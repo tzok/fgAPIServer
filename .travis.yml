@@ -6,6 +6,7 @@ python:
 
 install:
   pip install Flask
+install:
   pip install MySQL-python
 
 # command to install dependencies
