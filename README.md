@@ -1,5 +1,8 @@
 # GridEngine API Server
 
+[![Travis](http://img.shields.io/travis/FutureGateway/APIServer/master.png)](https://travis-ci.org/FutureGateway/geAPIServer)
+[![License](https://img.shields.io/github/license/FutureGateway/APIServer.svg?style?flat)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+
 RESTful API Server compliant with [CSGF APIs][specs] specifications.
 
 This service offers the same capabilities of the API Server project with the following differences:
