@@ -4,11 +4,6 @@ python:
   - "3.2"
   - "3.3"
 
-install:
-  pip install Flask
-install:
-  pip install MySQL-python
-
 # command to install dependencies
 script: python geapiserver.py 
 branches:
