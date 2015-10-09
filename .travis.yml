@@ -3,6 +3,10 @@ python:
   - "2.7"
   - "3.2"
   - "3.3"
+
+install:
+  pip install Flask
+
 # command to install dependencies
 script: python geapiserver.py 
 branches:
