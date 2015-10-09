@@ -1,2 +1,4 @@
 Flask
 MySQL-python
+nose
+

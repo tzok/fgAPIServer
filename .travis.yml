@@ -5,7 +5,7 @@ python:
   - "3.3"
 
 # command to install dependencies
-script: python geapiserver.py 
+script: nosetests geapiserver.py 
 branches:
   only:
     - master
