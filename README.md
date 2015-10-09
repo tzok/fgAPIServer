@@ -13,7 +13,7 @@ The Principal advantages of this solutions are:
 
  - Backward compatibility with existing systems based on the CSGF
  - Fast provisioning of ready to go solutions
- - Fast prototyping when designing new features and components
+ - Fast prototyping when designing new features and components (including APIServer itself)
  - Ideal solution for existing development environments using CSGF
 
    [specs]: <http://docs.csgfapis.apiary.io/#reference/v1.0/application/create-a-task>
