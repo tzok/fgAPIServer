@@ -6,6 +6,7 @@ python:
 
 install:
   pip install Flask
+  pip install MySQL-python
 
 # command to install dependencies
 script: python geapiserver.py 
