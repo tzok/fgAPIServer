@@ -173,7 +173,6 @@ class geapiserver_db:
                 ,'input_files' : task_ifiles
                 ,'output_files': task_ofiles
             }
-            print task_record
         except MySQLdb.Error, e:
             db.rollback()
             self.err_flag = True
@@ -248,10 +247,9 @@ class geapiserver_db:
         return task_ifiles
 
     """
-      getTaskAppDetail - Return application details of a given Task
+      getAppDetail - Return details about a given app_id
     """
-    def getTaskAppDetail(self,task_id):
-        task_record = self.getTaskRecord(task_id)
+    def getAppDetail(self,app_id):
         app_detail = {}
         try:
             db=self.connect()
@@ -263,7 +261,7 @@ class geapiserver_db:
                  '      ,enabled\n'
                  'from application\n'
                  'where id=%s;')
-            sql_data=(str(task_record['app_id']))
+            sql_data=(app_id)
             cursor.execute(sql,sql_data)
             app_record=cursor.fetchone()
             app_detail = {
@@ -279,7 +277,7 @@ class geapiserver_db:
                  'from application_parameter\n'
                  'where app_id=%s\n'
                  'order by param_id asc;')
-            sql_data=(str(task_record['app_id']))
+            sql_data=(app_id)
             cursor.execute(sql,sql_data)
             app_parameters=()
             for param in cursor:
@@ -289,8 +287,45 @@ class geapiserver_db:
                 }
                 app_parameters+=(parameter,)
             app_detail['parameters']=app_parameters
-            # Get now ifnrastructures with their params
+            # Get now application ifnrastructures with their params
             infrastructures=()
+            sql=('select id\n'
+                 '      ,name\n'
+                 '      ,description\n'
+                 '      ,creation\n'
+                 '      ,if(enabled,\'enabled\',\'disabled\') status\n'
+                 'from infrastructure\n'
+                 'where app_id=%s;')
+            sql_data=(app_id)
+            cursor.execute(sql,sql_data)
+            infrastructures = ()
+            for infra in cursor:
+                infra_details = {
+                     'id'         : infra[0]
+                    ,'name'       : infra[1]
+                    ,'description': infra[2]
+                    ,'creation'   : str(infra[3])
+                    ,'status'     : infra[4]
+                }
+                infrastructures+=(infra_details,)
+            # Now loop over infrastructures to get their parameters
+            for infra in infrastructures:
+                sql=('select pname, pvalue\n'
+                     'from infrastructure_parameter\n'
+                     'where infra_id=%s\n'
+                     'order by param_id asc;')
+                sql_data=(str(infra['id']))
+                cursor.execute(sql,sql_data)
+                infra_parameters = ()
+                for param in cursor:
+                    param_details = {
+                         'name' : param[0]
+                        ,'value': param[1]
+                    }
+                    infra_parameters+=(param_details,)
+                infra['parameters']=infra_parameters
+            app_detail['infrastructures']=infrastructures
+            return app_detail
         except MySQLdb.Error, e:
             db.rollback()
             self.err_flag = True
@@ -298,7 +333,13 @@ class geapiserver_db:
         finally:
             cursor.close()
             db.close()
-        return app_detail
+
+    """
+      getTaskAppDetail - Return application details of a given Task
+    """
+    def getTaskAppDetail(self,task_id):
+        task_record = self.getTaskRecord(task_id)
+        return self.getAppDetail(str(task_record['app_id']))
 
     """
       getTaskInfo - Retrieve full information about given task_id
@@ -381,8 +422,6 @@ class geapiserver_db:
                     sql_data=(task_id,inpfile,task_id)
                     cursor.execute(sql,sql_data)
             # Insert Task output_files
-            print "output_files:"
-            print output_files
             if output_files != []:
                 for outfile in output_files:
                     sql=('insert into task_output_file (task_id\n'
@@ -505,14 +544,19 @@ class geapiserver_db:
         }
         """
         GridEngineTaskDescription = {}
-        GridEngineTaskDescription.update({'commonName' : '%s' % task_record.get('description','task_id: %s' % task_id)})
-        GridEngineTaskDescription.update({'application': '%s' % geapiserverappid })
-        GridEngineTaskDescription.update({'identifier': 'task_id: %s' % task_id })
+        #GridEngineTaskDescription.update({'commonName' : '%s' % task_record.get('description','task_id: %s' % task_id)})
+        #GridEngineTaskDescription.update({'application': '%s' % geapiserverappid })
+        #GridEngineTaskDescription.update({'identifier': 'task_id: %s' % task_id })
+        GridEngineTaskDescription['commonName' ] = '%s' % task_record.get('description','task_id: %s' % task_id)
+        GridEngineTaskDescription['application'] = '%s' % geapiserverappid
+        GridEngineTaskDescription['identifier' ] = 'task_id: %s' % task_id
         GridEgnineJobDescription = {}
         # Get application specific settings
-        GridEngineTaskDescription.update({'jobDescription': GridEgnineJobDescription })
+        #GridEngineTaskDescription.update({'jobDescription': GridEgnineJobDescription })
+        GridEngineTaskDescription['jobDescription'] = GridEgnineJobDescription
         # Get application specific infrastructure settings
         GridEngineInfrastructure = {}
-        GridEngineTaskDescription.update({'jobDescription': GridEngineInfrastructure })
+        #GridEngineTaskDescription.update({'jobDescription': GridEngineInfrastructure })
+        GridEngineTaskDescription['jobDescription'] = GridEngineInfrastructure
         # Switch task status and populate gequeue table accordingly
         return True

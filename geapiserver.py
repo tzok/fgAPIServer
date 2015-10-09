@@ -234,7 +234,6 @@ def task_id_input(task_id=None):
         return resp
     elif request.method == 'POST':
         # First determin IO Sandbox location for this task
-        print "Uploading files: "
         geapisrv_db = geapiserver_db(db_host=geapisrv_db_host
                                     ,db_port=geapisrv_db_port
                                     ,db_user=geapisrv_db_user
@@ -272,7 +271,6 @@ def task_id_input(task_id=None):
                                               ,filename
                                               ,os.path.join(task_sandbox))
             file_list+=(filename,)
-            print "Saved '%s'" % os.path.join(task_sandbox, filename)
         # Now get input_sandbox status
         if geapisrv_db.isInputSandboxReady(task_id):
             # The input_sandbox is completed; trigger the GE for this task
