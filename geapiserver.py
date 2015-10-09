@@ -197,7 +197,14 @@ def task_id(task_id=None):
         resp.headers.add('Server',geapiserver_name)
         return resp
     elif request.method == 'POST':
-        return 'hello task_id %s' % task_id
+        task_response = {
+            'message' : 'Not supported yet'
+        }
+        js = json.dumps(task_response)
+        resp = Response(js, status=404, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        resp.headers.add('Server',geapiserver_name)
+        return resp
 
 # This finalizes the task request allowing to submit the task
 # GET  - shows input files

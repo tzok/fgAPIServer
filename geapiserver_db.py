@@ -520,14 +520,41 @@ class geapiserver_db:
     """
     def submitTaks(self,task_id):
         # Proceed only if task comes form a WAITING state
-        task_record = getTaskRecord(task_id)
-        task_status = task_record.get('status','')
+        task_info = self.getTaskInfo(task_id)
+        task_status = task_info.get('status','')
         if task_status != 'WAITING':
             self.err_flag = True
             self.err_msg  = 'Wrong status (\'%s\') to ask submission for task_id: %s' % (task_status,task_id)
             return False
         # Prepare GridEngine required info (JSON file)
         """
+        task_info contains:
+        { "status": "WAITING"
+        , "description": "helloworld@localhost test run"
+        , "creation": "2015-10-08 16:22:51"
+        , "user": "brunor"
+        , "id": 1
+        , "output_files": ["hello.out", "hello.err"]
+        , "application": {"description": "hostname tester application"
+                         , "parameters": [{"param_name": "jobdesc_executable", "param_value": "/bin/hostname"}
+                                        , {"param_name": "jobdesc_arguments", "param_value": "-f"}
+                                        , {"param_name": "jobdesc_output", "param_value": "stdout.txt"}
+                                        , {"param_name": "jobdesc_error", "param_value": "stderr.txt"}]
+                         , "creation": "2015-10-08 16:12:17"
+                         , "enabled": 1
+                         , "infrastructures": [ {"status": "enabled"
+                                               , "description": "hostname application on localhost"
+                                               , "parameters": [{"name": "jobservice", "value": "fork://localhost"}]
+                                               , "creation": "2015-10-08 16:12:18"
+                                               , "id": 1
+                                               , "name": "hostname@localhost"}]
+                        , "id": 1
+                        , "name": "hostname"
+                        }
+        , "arguments": ["arg1", "arg2", "arg3"]
+        , "input_files": ["hello.txt", "hello.sh"]
+        , "last_change": "2015-10-08 16:22:51"}
+        GridEngine understands:
         {
            "commonName": "helloworld@localhost test run",
            "application": 10000, -- Refers to the GridEngine APIServer registered app
@@ -543,20 +570,19 @@ class geapiserver_db:
            }
         }
         """
+        app_info=task_info['application']
+        app_params=app_info['parameters']
         GridEngineTaskDescription = {}
-        #GridEngineTaskDescription.update({'commonName' : '%s' % task_record.get('description','task_id: %s' % task_id)})
-        #GridEngineTaskDescription.update({'application': '%s' % geapiserverappid })
-        #GridEngineTaskDescription.update({'identifier': 'task_id: %s' % task_id })
-        GridEngineTaskDescription['commonName' ] = '%s' % task_record.get('description','task_id: %s' % task_id)
+        GridEngineTaskDescription['commonName' ] = '%s' % task_info.get('description','task_id: %s' % task_id)
         GridEngineTaskDescription['application'] = '%s' % geapiserverappid
         GridEngineTaskDescription['identifier' ] = 'task_id: %s' % task_id
         GridEgnineJobDescription = {}
         # Get application specific settings
-        #GridEngineTaskDescription.update({'jobDescription': GridEgnineJobDescription })
         GridEngineTaskDescription['jobDescription'] = GridEgnineJobDescription
-        # Get application specific infrastructure settings
         GridEngineInfrastructure = {}
-        #GridEngineTaskDescription.update({'jobDescription': GridEngineInfrastructure })
-        GridEngineTaskDescription['jobDescription'] = GridEngineInfrastructure
+        GridEngineTaskDescription['infrastructure'] = GridEngineInfrastructure
+        # view the equivalent GridEngine JSON request
+        print GridEngineTaskDescription
         # Switch task status and populate gequeue table accordingly
+        #self.triggerGridEngine(GridEngineTaskDescription)
         return True
