@@ -108,61 +108,57 @@ def task_create():
         if db_state[0] != 0:
             # Couldn't contact database
             # Prepare for 404 not found
+            task_state = 404
             task_response = {
                 'message' : db_state[1]
             }
-            js = json.dumps(task_response)
-            resp = Response(js, status=404, mimetype='application/json')
-            resp.headers['Content-type'] = 'application/json'
-            resp.headers.add('Server',geapiserver_name)
-            return resp
-        # Create task
-        task_id = geapisrv_db.initTask(app_id
-                                      ,app_desc
-                                      ,user
-                                      ,app_args
-                                      ,app_inpf
-                                      ,app_outf)
-        if task_id < 0:
-            task_state = geapisrv_db.getState()
-            # Couldn't contact database
-            # Prepare for 410 error
-            task_response = {
-                'message' : task_state[1]
-            }
-            js = json.dumps(task_response)
-            resp = Response(js, status=410, mimetype='application/json')
-            resp.headers['Content-type'] = 'application/json'
-            resp.headers.add('Server',geapiserver_name)
-            return resp
-        # Prepare response
-        task_record = geapisrv_db.getTaskRecord(task_id)
-        task_response = {
-             'id'          : task_record['id']
-            ,'application' : task_record['app_id']
-            ,'description' : task_record['description']
-            ,'arguments'   : task_record['arguments']
-            ,'input_files' : task_record['input_files']
-            ,'output_files': task_record['output_files']
-            ,'status'      : task_record['status']
-            ,'user'        : task_record['user']
-            ,'date'        : str(task_record['last_change'])
-            ,'_links'      : [{
-                                 'rel' : 'self'
-                                ,'href': '/%s/tasks/%s' % (geapiver,task_id)
-                              }
-                             ,{
-                                 'rel' : 'input'
-                                ,'href': '/%s/tasks/%s/input' % (geapiver,task_id)
-                              }]
-               }
+        else:
+            # Create task
+            task_id = geapisrv_db.initTask(app_id
+                                          ,app_desc
+                                          ,user
+                                          ,app_args
+                                          ,app_inpf
+                                          ,app_outf)
+            if task_id < 0:
+                task_state = geapisrv_db.getState()
+                # Couldn't contact database
+                # Prepare for 410 error
+                task_state = 410
+                task_response = {
+                    'message' : task_state[1]
+                }
+            else:
+                # Prepare response
+                task_state = 200
+                task_record = geapisrv_db.getTaskRecord(task_id)
+                task_response = {
+                     'id'          : task_record['id']
+                    ,'application' : task_record['app_id']
+                    ,'description' : task_record['description']
+                    ,'arguments'   : task_record['arguments']
+                    ,'input_files' : task_record['input_files']
+                    ,'output_files': task_record['output_files']
+                    ,'status'      : task_record['status']
+                    ,'user'        : task_record['user']
+                    ,'date'        : str(task_record['last_change'])
+                    ,'_links'      : [{
+                                         'rel' : 'self'
+                                        ,'href': '/%s/tasks/%s' % (geapiver,task_id)
+                                      }
+                                     ,{
+                                         'rel' : 'input'
+                                        ,'href': '/%s/tasks/%s/input' % (geapiver,task_id)
+                                      }]
+                }
         js = json.dumps(task_response)
-        resp = Response(js, status=200, mimetype='application/json')
+        resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
-        resp.headers.add('Location','/v1.0/tasks/%s' % task_id)
-        resp.headers.add('Link'
-                        ,'</v1.0/tasks/%s/input>; rel="input", </v1.0/tasks/%s>; rel="self"'
-                        %(task_id,task_id))
+        if task_state == 200:
+            resp.headers.add('Location','/v1.0/tasks/%s' % task_id)
+            resp.headers.add('Link'
+                            ,'</v1.0/tasks/%s/input>; rel="input", </v1.0/tasks/%s>; rel="self"'
+                            %(task_id,task_id))
         resp.headers.add('Server',geapiserver_name)
         return resp
 
@@ -181,18 +177,31 @@ def task_id(task_id=None):
         if db_state[0] != 0:
             # Couldn't contact database
             # Prepare for 404 not found
+            task_status = 404
             task_response = {
                 'message' : db_state[1]
             }
-            js = json.dumps(task_response)
-            resp = Response(js, status=404, mimetype='application/json')
-            resp.headers['Content-type'] = 'application/json'
-            resp.headers.add('Server',geapiserver_name)
-            return resp
+        elif not geapisrv_db.taskExists(task_id):
+            task_status = 404
+            task_response = {
+                'message' : "Unable to find task with id: %s" % task_id
+            }
+        else:
+            # Get task details
+            task_response=geapisrv_db.getTaskInfo(task_id)
+            db_state=geapisrv_db.getState()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
+                task_status = 404
+                task_response = {
+                    'message' : db_state[1]
+                }
+            else:
+                task_status = 200
         # Display task details
-        task_response=geapisrv_db.getTaskInfo(task_id)
         js = json.dumps(task_response)
-        resp = Response(js, status=200, mimetype='application/json')
+        resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         resp.headers.add('Server',geapiserver_name)
         return resp
@@ -222,20 +231,23 @@ def task_id_input(task_id=None):
         if db_state[0] != 0:
             # Couldn't contact database
             # Prepare for 404 not found
+            task_status = 404
             task_response = {
                 'message' : db_state[1]
             }
-            js = json.dumps(task_response)
-            resp = Response(js, status=404, mimetype='application/json')
-            resp.headers['Content-type'] = 'application/json'
-            resp.headers.add('Server',geapiserver_name)
-            return resp
-        task_response = {
-             'task'        : task_id
-            ,'input_files' : geapisrv_db.getTaskInputFiles(task_id)
-        }
+        elif not geapisrv_db.taskExists(task_id):
+            task_status = 404
+            task_response = {
+                'message' : "Unable to find task with id: %s" % task_id
+            }
+        else:
+            task_status = 200
+            task_response = {
+                 'task'        : task_id
+                ,'input_files' : geapisrv_db.getTaskInputFiles(task_id)
+            }
         js = json.dumps(task_response)
-        resp = Response(js, status=200, mimetype='application/json')
+        resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         resp.headers.add('Server',geapiserver_name)
         return resp
@@ -250,71 +262,63 @@ def task_id_input(task_id=None):
         if db_state[0] != 0:
             # Couldn't contact database
             # Prepare for 404 not found
+            task_status = 404
             task_response = {
                 'message' : db_state[1]
             }
-            js = json.dumps(task_response)
-            resp = Response(js, status=404, mimetype='application/json')
-            resp.headers['Content-type'] = 'application/json'
-            resp.headers.add('Server',geapiserver_name)
-            return resp
-        task_sandbox = geapisrv_db.getTaskIOSandbox(task_id)
-        if task_sandbox is None:
+        elif not geapisrv_db.taskExists(task_id):
+            task_status = 404
             task_response = {
-                'message' : 'Could not find IO Sandbox dir for task: %s' % task_id
+                'message' : "Unable to find task with id: %s" % task_id
             }
-            js = json.dumps(task_response)
-            resp = Response(js, status=404, mimetype='application/json')
-            resp.headers['Content-type'] = 'application/json'
-            resp.headers.add('Server',geapiserver_name)
-            return resp
-        # Now process files to upload
-        uploaded_files = request.files.getlist('file[]')
-        file_list = ()
-        for f in uploaded_files:
-            filename = secure_filename(f.filename)
-            f.save(os.path.join(task_sandbox, filename))
-            geapisrv_db.updateInputSandboxFile(task_id
-                                              ,filename
-                                              ,os.path.join(task_sandbox))
-            file_list+=(filename,)
-        # Now get input_sandbox status
-        if geapisrv_db.isInputSandboxReady(task_id):
-            # The input_sandbox is completed; trigger the GE for this task
-            if geapisrv_db.submitTaks(task_id):
-                task_response = {
-                     'task'    : task_id
-                    ,'files'   : file_list
-                    ,'message' : 'uploaded'
-                    ,'gestatus': 'triggered'
-                }
-                js = json.dumps(task_response)
-                resp = Response(js, status=200, mimetype='application/json')
-                resp.headers['Content-type'] = 'application/json'
-                resp.headers.add('Server',geapiserver_name)
-                return resp
-            else:
-                task_response = {
-                    'message' : geapisrv_db.getState()[1]
-                }
-                js = json.dumps(task_response)
-                resp = Response(js, status=412, mimetype='application/json')
-                resp.headers['Content-type'] = 'application/json'
-                resp.headers.add('Server',geapiserver_name)
-                return resp
         else:
-            geapisrv_db.submitTaks(task_id)
-            task_response = {
-                 'task'    : task_id
-                ,'files'   : file_list
-                ,'message' : 'uploaded'
-                ,'gestatus': 'waiting'
-            }
-            js = json.dumps(task_response)
-            resp = Response(js, status=200, mimetype='application/json')
-            resp.headers['Content-type'] = 'application/json'
-            resp.headers.add('Server',geapiserver_name)
-            return resp
+            task_sandbox = geapisrv_db.getTaskIOSandbox(task_id)
+            if task_sandbox is None:
+                task_status = 404
+                task_response = {
+                    'message' : 'Could not find IO Sandbox dir for task: %s' % task_id
+                }
+            else:
+                # Now process files to upload
+                uploaded_files = request.files.getlist('file[]')
+                file_list = ()
+                for f in uploaded_files:
+                    filename = secure_filename(f.filename)
+                    f.save(os.path.join(task_sandbox, filename))
+                    geapisrv_db.updateInputSandboxFile(task_id
+                                                      ,filename
+                                                      ,os.path.join(task_sandbox))
+                    file_list+=(filename,)
+                # Now get input_sandbox status
+                if geapisrv_db.isInputSandboxReady(task_id):
+                    # The input_sandbox is completed; trigger the GE for this task
+                    if geapisrv_db.submitTaks(task_id):
+                        task_status = 200
+                        task_response = {
+                             'task'    : task_id
+                            ,'files'   : file_list
+                            ,'message' : 'uploaded'
+                            ,'gestatus': 'triggered'
+                        }
+                    else:
+                        task_status = 412
+                        task_response = {
+                            'message' : geapisrv_db.getState()[1]
+                        }
+                else:
+                    geapisrv_db.submitTaks(task_id)
+                    task_status = 200
+                    task_response = {
+                         'task'    : task_id
+                        ,'files'   : file_list
+                        ,'message' : 'uploaded'
+                        ,'gestatus': 'waiting'
+                    }
+        js = json.dumps(task_response)
+        resp = Response(js, status=task_status, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        resp.headers.add('Server',geapiserver_name)
+        return resp
 
 #@app.route("/terminate",methods=['GET','POST'])
 #def terminate():

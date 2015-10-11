@@ -139,17 +139,17 @@ create table task_output_file (
 -- the REST engine and the GridEngine
 --
 create table ge_queue (
-     id           int unsigned not null auto_increment
-    ,task_id      int unsigned not null
-    ,action       varchar(32) not null -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...
-    ,status       varchar(32) not null -- Operation status (QUEUED,TAKEN,DONE,FAILED)
-    ,creation     datetime    not null -- When the action is enqueued
-    ,last_update  datetime    not null -- When the record has been modified by the GridEngine last time
+     task_id      int unsigned not null -- Taks reference for this GridEngine queue entry
+    ,agi_id       int unsigned          -- UsersTracking' ActiveGridInteraction id reference
+    ,action       varchar(32) not null  -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...
+    ,status       varchar(32) not null  -- Operation status (QUEUED,TAKEN,DONE,FAILED)
+    ,creation     datetime    not null  -- When the action is enqueued
+    ,last_change  datetime    not null  -- When the record has been modified by the GridEngine last time
     ,action_info  varchar(128) -- Temporary directory path containing further info to accomplish the requested operation
-    ,primary key(id)
+    ,primary key(task_id,status)
     ,index(task_id)
     ,index(status)
-    ,index(last_update)
+    ,index(last_change)
 );
 
 

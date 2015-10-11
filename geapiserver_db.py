@@ -30,6 +30,7 @@ __email__      = "riccardo.bruno@ct.infn.it"
 import MySQLdb
 import uuid
 import os
+import random
 
 """
  Task sandboxing will be placed here
@@ -37,51 +38,62 @@ import os
 """
 iosandbbox_dir   = '/tmp'
 geapiserverappid = '10000' # GridEngine sees API server as an application
+"""
+ Database connection default settings
+"""
+db_host = 'localhost'
+db_port = 3306
+db_user = 'geapiserver'
+db_pass = 'geapiserver_password'
+db_name = 'geapiserver'
 
 """
   geapiserver_db Class contain any call interacting with geapiserver database
 """
 class geapiserver_db:
 
-    db_host = 'localhost'
-    db_port = 3306
-    db_user = 'geapiserver'
-    db_pass = 'geapiserver_password'
-    db_name = 'geapiserver'
+    db_host = None
+    db_port = None
+    db_user = None
+    db_pass = None
+    db_name = None
 
     err_flag = False
     err_msg  = ''
     message  = ''
 
-
-    def __init__(self,db_host,db_port,db_user,db_pass,db_name):
-        self.db_host = db_host
-        self.db_port = db_port
-        self.db_user = db_user
-        self.db_pass = db_pass
-        self.db_name = db_name
+    """
+      geapiserver_db - Constructor may override default values defined at the top of the file
+    """
+    def __init__(self,*args, **kwargs):
+        self.db_host = kwargs.get('db_host',db_host)
+        self.db_port = kwargs.get('db_port',db_port)
+        self.db_user = kwargs.get('db_user',db_user)
+        self.db_pass = kwargs.get('db_pass',db_pass)
+        self.db_name = kwargs.get('db_name',db_name)
         self.test()
 
     def test(self):
         try:
             db = MySQLdb.connect(host=self.db_host
-                              ,user=self.db_user
-                              ,passwd=self.db_pass
-                              ,db=self.db_name
-                              ,port=self.db_port)
+                                ,user=self.db_user
+                                ,passwd=self.db_pass
+                                ,db=self.db_name
+                                ,port=self.db_port)
             # prepare a cursor object using cursor() method
             cursor = db.cursor()
             # execute SQL query using execute() method.
             cursor.execute("SELECT VERSION()")
             # Fetch a single row using fetchone() method.
             data = cursor.fetchone()
-            # disconnect from server
-            db.close()
             self.err_flag = False
             self.err_msg  = 'Database version : %s' % data[0]
-        except:
+        except MySQLdb.Error, e:
             self.err_flag = True
-            self.err_msg  = 'Unable to connect the database'
+            self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        finally:
+            cursor.close()
+            db.close()
 
     """
       connect Connects to the geapiserver database
@@ -100,6 +112,29 @@ class geapiserver_db:
         return (self.err_flag,self.err_msg)
 
     """
+      taskExists - Return True if the given task_id exists False otherwise
+    """
+    def taskExists(self,task_id):
+        count = 0
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select count(*)\n'
+                 'from task\n'
+                 'where id = %s;')
+            sql_data=(task_id,)
+            cursor.execute(sql,sql_data)
+            count = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            db.rollback()
+            self.err_flag = True
+            self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        finally:
+            cursor.close()
+            db.close()
+        return count > 0
+
+    """
        getTaskRecord
     """
     def getTaskRecord(self,task_id):
@@ -116,19 +151,24 @@ class geapiserver_db:
                  '      ,description\n'
                  '      ,status\n'
                  '      ,user\n'
+                 '      ,iosandbox\n'
                  'from task where id=%s;')
             sql_data=(task_id,)
             cursor.execute(sql,sql_data)
             task_dbrec=cursor.fetchone()
-            task_dicrec={ 'id'          : task_dbrec[0]
-                         ,'status'      : task_dbrec[1]
-                         ,'creation'    : task_dbrec[2]
-                         ,'last_change' : task_dbrec[3]
-                         ,'app_id'      : task_dbrec[4]
-                         ,'description' : task_dbrec[5]
-                         ,'status'      : task_dbrec[6]
-                         ,'user'        : task_dbrec[7]
-                        }
+            if task_dbrec is not None:
+                task_dicrec={ 'id'          : task_dbrec[0]
+                             ,'status'      : task_dbrec[1]
+                             ,'creation'    : task_dbrec[2]
+                             ,'last_change' : task_dbrec[3]
+                             ,'app_id'      : task_dbrec[4]
+                             ,'description' : task_dbrec[5]
+                             ,'status'      : task_dbrec[6]
+                             ,'user'        : task_dbrec[7]
+                             ,'iosandbox'   : task_dbrec[8]
+                            }
+            else:
+                return {}
             # Task arguments
             sql=('select argument\n'
                  'from task_arguments\n'
@@ -172,6 +212,7 @@ class geapiserver_db:
                 ,'arguments'   : task_args
                 ,'input_files' : task_ifiles
                 ,'output_files': task_ofiles
+                ,'iosandbox'   : task_dicrec['iosandbox']
             }
         except MySQLdb.Error, e:
             db.rollback()
@@ -200,7 +241,7 @@ class geapiserver_db:
                  '      ,if(path is null,\'waiting\',\'ready\')\n'
                  'from task_input_file\n'
                  'where task_id = %s;')
-            sql_data=(task_id)
+            sql_data=(task_id,)
             cursor.execute(sql,sql_data)
             for ifile in cursor:
                 file_info = {
@@ -229,7 +270,7 @@ class geapiserver_db:
                  '      ,if(path is null,\'waiting\',\'ready\')\n'
                  'from task_output_file\n'
                  'where task_id = %s;')
-            sql_data=(task_id)
+            sql_data=(task_id,)
             cursor.execute(sql,sql_data)
             for ifile in cursor:
                 file_info = {
@@ -261,7 +302,7 @@ class geapiserver_db:
                  '      ,enabled\n'
                  'from application\n'
                  'where id=%s;')
-            sql_data=(app_id)
+            sql_data=(app_id,)
             cursor.execute(sql,sql_data)
             app_record=cursor.fetchone()
             app_detail = {
@@ -277,7 +318,7 @@ class geapiserver_db:
                  'from application_parameter\n'
                  'where app_id=%s\n'
                  'order by param_id asc;')
-            sql_data=(app_id)
+            sql_data=(app_id,)
             cursor.execute(sql,sql_data)
             app_parameters=()
             for param in cursor:
@@ -296,7 +337,7 @@ class geapiserver_db:
                  '      ,if(enabled,\'enabled\',\'disabled\') status\n'
                  'from infrastructure\n'
                  'where app_id=%s;')
-            sql_data=(app_id)
+            sql_data=(app_id,)
             cursor.execute(sql,sql_data)
             infrastructures = ()
             for infra in cursor:
@@ -314,7 +355,7 @@ class geapiserver_db:
                      'from infrastructure_parameter\n'
                      'where infra_id=%s\n'
                      'order by param_id asc;')
-                sql_data=(str(infra['id']))
+                sql_data=(str(infra['id']),)
                 cursor.execute(sql,sql_data)
                 infra_parameters = ()
                 for param in cursor:
@@ -346,6 +387,11 @@ class geapiserver_db:
     """
     def getTaskInfo(self,task_id):
         task_record = self.getTaskRecord(task_id)
+        task_record.get('id',None)
+        if task_record.get('id',None) is None:
+            self.err_flag=True
+            self.err_msg="[ERROR] Did not find task id: %s" % task_id
+            return {}
         task_app_details = self.getTaskAppDetail(task_id)
         task_info = task_record
         del task_info['app_id']
@@ -361,12 +407,7 @@ class geapiserver_db:
         try:
             iosandbox = '%s/%s' % (iosandbbox_dir,str(uuid.uuid1()))
             os.makedirs(iosandbox)
-        except:
-            self.err_flag = True
-            self.err_msg  = "Unable to create IO Sandbox '%s' for task_id: %s" % (iosandbox,task_id)
-            return task_id
-        # Insert new Task
-        try:
+            # Insert new Task
             db=self.connect()
             cursor = db.cursor()
             sql=('insert into task (id\n'
@@ -435,6 +476,9 @@ class geapiserver_db:
                         )
                     sql_data=(task_id,outfile,task_id)
                     cursor.execute(sql,sql_data)
+        except IOError as (errno, strerror):
+            self.err_flag = True
+            self.err_msg  =  "I/O error({0}): {1}".format(errno, strerror)
         except MySQLdb.Error, e:
             db.rollback()
             self.err_flag = True
@@ -454,9 +498,14 @@ class geapiserver_db:
             db=self.connect()
             cursor = db.cursor()
             sql='select iosandbox from task where id=%s;'
-            sql_data=(task_id)
+            sql_data=(task_id,)
             cursor.execute(sql,sql_data)
-            iosandbox = cursor.fetchone()[0]
+            result = cursor.fetchone()
+            if result is None:
+                self.err_flag = True
+                self.err_msg  = "[ERROR] Unable to find task id: %s" % task_id
+            else:
+                iosandbox = result[0]
         except MySQLdb.Error, e:
             db.rollback()
             self.err_flag = True
@@ -502,7 +551,7 @@ class geapiserver_db:
             sql=('select sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
                  'from task_input_file\n'
                  'where task_id=%s;')
-            sql_data=(task_id)
+            sql_data=(task_id,)
             cursor.execute(sql,sql_data)
             sandbox_ready = cursor.fetchone()[0]
         except MySQLdb.Error, e:
@@ -519,12 +568,29 @@ class geapiserver_db:
                    This function takes care of all GridEngine needs to properly submit the applciation
     """
     def submitTaks(self,task_id):
-        # Proceed only if task comes form a WAITING state
+        # Get task information
         task_info = self.getTaskInfo(task_id)
+        app_info=task_info['application']
+        app_params=app_info['parameters']
+        # Retrieve only enabled infrastructures
+        app_infras=()
+        for infra in app_info['infrastructures']:
+            if bool(infra['status']):
+                app_infras+=(infra,)
+        if app_infras is None or len(app_infras) == 0:
+            self.err_flag = True
+            self.err_msg  = 'No suitable infrastructure found for task_id: %s' % task_id
+            return False
+        # Proceed only if task comes form a WAITING state
         task_status = task_info.get('status','')
         if task_status != 'WAITING':
             self.err_flag = True
             self.err_msg  = 'Wrong status (\'%s\') to ask submission for task_id: %s' % (task_status,task_id)
+            return False
+        # Application must be also enabled
+        if not bool(app_info['enabled']):
+            self.err_flag = True
+            self.err_msg  = 'Unable submit task_id: %s, because application is disabled' % task_id
             return False
         # Prepare GridEngine required info (JSON file)
         """
@@ -570,19 +636,85 @@ class geapiserver_db:
            }
         }
         """
-        app_info=task_info['application']
-        app_params=app_info['parameters']
         GridEngineTaskDescription = {}
         GridEngineTaskDescription['commonName' ] = '%s' % task_info.get('description','task_id: %s' % task_id)
         GridEngineTaskDescription['application'] = '%s' % geapiserverappid
         GridEngineTaskDescription['identifier' ] = 'task_id: %s' % task_id
+        # Prepare the JobDescription
         GridEgnineJobDescription = {}
+        for param in app_params:
+            if param['param_name']=='jobdesc_executable':
+                GridEgnineJobDescription['executable']=param['param_value']
+            elif param['param_name']=='jobdesc_arguments':
+                GridEgnineJobDescription['arguments']=param['param_value']+' '
+            elif param['param_name']=='jobdesc_output':
+                GridEgnineJobDescription['output']=param['param_value']
+            elif param['param_name']=='jobdesc_error':
+                GridEgnineJobDescription['error']=param['param_value']
+            #else: - here a warning should arose
+        # Now add further arguments if specified in task
+        for arg in task_info.get('arguments',[]):
+            GridEgnineJobDescription['arguments']+='%s ' % arg
+        GridEgnineJobDescription['arguments']=GridEgnineJobDescription['arguments'].strip()
         # Get application specific settings
         GridEngineTaskDescription['jobDescription'] = GridEgnineJobDescription
+        # Select one of the possible infrastructures defined for this application
+        # A random strategy is currently implemented; this could be changed later
+        if len(app_infras) > 1:
+           sel_infra = app_infras[int(random.random()*(len(app_infras)+1))]
+        else:
+           sel_infra = app_infras[0]
+        # Get resource manager
         GridEngineInfrastructure = {}
+        for param in sel_infra['parameters']:
+            if param['name'] == 'jobservice':
+                GridEngineInfrastructure['resourceManagers'] = param['value']
+            #elif ...
+            #else: - here a warning should arose
         GridEngineTaskDescription['infrastructure'] = GridEngineInfrastructure
-        # view the equivalent GridEngine JSON request
-        print GridEngineTaskDescription
         # Switch task status and populate gequeue table accordingly
-        #self.triggerGridEngine(GridEngineTaskDescription)
-        return True
+        return self.enqueueGridEngine(task_info,GridEngineTaskDescription)
+
+    def enqueueGridEngine(self,task_info,ge_desc):
+        self.err_flag = False
+        try:
+            # Save first the GridEngine task description file, which has the format:
+            # <task_iosandbox_dir>/<task_id>.info
+            ge_file=open('%s/%s.info' % (task_info['iosandbox'],task_info['id']),"w")
+            ge_file.write(str(ge_desc))
+            try:
+                # Insert task record in the GridEngine' queue
+                db=self.connect()
+                cursor = db.cursor()
+                sql=('insert into ge_queue (\n'
+                     '   task_id      -- Taks reference for this GridEngine queue entry\n'
+                     '  ,agi_id       -- UsersTracking\' ActiveGridInteraction id reference\n'
+                     '  ,action       -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
+                     '  ,status       -- Operation status (QUEUED,TAKEN,DONE,FAILED)\n'
+                     '  ,creation     -- When the action is enqueued\n'
+                     '  ,last_change  -- When the record has been modified by the GridEngine last time\n'
+                     '  ,action_info  -- Temporary directory path containing further info to accomplish the requested operation\n'
+                     ') values (%s,NULL,\'SUBMIT\',\'QUEUED\',now(),now(),%s);'
+                    )
+                sql_data=(task_info['id'],task_info['iosandbox'])
+                cursor.execute(sql,sql_data)
+                sql=('update task set status=\'SUBMIT\', last_change=now() where id=%s;'
+                    )
+                sql_data=(str(task_info['id']),)
+                cursor.execute(sql,sql_data)
+            except MySQLdb.Error, e:
+                db.rollback()
+                self.err_flag = True
+                self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+            finally:
+                cursor.close()
+                db.commit()
+                db.close()
+                ge_file.close()
+        except IOError as (errno, strerror):
+            self.err_flag = True
+            self.err_msg  = "I/O error({0}): {1}".format(errno, strerror)
+        finally:
+            ge_file.close()
+        return not self.err_flag
+
