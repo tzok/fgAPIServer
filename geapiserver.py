@@ -33,24 +33,32 @@ from flask import Response
 from flask import jsonify
 from werkzeug import secure_filename
 from geapiserver_db import geapiserver_db
+from geapiserver_cfg import geapiserver_cfg
 import os
 import sys
 import uuid
 import time
 import json
+import ConfigParser
+
+# geapiserver configuration file
+geapiserver_config_file = 'geapiserver.conf'
+
+# Load configuration
+ge_config = geapiserver_cfg(geapiserver_config_file)
 
 # geapiserver settings
-geapiver='v1.0'
-geapiserver_name='GridEngine API Server %s' % geapiver
-geapisrv_host='localhost'
-geapisrv_port=7777
+geapiver         =     ge_config.getConfValue('geapiver')
+geapiserver_name =     ge_config.getConfValue('geapiserver_name')
+geapisrv_host    =     ge_config.getConfValue('geapisrv_db_host')
+geapisrv_port    = int(ge_config.getConfValue('geapisrv_port'))
 
 # geapiserver database settings
-geapisrv_db_host = 'localhost'
-geapisrv_db_port = 3306
-geapisrv_db_user = 'geapiserver'
-geapisrv_db_pass = 'geapiserver_password'
-geapisrv_db_name = 'geapiserver'
+geapisrv_db_host =     ge_config.getConfValue('geapisrv_db_host')
+geapisrv_db_port = int(ge_config.getConfValue('geapisrv_db_port'))
+geapisrv_db_user =     ge_config.getConfValue('geapisrv_db_user')
+geapisrv_db_pass =     ge_config.getConfValue('geapisrv_db_pass')
+geapisrv_db_name =     ge_config.getConfValue('geapisrv_db_name')
 
 # setup path and Flask app
 base_path=os.path.dirname(__file__)

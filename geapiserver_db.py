@@ -71,15 +71,22 @@ class geapiserver_db:
         self.db_user = kwargs.get('db_user',db_user)
         self.db_pass = kwargs.get('db_pass',db_pass)
         self.db_name = kwargs.get('db_name',db_name)
-        self.test()
+
+    """
+      connect Connects to the geapiserver database
+    """
+    def connect(self):
+        return MySQLdb.connect(host=self.db_host
+                              ,user=self.db_user
+                              ,passwd=self.db_pass
+                              ,db=self.db_name
+                              ,port=self.db_port)
 
     def test(self):
+        db     = None
+        cursor = None
         try:
-            db = MySQLdb.connect(host=self.db_host
-                                ,user=self.db_user
-                                ,passwd=self.db_pass
-                                ,db=self.db_name
-                                ,port=self.db_port)
+            db = self.connect()
             # prepare a cursor object using cursor() method
             cursor = db.cursor()
             # execute SQL query using execute() method.
@@ -92,18 +99,9 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
 
-    """
-      connect Connects to the geapiserver database
-    """
-    def connect(self):
-        return MySQLdb.connect(host=self.db_host
-                              ,user=self.db_user
-                              ,passwd=self.db_pass
-                              ,db=self.db_name
-                              ,port=self.db_port)
 
     """
       getState returns the status and message of the last action on the DB
@@ -115,6 +113,8 @@ class geapiserver_db:
       taskExists - Return True if the given task_id exists False otherwise
     """
     def taskExists(self,task_id):
+        db     = None
+        cursor = None
         count = 0
         try:
             db=self.connect()
@@ -130,14 +130,16 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
         return count > 0
 
     """
        getTaskRecord
     """
     def getTaskRecord(self,task_id):
+        db     = None
+        cursor = None
         task_record = {}
         try:
             db=self.connect()
@@ -219,8 +221,8 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
         return task_record
 
     """
@@ -233,6 +235,8 @@ class geapiserver_db:
       getTaskInputFiles - Return information about InputFiles of a given Task
     """
     def getTaskInputFiles(self,task_id):
+        db     = None
+        cursor = None
         task_ifiles=()
         try:
             db=self.connect()
@@ -254,14 +258,16 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
         return task_ifiles
 
     """
       getTaskOutputFiles - Return information about OutputFiles of a given Task
     """
     def getTaskOutputFiles(self,task_id):
+        db     = None
+        cursor = None
         task_ifiles=()
         try:
             db=self.connect()
@@ -283,14 +289,16 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
         return task_ifiles
 
     """
       getAppDetail - Return details about a given app_id
     """
     def getAppDetail(self,app_id):
+        db     = None
+        cursor = None
         app_detail = {}
         try:
             db=self.connect()
@@ -372,8 +380,8 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
 
     """
       getTaskAppDetail - Return application details of a given Task
@@ -402,6 +410,8 @@ class geapiserver_db:
       initTask initialize a task from a given application id
     """
     def initTask(self,app_id,description,user,arguments,input_files,output_files):
+        db     = None
+        cursor = None
         task_id=-1
         # Create the Task IO Sandbox
         try:
@@ -484,15 +494,18 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.commit()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:
+                db.commit()
+                db.close()
         return task_id
 
     """
       getTaskIOSandbox - Get the assigned IO Sandbox folder of the given task_id
     """
     def getTaskIOSandbox(self,task_id):
+        db     = None
+        cursor = None
         iosandbox = None
         try:
             db=self.connect()
@@ -511,14 +524,16 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
         return iosandbox
 
     """
       updateInputSandboxFile - Update input_sandbox_table with the fullpath of a given (task,filename)
     """
     def updateInputSandboxFile(self,task_id,filename,filepath):
+        db     = None
+        cursor = None
         try:
             db=self.connect()
             cursor = db.cursor()
@@ -533,9 +548,10 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.commit()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:
+                db.commit()
+                db.close()
         return
 
     """
@@ -544,6 +560,8 @@ class geapiserver_db:
                             input file
     """
     def isInputSandboxReady(self,task_id):
+        db     = None
+        cursor = None
         sandbox_ready = False
         try:
             db=self.connect()
@@ -559,8 +577,8 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
-            cursor.close()
-            db.close()
+            if cursor is not None: cursor.close()
+            if     db is not None:     db.close()
         return 1==int(sandbox_ready)
 
     """
@@ -676,6 +694,9 @@ class geapiserver_db:
         return self.enqueueGridEngine(task_info,GridEngineTaskDescription)
 
     def enqueueGridEngine(self,task_info,ge_desc):
+        db      = None
+        cursor  = None
+        ge_file = None
         self.err_flag = False
         try:
             # Save first the GridEngine task description file, which has the format:
@@ -707,10 +728,11 @@ class geapiserver_db:
                 self.err_flag = True
                 self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
             finally:
-                cursor.close()
-                db.commit()
-                db.close()
-                ge_file.close()
+                if cursor  is not None: cursor.close()
+                if     db  is not None:
+                    db.commit()
+                    db.close()
+                if ge_file is not None: ge_file.close()
         except IOError as (errno, strerror):
             self.err_flag = True
             self.err_msg  = "I/O error({0}): {1}".format(errno, strerror)
