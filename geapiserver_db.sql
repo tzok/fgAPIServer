@@ -84,9 +84,11 @@ create table infrastructure_parameter (
 
 -- Infra for helloworld app
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (1,1,"hostname@localhost","hostname application on localhost",now(),true);
--- Parameters for infrastructure helloworld@localhost
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','fork://localhost');
+values (1,1,"hostname@localhost","hostname application csgfsdk (SSH)",now(),true);
+-- Parameters for infrastructure helloworld@csgfsdk (SSH)
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','ssh://90.147.74.95');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,2,'username','jobtest');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,3,'password','Xvf56jZ751f');
 
 -- Task table
 create table task (
@@ -151,5 +153,3 @@ create table ge_queue (
     ,index(status)
     ,index(last_change)
 );
-
-

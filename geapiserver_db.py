@@ -684,12 +684,17 @@ class geapiserver_db:
            sel_infra = app_infras[0]
         # Get resource manager
         GridEngineInfrastructure = {}
+        GridEngineCredentials    = {}
         for param in sel_infra['parameters']:
             if param['name'] == 'jobservice':
                 GridEngineInfrastructure['resourceManagers'] = param['value']
-            #elif ...
+            elif param['name'] == 'username':
+                GridEngineCredentials['username'] = param['value']
+            elif param['name'] == 'password':
+                GridEngineCredentials['password'] = param['value']
             #else: - here a warning should arose
         GridEngineTaskDescription['infrastructure'] = GridEngineInfrastructure
+        GridEngineTaskDescription['credentials'] = GridEngineCredentials
         # Switch task status and populate gequeue table accordingly
         return self.enqueueGridEngine(task_info,GridEngineTaskDescription)
 
