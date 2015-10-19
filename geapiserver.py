@@ -52,6 +52,7 @@ geapiver         =     ge_config.getConfValue('geapiver')
 geapiserver_name =     ge_config.getConfValue('geapiserver_name')
 geapisrv_host    =     ge_config.getConfValue('geapisrv_db_host')
 geapisrv_port    = int(ge_config.getConfValue('geapisrv_port'))
+gejson_indent    = int(ge_config.getConfValue('gejson_indent'))
 
 # geapiserver database settings
 geapisrv_db_host =     ge_config.getConfValue('geapisrv_db_host')
@@ -74,10 +75,19 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/%s/' % geapiver)
 def index():
+    versions = ({'id'    : geapiver
+                ,'_links': ({'rel' : 'self'
+                            ,'href': geapiver },)
+                ,'media-types': ({'type':'application/json'})
+                ,'status': 'prototype'
+                ,'updated': '2015-10-19'
+                },)
     index_response = {
-        'service' : 'GridEngine APIServer %s' % geapiver
+        'versions' : versions
+       ,'_links'   : ({ 'rel':'self'
+                       ,'href': '/'},)
     }
-    js = json.dumps(index_response)
+    js = json.dumps(index_response,indent=gejson_indent)
     resp = Response(js, status=200, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     resp.headers.add('Server',geapiserver_name)
@@ -97,6 +107,7 @@ def task_create():
     status   = request.values.get('status')
     user     = request.values.get('user')
     if request.method == 'GET':
+        # This should show the whole task list
         return 'task(GET)' 
     elif request.method == 'POST':
         # Getting values
@@ -159,7 +170,7 @@ def task_create():
                                         ,'href': '/%s/tasks/%s/input' % (geapiver,task_id)
                                       }]
                 }
-        js = json.dumps(task_response)
+        js = json.dumps(task_response,indent=gejson_indent)
         resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         if task_state == 200:
@@ -208,7 +219,31 @@ def task_id(task_id=None):
             else:
                 task_status = 200
         # Display task details
-        js = json.dumps(task_response)
+        js = json.dumps(task_response,indent=gejson_indent)
+        resp = Response(js, status=task_status, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        resp.headers.add('Server',geapiserver_name)
+        return resp
+    elif request.method == 'DELETE':
+        geapisrv_db = geapiserver_db(db_host=geapisrv_db_host
+                                    ,db_port=geapisrv_db_port
+                                    ,db_user=geapisrv_db_user
+                                    ,db_pass=geapisrv_db_pass
+                                    ,db_name=geapisrv_db_name)
+        db_state=geapisrv_db.getState()
+        if db_state[0] != 0:
+            # Couldn't contact database
+            # Prepare for 404 not found
+            task_status = 404
+            task_response = {
+                'message' : db_state[1]
+            }
+        elif not geapisrv_db.taskExists(task_id):
+            task_status = 404
+            task_response = {
+                'message' : "Unable to find task with id: %s" % task_id
+            }
+        js = json.dumps(task_response,indent=gejson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         resp.headers.add('Server',geapiserver_name)
@@ -217,7 +252,7 @@ def task_id(task_id=None):
         task_response = {
             'message' : 'Not supported yet'
         }
-        js = json.dumps(task_response)
+        js = json.dumps(task_response,indent=gejson_indent)
         resp = Response(js, status=404, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         resp.headers.add('Server',geapiserver_name)
@@ -248,13 +283,15 @@ def task_id_input(task_id=None):
             task_response = {
                 'message' : "Unable to find task with id: %s" % task_id
             }
-        else:
-            task_status = 200
+        elif not geapisrv_db.delete(task_id):
+            task_status = 410
             task_response = {
-                 'task'        : task_id
-                ,'input_files' : geapisrv_db.getTaskInputFiles(task_id)
+                'message' : "Unable to task task with id: %s" % task_id
             }
-        js = json.dumps(task_response)
+        else:
+            task_status = 204
+            task_response = {}
+        js = json.dumps(task_response,indent=gejson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         resp.headers.add('Server',geapiserver_name)
@@ -322,7 +359,7 @@ def task_id_input(task_id=None):
                         ,'message' : 'uploaded'
                         ,'gestatus': 'waiting'
                     }
-        js = json.dumps(task_response)
+        js = json.dumps(task_response,indent=gejson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         resp.headers.add('Server',geapiserver_name)

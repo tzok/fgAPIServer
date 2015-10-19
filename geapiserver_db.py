@@ -655,7 +655,7 @@ class geapiserver_db:
         }
         """
         GridEngineTaskDescription = {}
-        GridEngineTaskDescription['commonName' ] = '%s' % task_info.get('description','task_id: %s' % task_id)
+        GridEngineTaskDescription['commonName' ] = '%s' % task_info['user']
         GridEngineTaskDescription['application'] = '%s' % geapiserverappid
         GridEngineTaskDescription['identifier' ] = 'task_id: %s' % task_id
         # Prepare the JobDescription
@@ -745,3 +745,41 @@ class geapiserver_db:
             ge_file.close()
         return not self.err_flag
 
+    """
+      delete - Delete a given task
+    """
+    def delete(self,task_id):
+        status=False
+        # Get task information
+        task_info = self.getTaskInfo(task_id)
+        try:
+            # Insert task record in the GridEngine' queue
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('insert into ge_queue (\n'
+                 '   task_id      -- Taks reference for this GridEngine queue entry\n'
+                 '  ,agi_id       -- UsersTracking\' ActiveGridInteraction id reference\n'
+                 '  ,action       -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
+                 '  ,status       -- Operation status (QUEUED,TAKEN,DONE,FAILED)\n'
+                 '  ,creation     -- When the action is enqueued\n'
+                 '  ,last_change  -- When the record has been modified by the GridEngine last time\n'
+                 '  ,action_info  -- Temporary directory path containing further info to accomplish the requested operation\n'
+                 ') values (%s,NULL,\'JOBCANCEL\',\'QUEUED\',now(),now(),%s);'
+                )
+            sql_data=(task_info['id'],task_info['iosandbox'])
+            cursor.execute(sql,sql_data)
+            sql=('update task set status=\'CANCELLED\', last_change=now() where id=%s;'
+                )
+            sql_data=(str(task_info['id']),)
+            cursor.execute(sql,sql_data)
+            status=True
+        except MySQLdb.Error, e:
+            db.rollback()
+            self.err_flag = True
+            self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        finally:
+            if cursor  is not None: cursor.close()
+            if     db  is not None:
+                db.commit()
+                db.close()
+        return status

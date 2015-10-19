@@ -55,6 +55,7 @@ class geapiserver_cfg:
         print config
 
     def getConfValue(self,key):
+        def_value = None
         if   key == 'geapiver'        : def_value = 'v.10'
         elif key == 'geapiserver_name': def_value = 'GridEngine API Server % s' % self.getConfValue('geapiver')
         elif key == 'geapisrv_host'   : def_value = 'localhost'
@@ -64,6 +65,7 @@ class geapiserver_cfg:
         elif key == 'geapisrv_db_user': def_value = 'localhost'
         elif key == 'geapisrv_db_pass': def_value = 'geapiserver_password'
         elif key == 'geapisrv_db_name': def_value = 'geapiserver'
+        elif key == 'gejson_indent'   : def_value = '4'
         else:
 			print "[WARNING] Not found default value for key: '%s'" % key
         return self.geConfig.get(key,def_value)
