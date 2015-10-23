@@ -171,6 +171,20 @@ class geapiserver_db:
                             }
             else:
                 return {}
+            # Task status is influenced by ge_queue status
+            # if recognizing a different update status
+            # the new value will be updated in Task table
+            sql=('select if(ge_status is NULL,\'WAITING\',ge_status)\n'
+                 'from ge_queue\n'
+                 'where task_id =%s;')
+            sql_data=(task_id,)
+            cursor.execute(sql,sql_data)
+            task_status=cursor.fetchone()[0]
+            if task_status != task_dicrec['status']:
+                task_dicrec['status'] = task_status
+                sql=('update task set status=%s where id=%s;')
+                sql_data=(task_status,task_id)
+                cursor.execute(sql,sql_data)
             # Task arguments
             sql=('select argument\n'
                  'from task_arguments\n'
@@ -200,7 +214,11 @@ class geapiserver_db:
             cursor.execute(sql,sql_data)
             task_ofiles=()
             for ofile in cursor:
-                task_ofiles+=(ofile[0],)
+                ofile_entry = {
+                    'name' : ofile[0]
+                   ,'url'  : ''
+                }
+                task_ofiles+=(ofile_entry,)
             # Prepare output
             task_record= {
                  'id'          : task_dicrec['id']
@@ -209,7 +227,6 @@ class geapiserver_db:
                 ,'last_change' : str(task_dicrec['last_change'])
                 ,'app_id'      : task_dicrec['app_id']
                 ,'description' : task_dicrec['description']
-                ,'status'      : task_dicrec['status']
                 ,'user'        : task_dicrec['user']
                 ,'arguments'   : task_args
                 ,'input_files' : task_ifiles
@@ -222,7 +239,9 @@ class geapiserver_db:
             self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         finally:
             if cursor is not None: cursor.close()
-            if     db is not None:     db.close()
+            if     db is not None:
+                db.commit()
+                db.close()
         return task_record
 
     """
@@ -657,7 +676,7 @@ class geapiserver_db:
         GridEngineTaskDescription = {}
         GridEngineTaskDescription['commonName' ] = '%s' % task_info['user']
         GridEngineTaskDescription['application'] = '%s' % geapiserverappid
-        GridEngineTaskDescription['identifier' ] = 'task_id: %s' % task_id
+        GridEngineTaskDescription['identifier' ] = 'task_id: %s' % task_info['id']
         # Prepare the JobDescription
         GridEgnineJobDescription = {}
         for param in app_params:
@@ -716,11 +735,12 @@ class geapiserver_db:
                      '   task_id      -- Taks reference for this GridEngine queue entry\n'
                      '  ,agi_id       -- UsersTracking\' ActiveGridInteraction id reference\n'
                      '  ,action       -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                     '  ,status       -- Operation status (QUEUED,TAKEN,DONE,FAILED)\n'
+                     '  ,status       -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
+                     '  ,ge_status    -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
                      '  ,creation     -- When the action is enqueued\n'
                      '  ,last_change  -- When the record has been modified by the GridEngine last time\n'
                      '  ,action_info  -- Temporary directory path containing further info to accomplish the requested operation\n'
-                     ') values (%s,NULL,\'SUBMIT\',\'QUEUED\',now(),now(),%s);'
+                     ') values (%s,NULL,\'SUBMIT\',\'QUEUED\',NULL,now(),now(),%s);'
                     )
                 sql_data=(task_info['id'],task_info['iosandbox'])
                 cursor.execute(sql,sql_data)
@@ -760,11 +780,12 @@ class geapiserver_db:
                  '   task_id      -- Taks reference for this GridEngine queue entry\n'
                  '  ,agi_id       -- UsersTracking\' ActiveGridInteraction id reference\n'
                  '  ,action       -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                 '  ,status       -- Operation status (QUEUED,TAKEN,DONE,FAILED)\n'
+                 '  ,status       -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
+                 '  ,ge_status    -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
                  '  ,creation     -- When the action is enqueued\n'
                  '  ,last_change  -- When the record has been modified by the GridEngine last time\n'
                  '  ,action_info  -- Temporary directory path containing further info to accomplish the requested operation\n'
-                 ') values (%s,NULL,\'JOBCANCEL\',\'QUEUED\',now(),now(),%s);'
+                 ') values (%s,NULL,\'JOBCANCEL\',\'QUEUED\',NULL,now(),now(),%s);'
                 )
             sql_data=(task_info['id'],task_info['iosandbox'])
             cursor.execute(sql,sql_data)
