@@ -365,6 +365,33 @@ def task_id_input(task_id=None):
         resp.headers.add('Server',geapiserver_name)
         return resp
 
+@app.route('/%s/file' % geapiver,methods=['GET',])
+def file():
+    if request.method == 'GET':
+        file_path = request.values.get('path')
+        file_name = request.values.get('name')
+    serve_file = None
+    try:
+        serve_file = open('%s/%s' % (file_path,file_name),'rb')
+        serve_file_content = serve_file.read()
+        resp = Response(serve_file_content, status=200)
+        resp.headers['Content-type'] = 'application/octet-stream'
+        resp.headers.add('Content-Disposition','attachment; filename="%s"' % file_name)
+        resp.headers.add('Server',geapiserver_name)
+    except:
+        task_response = {
+            'message' : "Unable to get file: %s/%s" % (file_path,file_name)
+        }
+        js = json.dumps(task_response,indent=gejson_indent)
+        resp = Response(js, status=404)
+        resp.headers['Content-type'] = 'application/json'
+        resp.headers.add('Server',geapiserver_name)
+    finally:
+        if serve_file is not None:
+            serve_file.close()
+    return resp
+
+
 #@app.route("/terminate",methods=['GET','POST'])
 #def terminate():
 #	if request.method == 'GET':

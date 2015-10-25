@@ -31,6 +31,7 @@ import MySQLdb
 import uuid
 import os
 import random
+import urllib
 
 """
  Task sandboxing will be placed here
@@ -171,20 +172,6 @@ class geapiserver_db:
                             }
             else:
                 return {}
-            # Task status is influenced by ge_queue status
-            # if recognizing a different update status
-            # the new value will be updated in Task table
-            sql=('select if(ge_status is NULL,\'WAITING\',ge_status)\n'
-                 'from ge_queue\n'
-                 'where task_id =%s;')
-            sql_data=(task_id,)
-            cursor.execute(sql,sql_data)
-            task_status=cursor.fetchone()[0]
-            if task_status != task_dicrec['status']:
-                task_dicrec['status'] = task_status
-                sql=('update task set status=%s where id=%s;')
-                sql_data=(task_status,task_id)
-                cursor.execute(sql,sql_data)
             # Task arguments
             sql=('select argument\n'
                  'from task_arguments\n'
@@ -207,6 +194,7 @@ class geapiserver_db:
                 task_ifiles+=(ifile[0],)
             # Task output files
             sql=('select file\n'
+                 '      ,if(path is NULL,\'\',path)\n'
                  'from task_output_file\n'
                  'where task_id=%s\n'
                  'order by file_id asc;')
@@ -216,7 +204,8 @@ class geapiserver_db:
             for ofile in cursor:
                 ofile_entry = {
                     'name' : ofile[0]
-                   ,'url'  : ''
+                   ,'url'  : 'file?%s' % urllib.urlencode({'path':ofile[1]
+                                                          ,'name':ofile[0]})
                 }
                 task_ofiles+=(ofile_entry,)
             # Prepare output
@@ -491,20 +480,29 @@ class geapiserver_db:
                         )
                     sql_data=(task_id,inpfile,task_id)
                     cursor.execute(sql,sql_data)
-            # Insert Task output_files
-            if output_files != []:
-                for outfile in output_files:
-                    sql=('insert into task_output_file (task_id\n'
-                         '                             ,file_id\n'
-                         '                             ,file)\n'
-                         'select %s                                          -- task_id\n'
-                         '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                         '      ,%s                                          -- file\n'
-                         'from task_output_file\n'
-                         'where task_id=%s'
-                        )
-                    sql_data=(task_id,outfile,task_id)
-                    cursor.execute(sql,sql_data)
+            # Insert Task output_files specified by application settings (default)
+            sql=('select pvalue\n'
+                 'from application_parameter\n'
+                 'where app_id=%s\n'
+                 ' and pname=\'jobdesc_output\'\n'
+                 '  or pname=\'jobdesc_error\';')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            for out_file in cursor:
+                output_files+=[out_file[0],]
+            # Insert Task output_files specified by user
+            for outfile in output_files:
+                sql=('insert into task_output_file (task_id\n'
+                     '                             ,file_id\n'
+                     '                             ,file)\n'
+                     'select %s                                          -- task_id\n'
+                     '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
+                     '      ,%s                                          -- file\n'
+                     'from task_output_file\n'
+                     'where task_id=%s'
+                    )
+                sql_data=(task_id,outfile,task_id)
+                cursor.execute(sql,sql_data)
         except IOError as (errno, strerror):
             self.err_flag = True
             self.err_msg  =  "I/O error({0}): {1}".format(errno, strerror)
