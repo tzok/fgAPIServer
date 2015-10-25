@@ -106,9 +106,55 @@ def task_create():
     per_page = request.values.get('per_page')
     status   = request.values.get('status')
     user     = request.values.get('user')
+    app_id   = request.values.get('app_id')
     if request.method == 'GET':
-        # This should show the whole task list
-        return 'task(GET)' 
+        # Show the whole task list
+        # Connect database
+        geapisrv_db = geapiserver_db(db_host=geapisrv_db_host
+                                    ,db_port=geapisrv_db_port
+                                    ,db_user=geapisrv_db_user
+                                    ,db_pass=geapisrv_db_pass
+                                    ,db_name=geapisrv_db_name)
+        db_state=geapisrv_db.getState()
+        if db_state[0] != 0:
+            # Couldn't contact database
+            # Prepare for 404 not found
+            task_state = 404
+            task_response = {
+                'message' : db_state[1]
+            }
+        else:
+            # call to get tasks
+            task_list = geapisrv_db.getTaskList(user,app_id)
+            # Prepare response
+            task_response = []
+            for task_id in task_list:
+                task_record = geapisrv_db.getTaskRecord(task_id)
+                task_response += [{
+                     'id'          : task_record['id']
+                    ,'application' : task_record['app_id']
+                    ,'description' : task_record['description']
+                    ,'arguments'   : task_record['arguments']
+                    ,'input_files' : task_record['input_files']
+                    ,'output_files': task_record['output_files']
+                    ,'status'      : task_record['status']
+                    ,'user'        : task_record['user']
+                    ,'date'        : str(task_record['last_change'])
+                    ,'_links'      : [{
+                                         'rel' : 'self'
+                                        ,'href': '/%s/tasks/%s' % (geapiver,task_id)
+                                      }
+                                     ,{
+                                         'rel' : 'input'
+                                        ,'href': '/%s/tasks/%s/input' % (geapiver,task_id)
+                                      }]
+                },]
+            task_state = 200
+        js = json.dumps(task_response,indent=gejson_indent)
+        resp = Response(js, status=task_state, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        resp.headers.add('Server',geapiserver_name)
+        return resp
     elif request.method == 'POST':
         # Getting values
         params = request.get_json()
@@ -391,6 +437,12 @@ def file():
             serve_file.close()
     return resp
 
+@app.after_request
+def after_request(response):
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+  response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+  return response
 
 #@app.route("/terminate",methods=['GET','POST'])
 #def terminate():

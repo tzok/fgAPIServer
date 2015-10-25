@@ -764,6 +764,39 @@ class geapiserver_db:
         return not self.err_flag
 
     """
+      getTaskList - Get the list of tasks associated to a user and/or app_id
+    """
+    def getTaskList(self,user,app_id):
+        task_ids = []
+        try:
+            # Get Task ids preparing the right query (user/app_id)
+            db=self.connect()
+            cursor = db.cursor()
+            if app_id is not None:
+                sql=('select id\n'
+                 'from task\n'
+                 'where app_id = %s\n'
+                 '  and user = %s;'
+                )
+                sql_data=(app_id,user)
+            else:
+                sql=('select id\n'
+                 'from task\n'
+                 'where user = %s;'
+                )
+                sql_data=(user,)
+            cursor.execute(sql,sql_data)
+            for task_id in cursor:
+                task_ids+=[task_id[0],]
+        except MySQLdb.Error, e:
+            self.err_flag = True
+            self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        finally:
+            if cursor  is not None: cursor.close()
+            if     db  is not None: db.close()
+        return task_ids
+
+    """
       delete - Delete a given task
     """
     def delete(self,task_id):
