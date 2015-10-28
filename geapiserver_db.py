@@ -179,9 +179,9 @@ class geapiserver_db:
                  'order by arg_id asc;')
             sql_data=(task_id,)
             cursor.execute(sql,sql_data)
-            task_args=()
+            task_args=[]
             for arg in cursor:
-                task_args+=(arg[0],)
+                task_args+=[arg[0],]
             # Task input files
             sql=('select file\n'
                  'from task_input_file\n'
@@ -189,9 +189,9 @@ class geapiserver_db:
                  'order by file_id asc;')
             sql_data=(task_id,)
             cursor.execute(sql,sql_data)
-            task_ifiles=()
+            task_ifiles=[]
             for ifile in cursor:
-                task_ifiles+=(ifile[0],)
+                task_ifiles+=[ifile[0],]
             # Task output files
             sql=('select file\n'
                  '      ,if(path is NULL,\'\',path)\n'
@@ -200,14 +200,14 @@ class geapiserver_db:
                  'order by file_id asc;')
             sql_data=(task_id,)
             cursor.execute(sql,sql_data)
-            task_ofiles=()
+            task_ofiles=[]
             for ofile in cursor:
                 ofile_entry = {
                     'name' : ofile[0]
                    ,'url'  : 'file?%s' % urllib.urlencode({'path':ofile[1]
                                                           ,'name':ofile[0]})
                 }
-                task_ofiles+=(ofile_entry,)
+                task_ofiles+=[ofile_entry,]
             # Prepare output
             task_record= {
                  'id'          : task_dicrec['id']
@@ -484,8 +484,8 @@ class geapiserver_db:
             sql=('select pvalue\n'
                  'from application_parameter\n'
                  'where app_id=%s\n'
-                 ' and pname=\'jobdesc_output\'\n'
-                 '  or pname=\'jobdesc_error\';')
+                 ' and (   pname=\'jobdesc_output\'\n'
+                 '      or pname=\'jobdesc_error\');')
             sql_data=(app_id,)
             cursor.execute(sql,sql_data)
             for out_file in cursor:
@@ -674,7 +674,9 @@ class geapiserver_db:
         GridEngineTaskDescription = {}
         GridEngineTaskDescription['commonName' ] = '%s' % task_info['user']
         GridEngineTaskDescription['application'] = '%s' % geapiserverappid
-        GridEngineTaskDescription['identifier' ] = 'task_id: %s' % task_info['id']
+        GridEngineTaskDescription['identifier' ] = '%s@%s' % (task_info['id'],task_info['iosandbox'])
+        GridEngineTaskDescription['input_files'] = task_info['input_files']
+        GridEngineTaskDescription['output_files'] = task_info['output_files']
         # Prepare the JobDescription
         GridEgnineJobDescription = {}
         for param in app_params:

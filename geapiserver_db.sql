@@ -42,6 +42,8 @@ create table application (
 
 insert into application (id,name,description,creation,enabled) 
 values (1,"hostname","hostname tester application",now(),true);
+insert into application (id,name,description,creation,enabled)
+values (2,"SayHello","A more complex app using I/O Sandboxing",now(),true);
 
 -- Application parameters
 create table application_parameter (
@@ -54,10 +56,17 @@ create table application_parameter (
 );
 
 -- Parameters for application helloworld
+-- App 1
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,1,'jobdesc_executable','/bin/hostname');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,2,'jobdesc_arguments','-f');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,3,'jobdesc_output','stdout.txt');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,4,'jobdesc_error','stderr.txt');
+-- App 2
+insert into application_parameter (app_id,param_id,pname,pvalue) values (2,1,'jobdesc_executable','/bin/bash');
+insert into application_parameter (app_id,param_id,pname,pvalue) values (2,2,'jobdesc_arguments','sayhello.sh');
+insert into application_parameter (app_id,param_id,pname,pvalue) values (2,3,'jobdesc_output','sayhello.out');
+insert into application_parameter (app_id,param_id,pname,pvalue) values (2,4,'jobdesc_error','sayhello.err');
+
 
 -- Infrastructure
 create table infrastructure (
@@ -67,7 +76,7 @@ create table infrastructure (
    ,description  varchar(256) not null
    ,creation     datetime not null
    ,enabled      boolean default false not null
-   ,primary key(id)
+   ,primary key(id,app_id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
 );
@@ -82,13 +91,31 @@ create table infrastructure_parameter (
    ,foreign key(infra_id) references infrastructure(id)
 );
 
--- Infra for helloworld app
+-- Infra for helloworld app@csgfsdk
 insert into infrastructure (id,app_id,name,description,creation,enabled)
 values (1,1,"hostname@localhost","hostname application csgfsdk (SSH)",now(),true);
+-- Infra for sayhello app@csgfsdk
+insert into infrastructure (id,app_id,name,description,creation,enabled)
+values (1,2,"hostname@localhost","hostname application csgfsdk (SSH)",now(),true);
+-- Infra for sayhello app@nebula
+insert into infrastructure (id,app_id,name,description,creation,enabled)
+values (2,2,"hostname@localhost","hostname application csgfsdk (SSH)",now(),false);
+
 -- Parameters for infrastructure helloworld@csgfsdk (SSH)
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','ssh://90.147.74.95');
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,2,'username','jobtest');
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,3,'password','Xvf56jZ751f');
+
+-- Parameters for infrastructure sayhello@nebula (rOCCI)
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,1,'jobservice','rocci://nebula-server-01.ct.infn.it:9000');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,2,'os_tpl','uuid_generic_vm_19');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,3,'resource_tpl','small');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,4,'eToken_host','etokenserver.ct.infn.it');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,5,'eToken_port','8082');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,6,'eToken_id'  ,'bc681e2bd4c3ace2a4c54907ea0c379b');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,7,'voms'       ,'vo.chain-project.eu');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,8,'voms_role'  ,'vo.chain-project.eu');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,9,'rfc_proxy'  ,'true');
 
 -- Task table
 create table task (
