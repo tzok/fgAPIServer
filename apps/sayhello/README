@@ -1,0 +1,73 @@
+#
+# README - sayhello
+#
+# Author: Riccardo Bruno (riccardo.bruno@ct.infn.it)
+#
+This is a little more complex example showing how to execute a job
+making use of I/O Sandboxing and arguments as well
+The application executes /bin/bash and have configured as argument
+a bash script file provided in the inputSandbox together with
+another text file containing just a message 'sayhello.txt'
+The application produces a file named 'sayhello.out' that will be 
+placed in the outputSandbox together with standard input and ouput
+files
+
+To execute the demo, please follow the steps below:
+
+1) Prepare the job submission
+curl -i -H "Content-Type: application/json" -X POST -d '{"application":"2","description":"sayhello@csgfsdk test run", "arguments": ["\"I am saying hello!\""],  "output_files": ["sayhello.data"], "input_files": ["sayhello.sh","sayhello.txt"]}' http://localhost:7777/v1.0/tasks?user=brunor
+If successful, this call returns a json like:
+{
+    "status": "WAITING", 
+    "application": 2, 
+    "date": "2015-10-29 09:22:25", 
+    "description": "sayhello@csgfsdk test run", 
+    "output_files": [
+        {
+            "url": "file?path=&name=sayhello.data", 
+            "name": "sayhello.data"
+        }, 
+        {
+            "url": "file?path=&name=sayhello.out", 
+            "name": "sayhello.out"
+        }, 
+        {
+            "url": "file?path=&name=sayhello.err", 
+            "name": "sayhello.err"
+        }
+    ], 
+    "_links": [
+        {
+            "href": "/v1.0/tasks/14", 
+            "rel": "self"
+        }, 
+        {
+            "href": "/v1.0/tasks/14/input", 
+            "rel": "input"
+        }
+    ], 
+    "user": "brunor", 
+    "input_files": [
+        "sayhello.sh", 
+        "sayhello.txt"
+    ], 
+    "id": 14, 
+    "arguments": [
+        "\"I am saying hello!\""
+    ]
+Keep note of the "id" value that will be used by the next command
+
+2) Finalize the execution instructing the API server daemon to submit
+curl -i -F "file[]=@sayhello.txt" -F "file[]=@sayhello.sh" http://localhost:7777/v1.0/tasks/14/input?user=brunor
+If successful, this command returns the following json:
+{
+    "files": [
+        "sayhello.txt", 
+        "sayhello.sh"
+    ], 
+    "message": "uploaded", 
+    "task": "14", 
+    "gestatus": "triggered"
+}
+The "gestatus" value equal to "triggered" informs that the daemon is now in charge of submitting the job
+

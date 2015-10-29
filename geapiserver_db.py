@@ -627,6 +627,15 @@ class geapiserver_db:
             self.err_flag = True
             self.err_msg  = 'Unable submit task_id: %s, because application is disabled' % task_id
             return False
+        # Infrastructures must exist for this application
+        enabled_infras=[]
+        for infra in app_infras:
+            if infra['status'] == 'enabled':
+                enabled_infras += [infra,]
+        if len(enabled_infras) == 0:
+            self.err_flag = True
+            self.err_msg  = 'No suitable infrastructures found for task_id: %s' % task_id
+            return False
         # Prepare GridEngine required info (JSON file)
         """
         task_info contains:
@@ -697,10 +706,10 @@ class geapiserver_db:
         GridEngineTaskDescription['jobDescription'] = GridEgnineJobDescription
         # Select one of the possible infrastructures defined for this application
         # A random strategy is currently implemented; this could be changed later
-        if len(app_infras) > 1:
-           sel_infra = app_infras[int(random.random()*(len(app_infras)+1))]
+        if len(enabled_infras) > 1:
+            sel_infra = app_infras[int(random.random()*len(enabled_infras))]
         else:
-           sel_infra = app_infras[0]
+            sel_infra = enabled_infras[0]
         # Get resource manager
         GridEngineInfrastructure = {}
         GridEngineCredentials    = {}
@@ -727,6 +736,10 @@ class geapiserver_db:
             # <task_iosandbox_dir>/<task_id>.info
             ge_file=open('%s/%s.info' % (task_info['iosandbox'],task_info['id']),"w")
             ge_file.write(str(ge_desc))
+            # Now save native APIServer JSON file, having the format:
+            # <task_iosandbox_dir>/<task_id>.json
+            as_file=open('%s/%s.json' % (task_info['iosandbox'],task_info['id']),"w")
+            as_file.write(str(task_info))
             try:
                 # Insert task record in the GridEngine' queue
                 db=self.connect()
