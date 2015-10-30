@@ -536,6 +536,12 @@ class geapiserver_db:
                                   ,'file': file },]
             # Files can be registered in task_input_files
             for inpfile in app_files+inp_file:
+                # Not None paths refers to existing app_files that could be copied
+                # into the iosandbox task directory; then use iosandbox path
+                if inpfile['path'] is not None:
+                    shutil.copy('%s/%s' % (inpfile['path'],inpfile['file'])
+                               ,'%s/%s' % (iosandbox,inpfile['file']))
+                    inpfile['path'] = iosandbox
                 sql=('insert into task_input_file (task_id\n'
                      '                            ,file_id\n'
                      '                            ,path\n'
@@ -549,11 +555,6 @@ class geapiserver_db:
                     )
                 sql_data=(task_id,inpfile['path'],inpfile['file'],task_id)
                 cursor.execute(sql,sql_data)
-                # Not None paths refers to existing app_files that could be copied
-                # into the iosandbox task directory
-                if inpfile['path'] is not None:
-                    shutil.copy('%s/%s' % (inpfile['path'],inpfile['file'])
-                               ,'%s/%s' % (iosandbox,inpfile['file']))
             # Insert Task output_files specified by application settings (default)
             sql=('select pvalue\n'
                  'from application_parameter\n'
