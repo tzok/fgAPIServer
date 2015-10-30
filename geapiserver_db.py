@@ -716,11 +716,29 @@ class geapiserver_db:
         for param in sel_infra['parameters']:
             if param['name'] == 'jobservice':
                 GridEngineInfrastructure['resourceManagers'] = param['value']
+            elif param['name'] == 'os_tpl':
+                GridEngineInfrastructure['os_tpl'] = param['value']
+            elif param['name'] == 'resource_tpl':
+                GridEngineInfrastructure['resource_tpl'] = param['value']
+            elif param['name'] == 'attributes_title':
+                GridEngineInfrastructure['attributes_title'] = param['value']
             elif param['name'] == 'username':
                 GridEngineCredentials['username'] = param['value']
             elif param['name'] == 'password':
                 GridEngineCredentials['password'] = param['value']
-            #else: - here a warning should arose
+            elif param['name'] == 'eToken_host':
+                GridEngineCredentials['eToken_host'] = param['value']
+            elif param['name'] == 'eToken_port':
+                GridEngineCredentials['eToken_port'] = param['value']
+            elif param['name'] == 'eToken_id':
+                GridEngineCredentials['eToken_id'] = param['value']
+            elif param['name'] == 'voms':
+                GridEngineCredentials['voms'] = param['value']
+            elif param['name'] == 'voms_role':
+                GridEngineCredentials['voms_role'] = param['value']
+            elif param['name'] == 'rfc_proxy':
+                GridEngineCredentials['rfc_proxy'] = param['value']
+            #else: - here a warning should come
         GridEngineTaskDescription['infrastructure'] = GridEngineInfrastructure
         GridEngineTaskDescription['credentials'] = GridEngineCredentials
         # Switch task status and populate gequeue table accordingly

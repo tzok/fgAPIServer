@@ -93,13 +93,13 @@ create table infrastructure_parameter (
 
 -- Infra for helloworld app@csgfsdk
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (1,1,"hostname@localhost","hostname application csgfsdk (SSH)",now(),true);
+values (1,1,"hello@csgfsdk","hostname application csgfsdk (SSH)",now(),true);
 -- Infra for sayhello app@csgfsdk
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (1,2,"hostname@localhost","hostname application csgfsdk (SSH)",now(),true);
+values (1,2,"sayhello@csgfsdk","sayhello application csgfsdk (SSH)",now(),true);
 -- Infra for sayhello app@nebula
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (2,2,"hostname@localhost","hostname application csgfsdk (SSH)",now(),false);
+values (2,2,"sayhello@nebula","hostname application csgfsdk (rOCCI)",now(),false);
 
 -- Parameters for infrastructure helloworld@csgfsdk (SSH)
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','ssh://90.147.74.95');
@@ -107,15 +107,16 @@ insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,3,'password','Xvf56jZ751f');
 
 -- Parameters for infrastructure sayhello@nebula (rOCCI)
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,1,'jobservice','rocci://nebula-server-01.ct.infn.it:9000');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,2,'os_tpl','uuid_generic_vm_19');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,3,'resource_tpl','small');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,4,'eToken_host','etokenserver.ct.infn.it');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,5,'eToken_port','8082');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,6,'eToken_id'  ,'bc681e2bd4c3ace2a4c54907ea0c379b');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,7,'voms'       ,'vo.chain-project.eu');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,8,'voms_role'  ,'vo.chain-project.eu');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,9,'rfc_proxy'  ,'true');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 1,'jobservice'      ,'rocci://nebula-server-01.ct.infn.it:9000');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 2,'os_tpl'          ,'uuid_chain_reds_generic_vm_centos_6_6_kvm_103');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 3,'resource_tpl'    ,'small');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 4,'attributes_title','sayhello');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 5,'eToken_host'     ,'etokenserver.ct.infn.it');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 6,'eToken_port'     ,'8082');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 7,'eToken_id'       ,'bc681e2bd4c3ace2a4c54907ea0c379b');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 8,'voms'            ,'vo.chain-project.eu');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 9,'voms_role'       ,'vo.chain-project.eu');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,10,'rfc_proxy'       ,'true');
 
 -- Task table
 create table task (
