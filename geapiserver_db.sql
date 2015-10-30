@@ -67,6 +67,21 @@ insert into application_parameter (app_id,param_id,pname,pvalue) values (2,2,'jo
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,3,'jobdesc_output','sayhello.out');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,4,'jobdesc_error','sayhello.err');
 
+-- Application files
+create table application_file (
+    app_id        int unsigned not null
+   ,file_id       int unsigned not null -- progressive file number for each application
+   ,file          varchar(256) not null -- name of the application file
+   ,path          varchar(256) not null -- full path to the application file
+   ,override      boolean default false -- true if this file overrides user uploads
+   ,primary key(app_id,file_id)
+   ,foreign key (app_id) references application(id)
+);
+
+-- Files associated to application sayhello
+insert into application_file (app_id,file_id,file,path,override) values (2,1,'sayhello.sh' ,'/Users/Macbook/Documents/geapiserver/apps/sayhello',false);
+insert into application_file (app_id,file_id,file,path,override) values (2,2,'sayhello.txt','/Users/Macbook/Documents/geapiserver/apps/sayhello',false);
+
 
 -- Infrastructure
 create table infrastructure (

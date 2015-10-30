@@ -32,6 +32,7 @@ import uuid
 import os
 import random
 import urllib
+import shutil
 
 """
  Task sandboxing will be placed here
@@ -415,17 +416,53 @@ class geapiserver_db:
         return task_info
 
     """
+        Retrieve from application_files table the application specific files
+        associated to the given application
+    """
+    def getAppFiles(self,app_id):
+        db     = None
+        cursor = None
+        app_files=[]
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select file\n'
+                 '      ,path\n'
+                 '      ,override\n'
+                 'from application_file\n'
+                 'where app_id=%s\n'
+                 'order by file_id asc;')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            for app_file in cursor:
+                app_files+= [{
+                     'file'    : app_file[0]
+                    ,'path'    : app_file[1]
+                    ,'override': app_file[2]
+                },]
+        except MySQLdb.Error, e:
+            db.rollback()
+            self.err_flag = True
+            self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        finally:
+            if cursor is not None: cursor.close()
+            if     db is not None: db.close()
+        return app_files
+
+    """
       initTask initialize a task from a given application id
     """
     def initTask(self,app_id,description,user,arguments,input_files,output_files):
+        # Get app defined files
+        app_files = self.getAppFiles(app_id)
         db     = None
         cursor = None
         task_id=-1
-        # Create the Task IO Sandbox
         try:
+            # Create the Task IO Sandbox
             iosandbox = '%s/%s' % (iosandbbox_dir,str(uuid.uuid1()))
             os.makedirs(iosandbox)
-            # Insert new Task
+            # Insert new Task record
             db=self.connect()
             cursor = db.cursor()
             sql=('insert into task (id\n'
@@ -467,19 +504,56 @@ class geapiserver_db:
                     sql_data=(task_id,arg,task_id)
                     cursor.execute(sql,sql_data)
             # Insert Task input_files
-            if input_files != []:
-                for inpfile in input_files:
-                    sql=('insert into task_input_file (task_id\n'
-                         '                            ,file_id\n'
-                         '                            ,file)\n'
-                         'select %s                                          -- task_id\n'
-                         '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                         '      ,%s                                          -- file\n'
-                         'from task_input_file\n'
-                         'where task_id=%s'
-                        )
-                    sql_data=(task_id,inpfile,task_id)
-                    cursor.execute(sql,sql_data)
+            # Process input files specified in the REST URL (input_files)
+            # producing a new vector called inp_file having the same structure
+            # of app_files [ { 'name': <filname>
+            #                 ,'path': <path to file> },...]
+            # except for the 'override' key not necessary in this second array
+            # For each file specified inside input_file, verify if it exists alredy
+            # in the app_file vector. It the file exists there are two possibilities:
+            # * app_file['override'] flag is true; then user inputs are ignored, thus
+            # the file will be skipped
+            # * app_file['override'] flag is false; user input couldn't ignored, thus
+            # the path to the file will be set to NULL and copied file removed
+            inp_file = []
+            for file in input_files:
+                skip_file=False
+                for app_file in app_files:
+                    if file == app_file['file']:
+                        if app_file['override'] is True:
+                            # Skip this file already exists and it has priority
+                            skip_file=True
+                            break
+                        else:
+                            # The file present in app_file will be overwritten
+                            app_file['path'] = None
+                            skip_file=True
+                            break
+                if skip_file is True:
+                    break
+                else:
+                    inp_file += [{ 'path': None
+                                  ,'file': file },]
+            # Files can be registered in task_input_files
+            for inpfile in app_files+inp_file:
+                sql=('insert into task_input_file (task_id\n'
+                     '                            ,file_id\n'
+                     '                            ,path\n'
+                     '                            ,file)\n'
+                     'select %s                                          -- task_id\n'
+                     '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
+                     '      ,%s                                          -- path\n'
+                     '      ,%s                                          -- file\n'
+                     'from task_input_file\n'
+                     'where task_id=%s'
+                    )
+                sql_data=(task_id,inpfile['path'],inpfile['file'],task_id)
+                cursor.execute(sql,sql_data)
+                # Not None paths refers to existing app_files that could be copied
+                # into the iosandbox task directory
+                if inpfile['path'] is not None:
+                    shutil.copy('%s/%s' % (inpfile['path'],inpfile['file'])
+                               ,'%s/%s' % (iosandbox,inpfile['file']))
             # Insert Task output_files specified by application settings (default)
             sql=('select pvalue\n'
                  'from application_parameter\n'
