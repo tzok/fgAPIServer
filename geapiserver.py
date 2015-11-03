@@ -138,7 +138,8 @@ def task_create():
                     ,'output_files': task_record['output_files']
                     ,'status'      : task_record['status']
                     ,'user'        : task_record['user']
-                    ,'date'        : str(task_record['last_change'])
+                    ,'date'        : str(task_record['creation'])
+                    ,'last_change'        : str(task_record['last_change'])
                     ,'_links'      : [{
                                          'rel' : 'self'
                                         ,'href': '/%s/tasks/%s' % (geapiver,task_id)
