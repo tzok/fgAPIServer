@@ -924,12 +924,11 @@ class geapiserver_db:
                  '  ,creation     -- When the action is enqueued\n'
                  '  ,last_change  -- When the record has been modified by the GridEngine last time\n'
                  '  ,action_info  -- Temporary directory path containing further info to accomplish the requested operation\n'
-                 ') values (%s,NULL,\'JOBCANCEL\',\'QUEUED\',NULL,now(),now(),%s);'
+                 ') values (%s,NULL,\'CLEAN\',\'QUEUED\',NULL,now(),now(),%s);'
                 )
             sql_data=(task_info['id'],task_info['iosandbox'])
             cursor.execute(sql,sql_data)
-            sql=('update task set status=\'CANCELLED\', last_change=now() where id=%s;'
-                )
+            sql=('update task set status=\'CANCELLED\', last_change=now() where id=%s;')
             sql_data=(str(task_info['id']),)
             cursor.execute(sql,sql_data)
             status=True

@@ -192,7 +192,7 @@ create table ge_queue (
     ,creation     datetime    not null     -- When the action is enqueued
     ,last_change  datetime    not null     -- When the record has been modified by the GridEngine last time
     ,action_info  varchar(128)             -- Temporary directory path containing further info to accomplish the requested operation
-    ,primary key(task_id,status)
+    ,primary key(task_id,action)
     ,index(task_id)
     ,index(status)
     ,index(last_change)
