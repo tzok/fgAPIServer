@@ -41,18 +41,24 @@ import time
 import json
 import ConfigParser
 
+# setup path
+geapirundir=os.path.dirname(os.path.abspath(__file__))+'/'
+sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
+
 # geapiserver configuration file
-geapiserver_config_file = 'geapiserver.conf'
+geapiserver_config_file = geapirundir+'geapiserver.conf'
 
 # Load configuration
 ge_config = geapiserver_cfg(geapiserver_config_file)
 
 # geapiserver settings
-geapiver         =     ge_config.getConfValue('geapiver')
-geapiserver_name =     ge_config.getConfValue('geapiserver_name')
-geapisrv_host    =     ge_config.getConfValue('geapisrv_db_host')
-geapisrv_port    = int(ge_config.getConfValue('geapisrv_port'))
-gejson_indent    = int(ge_config.getConfValue('gejson_indent'))
+geapiver           =     ge_config.getConfValue('geapiver')
+geapiserver_name   =     ge_config.getConfValue('geapiserver_name')
+geapisrv_host      =     ge_config.getConfValue('geapisrv_db_host')
+geapisrv_port      = int(ge_config.getConfValue('geapisrv_port'))
+geapisrv_iosandbox =     ge_config.getConfValue('geapisrv_iosandbox')
+geapisrv_geappid   = int(ge_config.getConfValue('geapisrv_geappid'))
+gejson_indent      = int(ge_config.getConfValue('gejson_indent'))
 
 # geapiserver database settings
 geapisrv_db_host =     ge_config.getConfValue('geapisrv_db_host')
@@ -61,8 +67,7 @@ geapisrv_db_user =     ge_config.getConfValue('geapisrv_db_user')
 geapisrv_db_pass =     ge_config.getConfValue('geapisrv_db_pass')
 geapisrv_db_name =     ge_config.getConfValue('geapisrv_db_name')
 
-# setup path and Flask app
-base_path=os.path.dirname(__file__)
+# setup Flask app
 app = Flask(__name__)
 
 ##
@@ -113,7 +118,9 @@ def task_create():
                                     ,db_port=geapisrv_db_port
                                     ,db_user=geapisrv_db_user
                                     ,db_pass=geapisrv_db_pass
-                                    ,db_name=geapisrv_db_name)
+                                    ,db_name=geapisrv_db_name
+                                    ,iosandbbox_dir=geapisrv_iosandbox
+                                    ,geapiserverappid=geapisrv_geappid)
         db_state=geapisrv_db.getState()
         if db_state[0] != 0:
             # Couldn't contact database
@@ -167,7 +174,9 @@ def task_create():
                                     ,db_port=geapisrv_db_port
                                     ,db_user=geapisrv_db_user
                                     ,db_pass=geapisrv_db_pass
-                                    ,db_name=geapisrv_db_name)
+                                    ,db_name=geapisrv_db_name
+                                    ,iosandbbox_dir=geapisrv_iosandbox
+                                    ,geapiserverappid=geapisrv_geappid)
         db_state=geapisrv_db.getState()
         if db_state[0] != 0:
             # Couldn't contact database
@@ -235,7 +244,9 @@ def task_id(task_id=None):
                                     ,db_port=geapisrv_db_port
                                     ,db_user=geapisrv_db_user
                                     ,db_pass=geapisrv_db_pass
-                                    ,db_name=geapisrv_db_name)
+                                    ,db_name=geapisrv_db_name
+                                    ,iosandbbox_dir=geapisrv_iosandbox
+                                    ,geapiserverappid=geapisrv_geappid)
         db_state=geapisrv_db.getState()
         if db_state[0] != 0:
             # Couldn't contact database
@@ -272,7 +283,9 @@ def task_id(task_id=None):
                                     ,db_port=geapisrv_db_port
                                     ,db_user=geapisrv_db_user
                                     ,db_pass=geapisrv_db_pass
-                                    ,db_name=geapisrv_db_name)
+                                    ,db_name=geapisrv_db_name
+                                    ,iosandbbox_dir=geapisrv_iosandbox
+                                    ,geapiserverappid=geapisrv_geappid)
         db_state=geapisrv_db.getState()
         if db_state[0] != 0:
             # Couldn't contact database
@@ -320,7 +333,9 @@ def task_id_input(task_id=None):
                                     ,db_port=geapisrv_db_port
                                     ,db_user=geapisrv_db_user
                                     ,db_pass=geapisrv_db_pass
-                                    ,db_name=geapisrv_db_name)
+                                    ,db_name=geapisrv_db_name
+                                    ,iosandbbox_dir=geapisrv_iosandbox
+                                    ,geapiserverappid=geapisrv_geappid)
         db_state=geapisrv_db.getState()
         if db_state[0] != 0:
             # Couldn't contact database
@@ -347,7 +362,9 @@ def task_id_input(task_id=None):
                                     ,db_port=geapisrv_db_port
                                     ,db_user=geapisrv_db_user
                                     ,db_pass=geapisrv_db_pass
-                                    ,db_name=geapisrv_db_name)
+                                    ,db_name=geapisrv_db_name
+                                    ,iosandbbox_dir=geapisrv_iosandbox
+                                    ,geapiserverappid=geapisrv_geappid)
         db_state=geapisrv_db.getState()
         if db_state[0] != 0:
             # Couldn't contact database

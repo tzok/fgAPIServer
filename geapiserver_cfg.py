@@ -35,11 +35,14 @@ class geapiserver_cfg:
         config = ConfigParser.ConfigParser()
         config.read(configFile)
         # geapiserver
-        self.geConfig['geapiver'        ] = config.get('geapiserver','geapiver')
-        self.geConfig['geapiserver_name'] = "%s %s" % (config.get('geapiserver','geapiserver_name')
+        self.geConfig['geapiver'          ] = config.get('geapiserver','geapiver')
+        self.geConfig['geapiserver_name'  ] = "%s %s" % (config.get('geapiserver','geapiserver_name')
 				                                      ,self.geConfig['geapiver'])
-        self.geConfig['geapisrv_host'   ] = config.get('geapiserver','geapisrv_host')
-        self.geConfig['geapisrv_port'   ] = config.get('geapiserver','geapisrv_port')
+        self.geConfig['geapisrv_host'     ] = config.get('geapiserver','geapisrv_host')
+        self.geConfig['geapisrv_port'     ] = config.get('geapiserver','geapisrv_port')
+        self.geConfig['geapisrv_iosandbox'] = config.get('geapiserver','geapisrv_iosandbox')
+        self.geConfig['geapisrv_geappid'  ] = config.get('geapiserver','geapisrv_geappid')
+
         # geapiserver_db
         self.geConfig['geapisrv_db_host'] = config.get('geapiserver_db','geapisrv_db_host')
         self.geConfig['geapisrv_db_port'] = config.get('geapiserver_db','geapisrv_db_port')
@@ -56,16 +59,18 @@ class geapiserver_cfg:
 
     def getConfValue(self,key):
         def_value = None
-        if   key == 'geapiver'        : def_value = 'v.10'
-        elif key == 'geapiserver_name': def_value = 'GridEngine API Server % s' % self.getConfValue('geapiver')
-        elif key == 'geapisrv_host'   : def_value = 'localhost'
-        elif key == 'geapisrv_port'   : def_value = '7777'
-        elif key == 'geapisrv_db_host': def_value = 'localhost'
-        elif key == 'geapisrv_db_port': def_value = '3306'
-        elif key == 'geapisrv_db_user': def_value = 'localhost'
-        elif key == 'geapisrv_db_pass': def_value = 'geapiserver_password'
-        elif key == 'geapisrv_db_name': def_value = 'geapiserver'
-        elif key == 'gejson_indent'   : def_value = '4'
+        if   key == 'geapiver'          : def_value = 'v.10'
+        elif key == 'geapiserver_name'  : def_value = 'GridEngine API Server % s' % self.getConfValue('geapiver')
+        elif key == 'geapisrv_host'     : def_value = 'localhost'
+        elif key == 'geapisrv_port'     : def_value = '7777'
+        elif key == 'geapisrv_db_host'  : def_value = 'localhost'
+        elif key == 'geapisrv_db_port'  : def_value = '3306'
+        elif key == 'geapisrv_db_user'  : def_value = 'localhost'
+        elif key == 'geapisrv_db_pass'  : def_value = 'geapiserver_password'
+        elif key == 'geapisrv_db_name'  : def_value = 'geapiserver'
+        elif key == 'geapisrv_iosandbox': def_value = '/tmp'
+        elif key == 'geapisrv_geappid'  : def_value = '10000'
+        elif key == 'gejson_indent'     : def_value = '4'
         else:
 			print "[WARNING] Not found default value for key: '%s'" % key
         return self.geConfig.get(key,def_value)

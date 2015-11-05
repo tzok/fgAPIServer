@@ -35,31 +35,40 @@ import urllib
 import shutil
 
 """
+ Database connection default settings
+"""
+def_db_host = 'localhost'
+def_db_port = 3306
+def_db_user = 'geapiserver'
+def_db_pass = 'geapiserver_password'
+def_db_name = 'geapiserver'
+
+"""
  Task sandboxing will be placed here
  Sandbox directories will be generated as UUID names generated during task creation
 """
-iosandbbox_dir   = '/tmp'
-geapiserverappid = '10000' # GridEngine sees API server as an application
-"""
- Database connection default settings
-"""
-db_host = 'localhost'
-db_port = 3306
-db_user = 'geapiserver'
-db_pass = 'geapiserver_password'
-db_name = 'geapiserver'
+def_iosandbbox_dir   = '/tmp'
+def_geapiserverappid = '10000' # GridEngine sees API server as an application
 
 """
   geapiserver_db Class contain any call interacting with geapiserver database
 """
 class geapiserver_db:
 
+    """
+     GridEngine Database connection settings for UsersTrackingDB
+    """
     db_host = None
     db_port = None
     db_user = None
     db_pass = None
     db_name = None
+    iosandbbox_dir   = def_iosandbbox_dir
+    geapiserverappid = def_geapiserverappid
 
+    """
+        Error Flag and messages filled up upon failures
+    """
     err_flag = False
     err_msg  = ''
     message  = ''
@@ -68,11 +77,14 @@ class geapiserver_db:
       geapiserver_db - Constructor may override default values defined at the top of the file
     """
     def __init__(self,*args, **kwargs):
-        self.db_host = kwargs.get('db_host',db_host)
-        self.db_port = kwargs.get('db_port',db_port)
-        self.db_user = kwargs.get('db_user',db_user)
-        self.db_pass = kwargs.get('db_pass',db_pass)
-        self.db_name = kwargs.get('db_name',db_name)
+        self.db_host          = kwargs.get('db_host',def_db_host)
+        self.db_port          = kwargs.get('db_port',def_db_port)
+        self.db_user          = kwargs.get('db_user',def_db_user)
+        self.db_pass          = kwargs.get('db_pass',def_db_pass)
+        self.db_name          = kwargs.get('db_name',def_db_name)
+        self.iosandbbox_dir   = kwargs.get('geapisrv_iosandbox',def_iosandbbox_dir)
+        self.geapiserverappid = kwargs.get('geapisrv_geappid',def_geapiserverappid)
+
 
     """
       connect Connects to the geapiserver database
@@ -460,7 +472,7 @@ class geapiserver_db:
         task_id=-1
         try:
             # Create the Task IO Sandbox
-            iosandbox = '%s/%s' % (iosandbbox_dir,str(uuid.uuid1()))
+            iosandbox = '%s/%s' % (self.iosandbbox_dir,str(uuid.uuid1()))
             os.makedirs(iosandbox)
             # Insert new Task record
             db=self.connect()
@@ -757,7 +769,7 @@ class geapiserver_db:
         """
         GridEngineTaskDescription = {}
         GridEngineTaskDescription['commonName' ] = '%s' % task_info['user']
-        GridEngineTaskDescription['application'] = '%s' % geapiserverappid
+        GridEngineTaskDescription['application'] = '%s' % self.geapiserverappid
         GridEngineTaskDescription['identifier' ] = '%s@%s' % (task_info['id'],task_info['iosandbox'])
         GridEngineTaskDescription['input_files'] = task_info['input_files']
         GridEngineTaskDescription['output_files'] = task_info['output_files']
