@@ -1,10 +1,11 @@
 #!/bin/bash
 INPFILE=sayhello.txt
 DATAFILE=sayhello.data
-if [ "${1}" = "" ]; then
+DELAY=2
+if [ "${@}" = "" ]; then
   SAYS="nothing"
 else
-  SAYS=$1
+  SAYS="$@"
 fi
 echo "User "$(whoami)" says: $SAYS" | tee -i $DATAFILE 
 if [ -f "$INPFILE" ]; then
@@ -13,3 +14,6 @@ if [ -f "$INPFILE" ]; then
 else
   echo "Did not find $INPFILE"
 fi
+printf "waiting for a while ($DELAY minutes) ... "
+sleep $((60*DELAY)) # Wait few minutes
+echo "done"

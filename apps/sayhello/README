@@ -15,7 +15,7 @@ files
 To execute the demo, please follow the steps below:
 
 1) Prepare the job submission
-curl -i -H "Content-Type: application/json" -X POST -d '{"application":"2","description":"sayhello@csgfsdk test run", "arguments": ["\"I am saying hello!\""],  "output_files": ["sayhello.data"], "input_files": ["sayhello.sh","sayhello.txt"]}' http://localhost:7777/v1.0/tasks?user=brunor
+curl -i -H "Content-Type: application/json" -X POST -d '{"application":"2","description":"sayhello@csgfsdk test run", "arguments": ["\"I am saying hello!\""],  "output_files": ["sayhello.data"], "input_files": ["sayhello.sh","sayhello.txt"]}' http://localhost:8888/v1.0/tasks?user=brunor
 If successful, this call returns a json like:
 {
     "status": "WAITING", 
@@ -58,7 +58,7 @@ If successful, this call returns a json like:
 Keep note of the "id" value that will be used by the next command
 
 2) Finalize the execution instructing the API server daemon to submit
-curl -i -F "file[]=@sayhello.txt" -F "file[]=@sayhello.sh" http://localhost:7777/v1.0/tasks/14/input?user=brunor
+curl -i -F "file[]=@sayhello.txt" -F "file[]=@sayhello.sh" http://localhost:8888/v1.0/tasks/14/input?user=brunor
 If successful, this command returns the following json:
 {
     "files": [
@@ -70,4 +70,6 @@ If successful, this command returns the following json:
     "gestatus": "triggered"
 }
 The "gestatus" value equal to "triggered" informs that the daemon is now in charge of submitting the job
+SayHello is configured to provide default input files so that in order to trigger execution it is enough to specify the command:
+curl -i -X POST http://localhost:8888/v1.0/tasks/2/input?user=brunor
 

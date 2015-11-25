@@ -1,0 +1,256 @@
+{
+  "request":"",
+  "jobid":"http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#877",
+  "response":{
+    "response": [
+        {
+            "objclass": "text",
+            "objkey": "workflow_status",
+            "objcontent": [
+                {
+                    "title": "Workflow Status",
+                    "message": "OPH_STATUS_COMPLETED"
+                }
+            ]
+        },
+        {
+            "objclass": "grid",
+            "objkey": "workflow_list",
+            "objcontent": [
+                {
+                    "rowvalues": [
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#878",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "878",
+                            "877",
+                            "Create Work Container",
+                            "SIMPLE",
+                            "OPH_STATUS_EXECUTE_ERROR"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#879",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "879",
+                            "877",
+                            "Create Container Historical",
+                            "SIMPLE",
+                            "OPH_STATUS_EXECUTE_ERROR"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#880",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "880",
+                            "877",
+                            "Create Container Forecast",
+                            "SIMPLE",
+                            "OPH_STATUS_EXECUTE_ERROR"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#881",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "881",
+                            "877",
+                            "Import Historical",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#882",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "882",
+                            "877",
+                            "Import Forecast",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#883",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "883",
+                            "877",
+                            "Subset Zone Forecast",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#884",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "884",
+                            "877",
+                            "Subset Zone Historical",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#885",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "885",
+                            "877",
+                            "Subset JJA Forecast",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#886",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "886",
+                            "877",
+                            "90th percentile JJA Forecast",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#887",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "887",
+                            "877",
+                            "Linear regression Forecast",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#888",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "888",
+                            "877",
+                            "Subset JJA Historical",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#889",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "889",
+                            "877",
+                            "90th percentile JJA Historical",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#890",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "890",
+                            "877",
+                            "Linear regression Historical",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#891",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "891",
+                            "877",
+                            "Trend differences",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#892",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "892",
+                            "877",
+                            "Absolute values of trend differences",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#893",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "893",
+                            "877",
+                            "Export",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ],
+                        [
+                            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#894",
+                            "3747493840575643901445425702221512",
+                            "102",
+                            "894",
+                            "877",
+                            "Create map",
+                            "SIMPLE",
+                            "OPH_STATUS_COMPLETED"
+                        ]
+                    ],
+                    "rowfieldtypes": [
+                        "string",
+                        "string",
+                        "int",
+                        "int",
+                        "int",
+                        "string",
+                        "string",
+                        "string"
+                    ],
+                    "title": "Workflow Task List",
+                    "rowkeys": [
+                        "OPH JOB ID",
+                        "SESSION CODE",
+                        "WORKFLOW ID",
+                        "MARKER ID",
+                        "PARENT MARKER ID",
+                        "TASK NAME",
+                        "TYPE",
+                        "EXIT STATUS"
+                    ]
+                }
+            ]
+        },
+        {
+            "objclass": "text",
+            "objkey": "status",
+            "objcontent": [
+                {
+                    "title": "SUCCESS"
+                }
+            ]
+        }
+    ],
+    "responseKeyset": [
+        "workflow_status",
+        "workflow_list",
+        "status"
+    ],
+    "source": {
+        "srckey": "oph",
+        "srcname": "Ophidia",
+        "producer": "indigo",
+        "keys": [
+            "Session Code",
+            "Workflow",
+            "Marker",
+            "JobID"
+        ],
+        "description": "Ophidia Data Source",
+        "values": [
+            "3747493840575643901445425702221512",
+            "102",
+            "877",
+            "http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment?102#877"
+        ]
+    },
+    "consumers": [
+        "indigo"
+    ]
+},
+  "stdout":"Resuming last session... Done.\nCurrent session is now \"http://193.204.199.174/ophidia/sessions/3747493840575643901445425702221512/experiment\".\nLast working directory was \"/\".\nLast produced datacube was \"http://193.204.199.174/ophidia/9/347\".\n\n",
+  "stderr":""
+}

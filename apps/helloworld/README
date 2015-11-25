@@ -1,0 +1,59 @@
+#
+# README - helloworld
+#
+# Author: Riccardo Bruno (riccardo.bruno@ct.infn.it)
+#
+This is the simpler tester application configured in the 
+APIServer by the database baseline setup
+This application hust executes the hostname command
+without using any I/O Sandboxing or arguments
+
+To test execution use:
+
+1) Prepare the execution
+curl -i -H "Content-Type: application/json" -X POST -d '{"application":"1","description":"helloworld@csgfsdk test run" }' http://localhost:8888/v1.0/tasks?user=brunor
+If successful, this command returns the following JSON in compliancy with the API Server specs 
+availabe at: http://docs.csgfapis.apiary.io/#reference/v1.0
+{
+    "status": "WAITING", 
+    "application": 1, 
+    "date": "2015-10-29 09:49:33", 
+    "description": "helloworld@csgfsdk test run", 
+    "output_files": [
+        {
+            "url": "file?path=&name=stdout.txt", 
+            "name": "stdout.txt"
+        }, 
+        {
+            "url": "file?path=&name=stderr.txt", 
+            "name": "stderr.txt"
+        }
+    ], 
+    "_links": [
+        {
+            "href": "/v1.0/tasks/15", 
+            "rel": "self"
+        }, 
+        {
+            "href": "/v1.0/tasks/15/input", 
+            "rel": "input"
+        }
+    ], 
+    "user": "brunor", 
+    "input_files": [], 
+    "id": 15, 
+    "arguments": []
+}
+Please take note of the "id" field that will be used by the next command
+2) Finalize the execution instructing the API server daemon to submit
+curl -i -X POST http://localhost:8888/v1.0/tasks/15/input?user=brunor
+If successful, the command above returns the following JSON:
+{
+    "files": [], 
+    "message": "uploaded", 
+    "task": "15", 
+    "gestatus": "triggered"
+}
+The "gestatus" value equal to "triggered" informs that the daemon is now in charge of submitting the job
+
+NOTE: The web fronted for this application is available at: https://github.com/FutureGateway/HelloTester.git
