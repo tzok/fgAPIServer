@@ -2,6 +2,14 @@
 INPFILE=sayhello.txt
 DATAFILE=sayhello.data
 DELAY=2
+printf "starting at: " ; date
+printf "whoami: "; whoami
+printf "home: "; echo $HOME
+printf "listing home:\n"
+ls -l $HOME
+printf "pwd: "; pwd
+printf "listing working directory:\n"
+ls -l $PWD
 if [ "${@}" = "" ]; then
   SAYS="nothing"
 else
@@ -17,3 +25,4 @@ fi
 printf "waiting for a while ($DELAY minutes) ... "
 sleep $((60*DELAY)) # Wait few minutes
 echo "done"
+printf "ending at: "; date

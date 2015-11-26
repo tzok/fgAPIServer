@@ -246,7 +246,7 @@ def task_id(task_id=None):
                                     ,db_pass=fgapisrv_db_pass
                                     ,db_name=fgapisrv_db_name
                                     ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_fgappid)
+                                    ,fgapiserverappid=fgapisrv_geappid)
         db_state=fgapisrv_db.getState()
         if db_state[0] != 0:
             # Couldn't contact database
@@ -413,7 +413,6 @@ def task_id_input(task_id=None):
                             'message' : fgapisrv_db.getState()[1]
                         }
                 else:
-                    fgapisrv_db.submitTaks(task_id)
                     task_status = 200
                     task_response = {
                          'task'    : task_id

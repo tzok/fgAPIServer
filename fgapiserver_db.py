@@ -467,6 +467,7 @@ class fgapiserver_db:
     def initTask(self,app_id,description,user,arguments,input_files,output_files):
         # Get app defined files
         app_files = self.getAppFiles(app_id)
+        # Start creating task
         db     = None
         cursor = None
         task_id=-1
@@ -518,32 +519,29 @@ class fgapiserver_db:
             # Insert Task input_files
             # Process input files specified in the REST URL (input_files)
             # producing a new vector called inp_file having the same structure
-            # of app_files [ { 'name': <filname>
-            #                 ,'path': <path to file> },...]
-            # except for the 'override' key not necessary in this second array
+            # of app_files: [ { 'name': <filname>
+            #                  ,'path': <path to file> },...]
+            # except for the 'override' key not necessary in this second array.
             # For each file specified inside input_file, verify if it exists alredy
-            # in the app_file vector. It the file exists there are two possibilities:
+            # in the app_file vector. If the file exists there are two possibilities:
             # * app_file['override'] flag is true; then user inputs are ignored, thus
             # the file will be skipped
             # * app_file['override'] flag is false; user input couldn't ignored, thus
-            # the path to the file will be set to NULL and copied file removed
+            # the path to the file will be set to NULL waiting for user input
             inp_file = []
             for file in input_files:
+                print "file: '%s'" % file
                 skip_file=False
                 for app_file in app_files:
                     if file == app_file['file']:
+                        skip_file = True
                         if app_file['override'] is True:
-                            # Skip this file already exists and it has priority
-                            skip_file=True
                             break
                         else:
-                            # The file present in app_file will be overwritten
                             app_file['path'] = None
-                            skip_file=True
                             break
-                if skip_file is True:
-                    break
-                else:
+                if not skip_file:
+                    # The file is not in app_file
                     inp_file += [{ 'path': None
                                   ,'file': file },]
             # Files can be registered in task_input_files
@@ -850,15 +848,15 @@ class fgapiserver_db:
                 db=self.connect()
                 cursor = db.cursor()
                 sql=('insert into as_queue (\n'
-                     '   task_id      -- Taks reference for this GridEngine queue entry\n'
-                     '  ,target_id    -- UsersTracking\' ActiveGridInteraction id reference\n'
-					 '  ,target       -- Targeted command executor interface for APIServer Daemon\n'
-                     '  ,action       -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                     '  ,status       -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
-                     '  ,ge_status    -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
-                     '  ,creation     -- When the action is enqueued\n'
-                     '  ,last_change  -- When the record has been modified by the GridEngine last time\n'
-                     '  ,action_info  -- Temporary directory path containing further info to accomplish the requested operation\n'
+                     '   task_id       -- Taks reference for this GridEngine queue entry\n'
+                     '  ,target_id     -- UsersTracking\' ActiveGridInteraction id reference\n'
+					 '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
+                     '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
+                     '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
+                     '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
+                     '  ,creation      -- When the action is enqueued\n'
+                     '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
+                     '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
                      ') values (%s,NULL,\'GridEngine\',\'SUBMIT\',\'QUEUED\',NULL,now(),now(),%s);'
                     )
                 sql_data=(task_info['id'],task_info['iosandbox'])
@@ -929,15 +927,15 @@ class fgapiserver_db:
             db=self.connect()
             cursor = db.cursor()
             sql=('insert into as_queue (\n'
-                 '   task_id      -- Taks reference for this GridEngine queue entry\n'
-                 '  ,target_id    -- (GridEngine) UsersTracking\' ActiveGridInteraction id reference\n'
-				 '  ,target       -- Targeted command executor interface for APIServer Daemon\n'
-                 '  ,action       -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                 '  ,status       -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
-                 '  ,ge_status    -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
-                 '  ,creation     -- When the action is enqueued\n'
-                 '  ,last_change  -- When the record has been modified by the GridEngine last time\n'
-                 '  ,action_info  -- Temporary directory path containing further info to accomplish the requested operation\n'
+                 '   task_id       -- Taks reference for this GridEngine queue entry\n'
+                 '  ,target_id     -- (GridEngine) UsersTracking\' ActiveGridInteraction id reference\n'
+				 '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
+                 '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
+                 '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
+                 '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
+                 '  ,creation      -- When the action is enqueued\n'
+                 '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
+                 '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
                  ') values (%s,NULL,\'GridEngine\',\'CLEAN\',\'QUEUED\',NULL,now(),now(),%s);'
                 )
             sql_data=(task_info['id'],task_info['iosandbox'])

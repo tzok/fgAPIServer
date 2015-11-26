@@ -79,8 +79,8 @@ create table application_file (
 );
 
 -- Files associated to application sayhello
-insert into application_file (app_id,file_id,file,path,override) values (2,1,'sayhello.sh' ,'/Users/Macbook/Documents/geapiserver/apps/sayhello',false);
-insert into application_file (app_id,file_id,file,path,override) values (2,2,'sayhello.txt','/Users/Macbook/Documents/geapiserver/apps/sayhello',false);
+insert into application_file (app_id,file_id,file,path,override) values (2,1,'sayhello.sh' ,'/Users/Macbook/Documents/fgapiserver/apps/sayhello',false);
+insert into application_file (app_id,file_id,file,path,override) values (2,2,'sayhello.txt','/Users/Macbook/Documents/fgapiserver/apps/sayhello',false);
 
 -- Infrastructure
 create table infrastructure (
@@ -183,15 +183,15 @@ create table task_output_file (
 -- the REST engine and the targeted architecture
 --
 create table as_queue (
-     task_id      int unsigned not null    -- Taks reference for this GridEngine queue entry
-    ,target_id    int unsigned default 0   -- For GridEngine UsersTracking' ActiveGridInteraction id reference
-    ,target       varchar(32) not null     -- Targeted architecture ("GridEngine","OneDATA", ...)
-    ,action       varchar(32) not null     -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...
-    ,status       varchar(32) not null     -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE
-    ,ge_status    varchar(32) default null -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE
-    ,creation     datetime    not null     -- When the action is enqueued
-    ,last_change  datetime    not null     -- When the record has been modified by the GridEngine last time
-    ,action_info  varchar(128)             -- Temporary directory path containing further info to accomplish the requested operation
+     task_id       int unsigned not null    -- Taks reference for this GridEngine queue entry
+    ,target_id     int unsigned default 0   -- For GridEngine UsersTracking' ActiveGridInteraction id reference
+    ,target        varchar(32) not null     -- Targeted architecture ("GridEngine","OneDATA", ...)
+    ,action        varchar(32) not null     -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...
+    ,status        varchar(32) not null     -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE
+    ,target_status varchar(32) default null -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE
+    ,creation      datetime    not null     -- When the action is enqueued
+    ,last_change   datetime    not null     -- When the record has been modified by the GridEngine last time
+    ,action_info   varchar(128)             -- Temporary directory path containing further info to accomplish the requested operation
     ,primary key(task_id,action)
     ,index(task_id)
     ,index(action)
