@@ -49,7 +49,7 @@ select max(id)
      ,(select if(max(file_id)+1 is NULL, 1, max(file_id)+1)
       from application_file
       where app_id = (select max(id) from application)) file_id
-      ,'ophidia_client.py','/var/applications/ophidia_client'
+      ,'ophidia_helper.py','/var/applications/ophidia_client'
       ,false
 from application;
 insert into application_file (app_id,file_id,file,path,override)
