@@ -82,8 +82,8 @@ class fgapiserver_db:
         self.db_user          = kwargs.get('db_user',def_db_user)
         self.db_pass          = kwargs.get('db_pass',def_db_pass)
         self.db_name          = kwargs.get('db_name',def_db_name)
-        self.iosandbbox_dir   = kwargs.get('fgapisrv_iosandbox',def_iosandbbox_dir)
-        self.geapiserverappid = kwargs.get('fgapisrv_geappid',def_geapiserverappid)
+        self.iosandbbox_dir   = kwargs.get('iosandbbox_dir',def_iosandbbox_dir)
+        self.geapiserverappid = kwargs.get('geapiserverappid',def_geapiserverappid)
 
 
     """
