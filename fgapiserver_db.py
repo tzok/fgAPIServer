@@ -807,6 +807,12 @@ class fgapiserver_db:
                 GridEngineInfrastructure['resource_tpl'] = param['value']
             elif param['name'] == 'attributes_title':
                 GridEngineInfrastructure['attributes_title'] = param['value']
+            elif param['name'] == 'bdii':
+                GridEngineInfrastructure['bdii']=param['value']
+            elif param['name'] == 'swtags':
+                GridEngineInfrastructure['swtags']=param['value']
+            elif param['name'] == 'jdlRequirements':
+                GridEngineInfrastructure['jdlRequirements']=param['value']
             elif param['name'] == 'username':
                 GridEngineCredentials['username'] = param['value']
             elif param['name'] == 'password':

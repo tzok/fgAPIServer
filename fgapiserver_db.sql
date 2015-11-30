@@ -114,6 +114,9 @@ values (1,2,"sayhello@csgfsdk","sayhello application csgfsdk (SSH)",now(),true);
 -- Infra for sayhello app@nebula
 insert into infrastructure (id,app_id,name,description,creation,enabled)
 values (2,2,"sayhello@nebula","hostname application csgfsdk (rOCCI)",now(),false);
+-- Infra for helloworld app@eumed
+insert into infrastructure (id,app_id,name,description,creation,enabled)
+values (3,1,"hello@eumed","hostname application eumed (wms)",now(),true);
 
 -- Parameters for infrastructure helloworld@csgfsdk (SSH)
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','ssh://90.147.74.95');
@@ -131,6 +134,16 @@ insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 8,'voms'            ,'vo.chain-project.eu');
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 9,'voms_role'       ,'vo.chain-project.eu');
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,10,'rfc_proxy'       ,'true');
+
+-- Parameters for infrastructure sayhello@eumed (wms)
+insert into infrastructure_parameter values (3,1,'jobservice'  ,'wms://wms.ulakbim.gov.tr:7443/glite_wms_wmproxy_server');
+insert into infrastructure_parameter values (3,2,'bdii'        ,'ldap://bdii.eumedgrid.eu:2170');
+insert into infrastructure_parameter values (3,3,'eToken_host' ,'etokenserver2.ct.infn.it');
+insert into infrastructure_parameter values (3,4,'eToken_port' ,'8082');
+insert into infrastructure_parameter values (3,5,'eToken_id'   ,'bc681e2bd4c3ace2a4c54907ea0c379b');
+insert into infrastructure_parameter values (3,6,'voms'        ,'eumed');
+insert into infrastructure_parameter values (3,7,'voms_role'   ,'eumed');
+insert into infrastructure_parameter values (3,8,'rfc_proxy'   ,'false');
 
 -- Task table
 create table task (
