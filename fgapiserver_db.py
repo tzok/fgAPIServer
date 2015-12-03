@@ -238,11 +238,11 @@ class fgapiserver_db:
                 task_ofiles+=[ofile_entry,]
             # Prepare output
             task_record= {
-                 'id'          : task_dicrec['id']
+                 'id'          : str(task_dicrec['id'])
                 ,'status'      : task_dicrec['status']
                 ,'creation'    : str(task_dicrec['creation'])
                 ,'last_change' : str(task_dicrec['last_change'])
-                ,'app_id'      : task_dicrec['app_id']
+                ,'app_id'      : str(task_dicrec['app_id'])
                 ,'description' : task_dicrec['description']
                 ,'user'        : task_dicrec['user']
                 ,'arguments'   : task_args
@@ -353,13 +353,13 @@ class fgapiserver_db:
                  'order by param_id asc;')
             sql_data=(app_id,)
             cursor.execute(sql,sql_data)
-            app_parameters=()
+            app_parameters=[]
             for param in cursor:
                 parameter = {
                      'param_name' : param[0]
                     ,'param_value': param[1]
                 }
-                app_parameters+=(parameter,)
+                app_parameters+=[parameter,]
             app_detail['parameters']=app_parameters
             # Get now application ifnrastructures with their params
             infrastructures=()
@@ -372,16 +372,16 @@ class fgapiserver_db:
                  'where app_id=%s;')
             sql_data=(app_id,)
             cursor.execute(sql,sql_data)
-            infrastructures = ()
+            infrastructures = []
             for infra in cursor:
                 infra_details = {
-                     'id'         : infra[0]
+                     'id'         : str(infra[0])
                     ,'name'       : infra[1]
                     ,'description': infra[2]
                     ,'creation'   : str(infra[3])
                     ,'status'     : infra[4]
                 }
-                infrastructures+=(infra_details,)
+                infrastructures+=[infra_details,]
             # Now loop over infrastructures to get their parameters
             for infra in infrastructures:
                 sql=('select pname, pvalue\n'
@@ -390,13 +390,13 @@ class fgapiserver_db:
                      'order by param_id asc;')
                 sql_data=(str(infra['id']),)
                 cursor.execute(sql,sql_data)
-                infra_parameters = ()
+                infra_parameters = []
                 for param in cursor:
                     param_details = {
                          'name' : param[0]
                         ,'value': param[1]
                     }
-                    infra_parameters+=(param_details,)
+                    infra_parameters+=[param_details,]
                 infra['parameters']=infra_parameters
             app_detail['infrastructures']=infrastructures
             return app_detail
@@ -745,7 +745,9 @@ class fgapiserver_db:
                "resourceManagers": "fork://localhost"
            }
         }
-        """
+        # fgAPIServer no more translates Taks info for a specific executor
+        # this task will be rather performed by the right interface writthen
+        # for the GridEngineDaemon
         GridEngineTaskDescription = {}
         GridEngineTaskDescription['commonName' ] = '%s' % task_info['user']
         GridEngineTaskDescription['application'] = '%s' % self.geapiserverappid
@@ -815,18 +817,16 @@ class fgapiserver_db:
         GridEngineTaskDescription['credentials'] = GridEngineCredentials
         # Switch task status and populate gequeue table accordingly
         return self.enqueueGridEngine(task_info,GridEngineTaskDescription)
+        """
+        return self.enqueueGridEngine(task_info)
 
-    def enqueueGridEngine(self,task_info,ge_desc):
+    #def enqueueGridEngine(self,task_info,ge_desc):
+    def enqueueGridEngine(self,task_info):
         db      = None
         cursor  = None
-        ge_file = None
         self.err_flag = False
         try:
-            # Save first the GridEngine task description file, which has the format:
-            # <task_iosandbox_dir>/<task_id>.info
-            ge_file=open('%s/%s.info' % (task_info['iosandbox'],task_info['id']),"w")
-            ge_file.write(str(ge_desc))
-            # Now save native APIServer JSON file, having the format:
+            # Save native APIServer JSON file, having the format:
             # <task_iosandbox_dir>/<task_id>.json
             as_file=open('%s/%s.json' % (task_info['iosandbox'],task_info['id']),"w")
             as_file.write(str(task_info))
@@ -856,12 +856,12 @@ class fgapiserver_db:
                 self.catchDBError(db,True)
             finally:
                 self.closeDB(db,cursor,True)
-                if ge_file is not None: ge_file.close()
+                if as_file is not None: as_file.close()
         except IOError as (errno, strerror):
             self.err_flag = True
             self.err_msg  = "I/O error({0}): {1}".format(errno, strerror)
         finally:
-            ge_file.close()
+            as_file.close()
         return not self.err_flag
 
     """
