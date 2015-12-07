@@ -273,7 +273,11 @@ def task_id(task_id=None):
                 }
             else:
                 task_status = 200
-        # Display task details
+        # Display task details replacing whole application info
+        # with just the application id as in specs
+        app_id=task_response['application']['id']
+        del task_response['application']
+        task_response['application']=app_id
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
