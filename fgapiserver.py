@@ -138,7 +138,7 @@ def task_create():
                 task_record = fgapisrv_db.getTaskRecord(task_id)
                 task_response += [{
                      'id'          : task_record['id']
-                    ,'application' : task_record['app_id']
+                    ,'application' : task_record['application']
                     ,'description' : task_record['description']
                     ,'arguments'   : task_record['arguments']
                     ,'input_files' : task_record['input_files']
@@ -207,7 +207,7 @@ def task_create():
                 task_record = fgapisrv_db.getTaskRecord(task_id)
                 task_response = {
                      'id'          : task_record['id']
-                    ,'application' : task_record['app_id']
+                    ,'application' : task_record['application']
                     ,'description' : task_record['description']
                     ,'arguments'   : task_record['arguments']
                     ,'input_files' : task_record['input_files']
