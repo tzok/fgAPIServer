@@ -262,7 +262,7 @@ def task_id(task_id=None):
             }
         else:
             # Get task details
-            task_response=fgapisrv_db.getTaskInfo(task_id)
+            task_response=fgapisrv_db.getTaskRecord(task_id)
             db_state=fgapisrv_db.getState()
             if db_state[0] != 0:
                 # Couldn't contact database
@@ -273,11 +273,7 @@ def task_id(task_id=None):
                 }
             else:
                 task_status = 200
-        # Display task details replacing whole application info
-        # with just the application id as in specs
-        app_id=task_response['application']['id']
-        del task_response['application']
-        task_response['application']=app_id
+        # Display task details
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'

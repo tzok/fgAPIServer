@@ -192,7 +192,7 @@ class fgapiserver_db:
                              ,'status'      : task_dbrec[1]
                              ,'creation'    : task_dbrec[2]
                              ,'last_change' : task_dbrec[3]
-                             ,'app_id'      : task_dbrec[4]
+                             ,'application' : task_dbrec[4]
                              ,'description' : task_dbrec[5]
                              ,'status'      : task_dbrec[6]
                              ,'user'        : task_dbrec[7]
@@ -242,7 +242,7 @@ class fgapiserver_db:
                 ,'status'      : task_dicrec['status']
                 ,'creation'    : str(task_dicrec['creation'])
                 ,'last_change' : str(task_dicrec['last_change'])
-                ,'app_id'      : str(task_dicrec['app_id'])
+                ,'application' : str(task_dicrec['application'])
                 ,'description' : task_dicrec['description']
                 ,'user'        : task_dicrec['user']
                 ,'arguments'   : task_args
@@ -410,7 +410,7 @@ class fgapiserver_db:
     """
     def getTaskAppDetail(self,task_id):
         task_record = self.getTaskRecord(task_id)
-        return self.getAppDetail(str(task_record['app_id']))
+        return self.getAppDetail(str(task_record['application']))
 
     """
       getTaskInfo - Retrieve full information about given task_id
@@ -424,7 +424,7 @@ class fgapiserver_db:
             return {}
         task_app_details = self.getTaskAppDetail(task_id)
         task_info = task_record
-        del task_info['app_id']
+        del task_info['application']
         task_info['application']=task_app_details
         return task_info
 
