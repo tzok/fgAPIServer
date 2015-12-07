@@ -54,7 +54,7 @@ fg_config = fgapiserver_cfg(fgapiserver_config_file)
 # fgapiserver settings
 fgapiver           =     fg_config.getConfValue('fgapiver')
 fgapiserver_name   =     fg_config.getConfValue('fgapiserver_name')
-fgapisrv_host      =     fg_config.getConfValue('fgapisrv_db_host')
+fgapisrv_host      =     fg_config.getConfValue('fgapisrv_host')
 fgapisrv_port      = int(fg_config.getConfValue('fgapisrv_port'))
 fgapisrv_iosandbox =     fg_config.getConfValue('fgapisrv_iosandbox')
 fgapisrv_geappid   = int(fg_config.getConfValue('fgapisrv_geappid'))
