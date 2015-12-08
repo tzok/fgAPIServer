@@ -665,10 +665,10 @@ class fgapiserver_db:
         return 1==int(sandbox_ready)
 
     """
-      submitTaks - Trigger the GridEngine to submit the given task
+      submitTask - Trigger the GridEngine to submit the given task
                    This function takes care of all GridEngine needs to properly submit the applciation
     """
-    def submitTaks(self,task_id):
+    def submitTask(self,task_id):
         # Get task information
         task_info = self.getTaskInfo(task_id)
         app_info=task_info['application']

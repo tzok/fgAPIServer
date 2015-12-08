@@ -132,31 +132,49 @@ def task_create():
         else:
             # call to get tasks
             task_list = fgapisrv_db.getTaskList(user,app_id)
-            # Prepare response
-            task_response = []
-            for task_id in task_list:
-                task_record = fgapisrv_db.getTaskRecord(task_id)
-                task_response += [{
-                     'id'          : task_record['id']
-                    ,'application' : task_record['application']
-                    ,'description' : task_record['description']
-                    ,'arguments'   : task_record['arguments']
-                    ,'input_files' : task_record['input_files']
-                    ,'output_files': task_record['output_files']
-                    ,'status'      : task_record['status']
-                    ,'user'        : task_record['user']
-                    ,'date'        : str(task_record['creation'])
-                    ,'last_change'        : str(task_record['last_change'])
-                    ,'_links'      : [{
-                                         'rel' : 'self'
-                                        ,'href': '/%s/tasks/%s' % (fgapiver,task_id)
-                                      }
-                                     ,{
-                                         'rel' : 'input'
-                                        ,'href': '/%s/tasks/%s/input' % (fgapiver,task_id)
-                                      }]
-                },]
-            task_state = 200
+            db_state=fgapisrv_db.getState()
+            if db_state[0] != 0:
+                # DBError getting TaskList
+                # Prepare for 402
+                task_state = 402
+                task_response = {
+                    'message' : db_state[1]
+                }
+            else:
+                # Prepare response
+                task_response = []
+                for task_id in task_list:
+                    task_record = fgapisrv_db.getTaskRecord(task_id)
+                    db_state=fgapisrv_db.getState()
+                    if db_state[0] != 0:
+                        # DBError getting TaskRecord
+                        # Prepare for 403
+                        task_state = 403
+                        task_response = {
+                            'message' : db_state[1]
+                        }
+                    else:
+                        task_response += [{
+                             'id'          : task_record['id']
+                            ,'application' : task_record['application']
+                            ,'description' : task_record['description']
+                            ,'arguments'   : task_record['arguments']
+                            ,'input_files' : task_record['input_files']
+                            ,'output_files': task_record['output_files']
+                            ,'status'      : task_record['status']
+                            ,'user'        : task_record['user']
+                            ,'date'        : str(task_record['creation'])
+                            ,'last_change'        : str(task_record['last_change'])
+                            ,'_links'      : [{
+                                                 'rel' : 'self'
+                                                ,'href': '/%s/tasks/%s' % (fgapiver,task_id)
+                                              }
+                                             ,{
+                                                 'rel' : 'input'
+                                                ,'href': '/%s/tasks/%s/input' % (fgapiver,task_id)
+                                              }]
+                        },]
+                        task_state = 200
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
@@ -195,7 +213,7 @@ def task_create():
                                           ,app_outf)
             if task_id < 0:
                 task_state = fgapisrv_db.getState()
-                # Couldn't contact database
+                # Error initializing task
                 # Prepare for 410 error
                 task_state = 410
                 task_response = {
@@ -265,7 +283,7 @@ def task_id(task_id=None):
             task_response=fgapisrv_db.getTaskRecord(task_id)
             db_state=fgapisrv_db.getState()
             if db_state[0] != 0:
-                # Couldn't contact database
+                # Couldn't get TaskRecord
                 # Prepare for 404 not found
                 task_status = 404
                 task_response = {
@@ -399,7 +417,7 @@ def task_id_input(task_id=None):
                 # Now get input_sandbox status
                 if fgapisrv_db.isInputSandboxReady(task_id):
                     # The input_sandbox is completed; trigger the GE for this task
-                    if fgapisrv_db.submitTaks(task_id):
+                    if fgapisrv_db.submitTask(task_id):
                         task_status = 200
                         task_response = {
                              'task'    : task_id
