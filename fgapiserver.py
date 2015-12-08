@@ -105,12 +105,13 @@ def index():
 # GET  - View task info
 # POST - Create a new task; it only prepares the task for execution
 @app.route('/%s/tasks' % fgapiver,methods=['GET','POST'])
-def task_create():
+def tasks():
     page     = request.values.get('page')
     per_page = request.values.get('per_page')
     status   = request.values.get('status')
     user     = request.values.get('user')
     app_id   = request.values.get('app_id')
+    task_state = 0
     if request.method == 'GET':
         # Show the whole task list
         # Connect database

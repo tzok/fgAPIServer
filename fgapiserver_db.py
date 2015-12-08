@@ -873,19 +873,20 @@ class fgapiserver_db:
             # Get Task ids preparing the right query (user/app_id)
             db=self.connect()
             cursor = db.cursor()
+            user_clause = ''
+            app_clause = ''
+            sql_data = ()
+            if user is not None:
+                user_clause = '  and user = %s\n'
+                sql_data +=(user,)
             if app_id is not None:
-                sql=('select id\n'
-                 'from task\n'
-                 'where app_id = %s\n'
-                 '  and user = %s;'
-                )
-                sql_data=(app_id,user)
-            else:
-                sql=('select id\n'
-                 'from task\n'
-                 'where user = %s;'
-                )
-                sql_data=(user,)
+                app_clause = '  and app_id = %s\n'
+                sql_data +=(app_id,)
+            sql=('select id\n'
+             'from task\n'
+             'where true\n'
+             '%s%s;'
+            ) % (user_clause,app_clause)
             cursor.execute(sql,sql_data)
             for task_id in cursor:
                 task_ids+=[task_id[0],]
