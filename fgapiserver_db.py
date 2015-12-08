@@ -88,7 +88,7 @@ class fgapiserver_db:
     """
       catchDBError - common operations performed upon database query/transaction failure
     """
-    def catchDBError(self,db,rollback):
+    def catchDBError(self,e,db,rollback):
         print "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         if rollback is True:
             db.rollback()
@@ -131,7 +131,7 @@ class fgapiserver_db:
             self.err_flag = False
             self.err_msg  = 'Database version : %s' % data[0]
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
 
@@ -158,7 +158,7 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             count = cursor.fetchone()[0]
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
         return count > 0
@@ -251,7 +251,7 @@ class fgapiserver_db:
                 ,'iosandbox'   : task_dicrec['iosandbox']
             }
         except MySQLdb.Error, e:
-            self.catchDBError(db,True)
+            self.catchDBError(e,db,True)
         finally:
             self.closeDB(db,cursor,True)
         return task_record
@@ -285,7 +285,7 @@ class fgapiserver_db:
                 }
                 task_ifiles+=(file_info,)
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
         return task_ifiles
@@ -313,7 +313,7 @@ class fgapiserver_db:
                 }
                 task_ifiles+=(file_info,)
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
         return task_ifiles
@@ -401,7 +401,7 @@ class fgapiserver_db:
             app_detail['infrastructures']=infrastructures
             return app_detail
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
 
@@ -454,7 +454,7 @@ class fgapiserver_db:
                     ,'override': app_file[2]
                 },]
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
         return app_files
@@ -589,7 +589,7 @@ class fgapiserver_db:
             self.err_flag = True
             self.err_msg  =  "I/O error({0}): {1}".format(errno, strerror)
         except MySQLdb.Error, e:
-            self.catchDBError(db,True)
+            self.catchDBError(e,db,True)
         finally:
             self.closeDB(db,cursor,True)
         return task_id
@@ -614,7 +614,7 @@ class fgapiserver_db:
             else:
                 iosandbox = result[0]
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
         return iosandbox
@@ -635,7 +635,7 @@ class fgapiserver_db:
             sql_data=(filepath,task_id,filename)
             cursor.execute(sql,sql_data)
         except MySQLdb.Error, e:
-            self.catchDBError(db,True)
+            self.catchDBError(e,db,True)
         finally:
             self.closeDB(db,cursor,True)
         return
@@ -659,7 +659,7 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             sandbox_ready = cursor.fetchone()[0]
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
         return 1==int(sandbox_ready)
@@ -853,7 +853,7 @@ class fgapiserver_db:
                 sql_data=(str(task_info['id']),)
                 cursor.execute(sql,sql_data)
             except MySQLdb.Error, e:
-                self.catchDBError(db,True)
+                self.catchDBError(e,db,True)
             finally:
                 self.closeDB(db,cursor,True)
                 if as_file is not None: as_file.close()
@@ -890,7 +890,7 @@ class fgapiserver_db:
             for task_id in cursor:
                 task_ids+=[task_id[0],]
         except MySQLdb.Error, e:
-            self.catchDBError(db,False)
+            self.catchDBError(e,db,False)
         finally:
             self.closeDB(db,cursor,False)
         return task_ids
@@ -925,7 +925,7 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             status=True
         except MySQLdb.Error, e:
-            self.catchDBError(db,True)
+            self.catchDBError(e,db,True)
         finally:
             self.closeDB(db,cursor,True)
         return status
