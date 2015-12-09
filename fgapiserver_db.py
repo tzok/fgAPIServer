@@ -1009,7 +1009,7 @@ select max(id)
       ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
         from infrastructure_parameter
         where infra_id = (select max(id) from infrastructure)) param_id
-      ,'password','84g3R=FRm_(bC<FW'
+      ,'password','**********'
 from infrastructure;
 
 COMMIT;
