@@ -116,7 +116,7 @@ insert into infrastructure (id,app_id,name,description,creation,enabled)
 values (2,2,"sayhello@nebula","hostname application csgfsdk (rOCCI)",now(),false);
 -- Infra for helloworld app@eumed
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (3,1,"hello@eumed","hostname application eumed (wms)",now(),true);
+values (3,1,"hello@eumed","hostname application eumed (wms)",now(),false);
 
 -- Parameters for infrastructure helloworld@csgfsdk (SSH)
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','ssh://90.147.74.95');
