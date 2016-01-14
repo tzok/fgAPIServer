@@ -253,8 +253,8 @@ class fgapiserver_db:
                     'name'        : rtdata[0]
                    ,'value'       : rtdata[1]
                    ,'description' : rtdata[2]
-                   ,'creation'    : rtdata[3]
-                   ,'last_change' : rtdata[4]
+                   ,'creation'    : str(rtdata[3])
+                   ,'last_change' : str(rtdata[4])
                 }
                 runtime_data+=[rtdata_entry,]
             # Prepare output
