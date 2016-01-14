@@ -188,6 +188,18 @@ create table task_output_file (
     ,foreign key (task_id) references task(id)
 );
 
+-- Runtime data
+create table runtime_data (
+     task_id      int unsigned  not null      -- id of the task owning data
+    ,data_id      int unsigned  not null      -- data identifier (a progressive number)
+    ,data_name    varchar(128)  not null      -- name of data field
+    ,data_value   varchar(1024) not null      -- value of data field
+    ,creation     datetime      not null      -- When data has been written the first time
+    ,last_change  datetime      not null      -- When data has been updated
+    ,primary key(task_id,data_id)
+    ,foreign key (task_id) references task(id)
+);
+
 --
 -- APIServer queue table
 --

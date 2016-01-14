@@ -15,7 +15,7 @@ files
 To execute the demo, please follow the steps below:
 
 1) Prepare the job submission
-curl -i -H "Content-Type: application/json" -X POST -d '{"application":"2","description":"sayhello@csgfsdk test run", "arguments": ["\"I am saying hello!\""],  "output_files": ["sayhello.data"], "input_files": ["sayhello.sh","sayhello.txt"]}' http://localhost:8888/v1.0/tasks?user=brunor
+curl -i -H "Content-Type: application/json" -X POST -d '{"application":"2","description":"sayhello@csgfsdk test run", "arguments": ["\"I am saying hello!\""],  "output_files": [{"name":"sayhello.data"}], "input_files": [{"name":"sayhello.sh"},{"name":"sayhello.txt"}]}' http://localhost:8888/v1.0/tasks?user=brunor
 If successful, this call returns a json like:
 {
     "status": "WAITING", 

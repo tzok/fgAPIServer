@@ -8,7 +8,7 @@ Demo application executing ENES ophidia client
 To execute the demo, please follow the steps below:
 
 1) Prepare the job submission
-curl -i -H "Content-Type: application/json" -X POST -d '{"application":"3","description":"ophidia test run", "arguments": [],  "output_files": ["out.png"], "input_files": []}' http://localhost:8888/v1.0/tasks?user=brunor
+curl -i -H "Content-Type: application/json" -X POST -d '{"application":"3","description":"ophidia test run", "arguments": [],  "output_files": [{"name":"out.png"}], "input_files": []}' http://localhost:8888/v1.0/tasks?user=brunor
 Inside the json returned by the command, keep note of the "id" value that will be used by the next command
 
 2) Finalize the execution instructing the API server daemon to submit
