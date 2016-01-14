@@ -256,7 +256,7 @@ def tasks():
 # This is an informative call
 # GET  - shows details
 # POST - could reshape the request (Delete/Recreate)
-@app.route('/%s/tasks/<task_id>' % fgapiver,methods=['GET','POST','DELETE'])
+@app.route('/%s/tasks/<task_id>' % fgapiver,methods=['GET','POST','DELETE','PATCH'])
 def task_id(task_id=None):
     if request.method == 'GET':
         fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
@@ -327,6 +327,53 @@ def task_id(task_id=None):
             task_status = 200
             task_response = {
                 'message' : "Successfully removed task with id: %s" % task_id
+            }
+        js = json.dumps(task_response,indent=fgjson_indent)
+        resp = Response(js, status=task_status, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        return resp
+    elif request.method == 'PATCH':
+        # PATCH on tasks accepts only changes on runtime_data
+        # The input consists in a json having the form
+        # { "runtime_data" : [ { "data_name":  "name"
+        #                       ,"data_value": "value"
+        #                       ,"data_desc": "description of the value"
+        #                      }, ... ]
+        # The insertion policy will be:
+        #  1) data_name does not exists, a new record will be created in runtime_data table
+        #  2) data_name exists the new value will be updated to the existing
+        #
+        params = request.get_json()
+        runtime_data = params.get('runtime_data',[])
+        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                    ,db_port=fgapisrv_db_port
+                                    ,db_user=fgapisrv_db_user
+                                    ,db_pass=fgapisrv_db_pass
+                                    ,db_name=fgapisrv_db_name
+                                    ,iosandbbox_dir=fgapisrv_iosandbox
+                                    ,fgapiserverappid=fgapisrv_geappid)
+        db_state=fgapisrv_db.getState()
+        if db_state[0] != 0:
+            # Couldn't contact database
+            # Prepare for 404 not found
+            task_status = 404
+            task_response = {
+                'message' : db_state[1]
+            }
+        elif not fgapisrv_db.taskExists(task_id):
+            task_status = 404
+            task_response = {
+                'message' : "Unable to find task with id: %s" % task_id
+            }
+        elif not fgapisrv_db.patch_task(task_id,runtime_data):
+            task_status = 410
+            task_response = {
+                'message' : "Unable to delete task with id: %s" % task_id
+            }
+        else:
+            task_status = 200
+            task_response = {
+                'message' : "Successfully patched task with id: %s" % task_id
             }
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
@@ -472,7 +519,7 @@ def file():
 def after_request(response):
   response.headers.add('Access-Control-Allow-Origin', '*')
   response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-  response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+  response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH')
   response.headers.add('Access-Control-Allow-Credentials', 'true')
   response.headers.add('Server',fgapiserver_name)
   return response

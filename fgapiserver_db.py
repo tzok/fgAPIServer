@@ -236,6 +236,27 @@ class fgapiserver_db:
                                                           ,'name':ofile[0]})
                 }
                 task_ofiles+=[ofile_entry,]
+            # runtime_data
+            sql=('select data_name\n'
+                 '      ,data_value\n'
+                 '      ,data_desc\n'
+                 '      ,creation\n'
+                 '      ,last_change\n'
+                 'from runtime_data\n'
+                 'where task_id=%s\n'
+                 'order by data_id asc;')
+            sql_data=(task_id,)
+            cursor.execute(sql,sql_data)
+            runtime_data=[]
+            for rtdata in cursor:
+                rtdata_entry = {
+                    'name'        : rtdata[0]
+                   ,'value'       : rtdata[1]
+                   ,'description' : rtdata[2]
+                   ,'creation'    : rtdata[3]
+                   ,'last_change' : rtdata[4]
+                }
+                runtime_data+=[rtdata_entry,]
             # Prepare output
             task_record= {
                  'id'          : str(task_dicrec['id'])
@@ -248,6 +269,7 @@ class fgapiserver_db:
                 ,'arguments'   : task_args
                 ,'input_files' : task_ifiles
                 ,'output_files': task_ofiles
+                ,'runtime_data': runtime_data
                 ,'iosandbox'   : task_dicrec['iosandbox']
             }
         except MySQLdb.Error, e:
@@ -702,122 +724,6 @@ class fgapiserver_db:
             self.err_flag = True
             self.err_msg  = 'No suitable infrastructures found for task_id: %s' % task_id
             return False
-        # Prepare GridEngine required info (JSON file)
-        """
-        task_info contains:
-        { "status": "WAITING"
-        , "description": "helloworld@localhost test run"
-        , "creation": "2015-10-08 16:22:51"
-        , "user": "brunor"
-        , "id": 1
-        , "output_files": ["hello.out", "hello.err"]
-        , "application": {"description": "hostname tester application"
-                         , "parameters": [{"param_name": "jobdesc_executable", "param_value": "/bin/hostname"}
-                                        , {"param_name": "jobdesc_arguments", "param_value": "-f"}
-                                        , {"param_name": "jobdesc_output", "param_value": "stdout.txt"}
-                                        , {"param_name": "jobdesc_error", "param_value": "stderr.txt"}]
-                         , "creation": "2015-10-08 16:12:17"
-                         , "enabled": 1
-                         , "infrastructures": [ {"status": "enabled"
-                                               , "description": "hostname application on localhost"
-                                               , "parameters": [{"name": "jobservice", "value": "fork://localhost"}]
-                                               , "creation": "2015-10-08 16:12:18"
-                                               , "id": 1
-                                               , "name": "hostname@localhost"}]
-                        , "id": 1
-                        , "name": "hostname"
-                        }
-        , "arguments": ["arg1", "arg2", "arg3"]
-        , "input_files": ["hello.txt", "hello.sh"]
-        , "last_change": "2015-10-08 16:22:51"}
-        GridEngine understands:
-        {
-           "commonName": "helloworld@localhost test run",
-           "application": 10000, -- Refers to the GridEngine APIServer registered app
-           "identifier": "task_id: 1",
-           "jobDescription": {
-               "executable": "hostname",
-               "output": "stdout.txt",
-               "error": "stderr.txt"
-               "arguments": "-f"
-           },
-           "infrastructure": {
-               "resourceManagers": "fork://localhost"
-           }
-        }
-        # fgAPIServer no more translates Taks info for a specific executor
-        # this task will be rather performed by the right interface writthen
-        # for the GridEngineDaemon
-        GridEngineTaskDescription = {}
-        GridEngineTaskDescription['commonName' ] = '%s' % task_info['user']
-        GridEngineTaskDescription['application'] = '%s' % self.geapiserverappid
-        GridEngineTaskDescription['identifier' ] = '%s@%s' % (task_info['id'],task_info['iosandbox'])
-        GridEngineTaskDescription['input_files'] = task_info['input_files']
-        GridEngineTaskDescription['output_files'] = task_info['output_files']
-        # Prepare the JobDescription
-        GridEgnineJobDescription = {}
-        for param in app_params:
-            if param['param_name']=='jobdesc_executable':
-                GridEgnineJobDescription['executable']=param['param_value']
-            elif param['param_name']=='jobdesc_arguments':
-                GridEgnineJobDescription['arguments']=param['param_value']+' '
-            elif param['param_name']=='jobdesc_output':
-                GridEgnineJobDescription['output']=param['param_value']
-            elif param['param_name']=='jobdesc_error':
-                GridEgnineJobDescription['error']=param['param_value']
-            #else: - here a warning should arose
-        # Now add further arguments if specified in task
-        for arg in task_info.get('arguments',[]):
-            GridEgnineJobDescription['arguments']+='%s ' % arg
-        GridEgnineJobDescription['arguments']=GridEgnineJobDescription['arguments'].strip()
-        # Get application specific settings
-        GridEngineTaskDescription['jobDescription'] = GridEgnineJobDescription
-        # Select one of the possible infrastructures defined for this application
-        # A random strategy is currently implemented; this could be changed later
-        if len(enabled_infras) > 1:
-            sel_infra = app_infras[int(random.random()*len(enabled_infras))]
-        else:
-            sel_infra = enabled_infras[0]
-        # Get resource manager
-        GridEngineInfrastructure = {}
-        GridEngineCredentials    = {}
-        for param in sel_infra['parameters']:
-            if param['name'] == 'jobservice':
-                GridEngineInfrastructure['resourceManagers'] = param['value']
-            elif param['name'] == 'os_tpl':
-                GridEngineInfrastructure['os_tpl'] = param['value']
-            elif param['name'] == 'resource_tpl':
-                GridEngineInfrastructure['resource_tpl'] = param['value']
-            elif param['name'] == 'attributes_title':
-                GridEngineInfrastructure['attributes_title'] = param['value']
-            elif param['name'] == 'bdii':
-                GridEngineInfrastructure['bdii']=param['value']
-            elif param['name'] == 'swtags':
-                GridEngineInfrastructure['swtags']=param['value']
-            elif param['name'] == 'jdlRequirements':
-                GridEngineInfrastructure['jdlRequirements']=param['value']
-            elif param['name'] == 'username':
-                GridEngineCredentials['username'] = param['value']
-            elif param['name'] == 'password':
-                GridEngineCredentials['password'] = param['value']
-            elif param['name'] == 'eToken_host':
-                GridEngineCredentials['eToken_host'] = param['value']
-            elif param['name'] == 'eToken_port':
-                GridEngineCredentials['eToken_port'] = param['value']
-            elif param['name'] == 'eToken_id':
-                GridEngineCredentials['eToken_id'] = param['value']
-            elif param['name'] == 'voms':
-                GridEngineCredentials['voms'] = param['value']
-            elif param['name'] == 'voms_role':
-                GridEngineCredentials['voms_role'] = param['value']
-            elif param['name'] == 'rfc_proxy':
-                GridEngineCredentials['rfc_proxy'] = param['value']
-            #else: - here a warning should come
-        GridEngineTaskDescription['infrastructure'] = GridEngineInfrastructure
-        GridEngineTaskDescription['credentials'] = GridEngineCredentials
-        # Switch task status and populate gequeue table accordingly
-        return self.enqueueGridEngine(task_info,GridEngineTaskDescription)
-        """
         return self.enqueueGridEngine(task_info)
 
     #def enqueueGridEngine(self,task_info,ge_desc):
@@ -925,6 +831,68 @@ class fgapiserver_db:
             sql_data=(str(task_info['id']),)
             cursor.execute(sql,sql_data)
             status=True
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,True)
+        finally:
+            self.closeDB(db,cursor,True)
+        return status
+
+    """
+      patch_task - Patches a given task with provided runtime_data values
+    """
+    def patch_task(self,task_id,runtime_data):
+        status=False
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            for rtdata in runtime_data:
+                data_name   = rtdata['data_name']
+                data_value  = rtdata['data_value']
+                data_desc   = rtdata.get('data_desc','')
+                # Determine if dataname exists for this task
+                sql=('select count(*)\n'
+                     'from runtime_data\n'
+                     'where data_name=%s\n'
+                     '  and task_id=%s;')
+                sql_data=(data_name,task_id)
+                cursor.execute(sql,sql_data)
+                result = cursor.fetchone()
+                if result is None:
+                    self.err_flag = True
+                    self.err_msg  = "[ERROR] Unable to patch task id: %s" % task_id
+                else:
+                    data_count = result[0]
+                print "Data_count %s" % data_count
+                if data_count == 0:
+                    # First data insertion
+                    sql=('insert into runtime_data (task_id\n'
+                         '                         ,data_id\n'
+                         '                         ,data_name\n'
+                         '                         ,data_value\n'
+                         '                         ,data_desc\n'
+                         '                         ,creation\n'
+                         '                         ,last_change)\n'
+                         'select %s\n'
+                         '      ,(select if(max(data_id) is NULL,1,max(data_id)+1)\n'
+                         '        from runtime_data\n'
+                         '        where task_id=%s)\n'
+                         '      ,%s\n'
+                         '      ,%s\n'
+                         '      ,%s\n'
+                         '      ,now()\n'
+                         '      ,now();\n')
+                    sql_data=(task_id,task_id,data_name,data_value,data_desc)
+                    cursor.execute(sql,sql_data)
+                    status=True
+                else:
+                    sql=('update runtime_data\n'
+                         'set data_value = %s\n'
+                         '   ,last_change = now()\n'
+                         'where data_name=%s\n'
+                         '  and task_id=%s;')
+                    sql_data=(data_value,data_name,task_id)
+                    cursor.execute(sql,sql_data)
+                    status=True
         except MySQLdb.Error, e:
             self.catchDBError(e,db,True)
         finally:

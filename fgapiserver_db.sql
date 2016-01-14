@@ -194,6 +194,7 @@ create table runtime_data (
     ,data_id      int unsigned  not null      -- data identifier (a progressive number)
     ,data_name    varchar(128)  not null      -- name of data field
     ,data_value   varchar(1024) not null      -- value of data field
+    ,data_desc    varchar(2048)               -- value of data description
     ,creation     datetime      not null      -- When data has been written the first time
     ,last_change  datetime      not null      -- When data has been updated
     ,primary key(task_id,data_id)
