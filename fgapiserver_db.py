@@ -614,6 +614,13 @@ class fgapiserver_db:
             self.catchDBError(e,db,True)
         finally:
             self.closeDB(db,cursor,True)
+
+        # Accordingly to specs: input_files - If omitted the task is immediately ready to start
+        # If the inputsandbox is ready the job will be triggered for execution
+        if self.isInputSandboxReady(task_id):
+            # The input_sandbox is completed; trigger the Executor for this task
+            self.submitTask(task_id)
+
         return task_id
 
     """
@@ -749,8 +756,9 @@ class fgapiserver_db:
                      '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
                      '  ,creation      -- When the action is enqueued\n'
                      '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
+                     '  ,check_ts      -- Checking timestamp used to perform a round-robin loop\n'
                      '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                     ') values (%s,NULL,\'GridEngine\',\'SUBMIT\',\'QUEUED\',NULL,now(),now(),%s);'
+                     ') values (%s,NULL,\'GridEngine\',\'SUBMIT\',\'QUEUED\',NULL,now(),now(),now(),%s);'
                     )
                 sql_data=(task_info['id'],task_info['iosandbox'])
                 cursor.execute(sql,sql_data)
@@ -823,7 +831,8 @@ class fgapiserver_db:
                  '  ,creation      -- When the action is enqueued\n'
                  '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
                  '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                 ') values (%s,NULL,\'GridEngine\',\'CLEAN\',\'QUEUED\',NULL,now(),now(),%s);'
+                 '  ,check_ts      -- Check timestamp used to implement a round-robin strategy loop'
+                 ') values (%s,NULL,\'GridEngine\',\'CLEAN\',\'QUEUED\',NULL,now(),now(),now(),%s);'
                 )
             sql_data=(task_info['id'],task_info['iosandbox'])
             cursor.execute(sql,sql_data)

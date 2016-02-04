@@ -209,15 +209,17 @@ create table runtime_data (
 -- the REST engine and the targeted architecture
 --
 create table as_queue (
-     task_id       int unsigned not null    -- Taks reference for this GridEngine queue entry
-    ,target_id     int unsigned default 0   -- For GridEngine UsersTracking' ActiveGridInteraction id reference
-    ,target        varchar(32) not null     -- Targeted architecture ("GridEngine","OneDATA", ...)
-    ,action        varchar(32) not null     -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...
-    ,status        varchar(32) not null     -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE
-    ,target_status varchar(32) default null -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE
-    ,creation      datetime    not null     -- When the action is enqueued
-    ,last_change   datetime    not null     -- When the record has been modified by the GridEngine last time
-    ,action_info   varchar(128)             -- Temporary directory path containing further info to accomplish the requested operation
+     task_id       int unsigned not null           -- Taks reference for this GridEngine queue entry
+    ,target_id     int unsigned default 0          -- For GridEngine UsersTracking' ActiveGridInteraction id reference
+    ,target        varchar(32) not null            -- Targeted architecture ("GridEngine","OneDATA", ...)
+    ,action        varchar(32) not null            -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...
+    ,status        varchar(32) not null            -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE
+    ,target_status varchar(32) default null        -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE
+    ,retry         int unsigned not null default 0 -- Retry count of the task in the queue
+    ,creation      datetime    not null            -- When the action is enqueued
+    ,last_change   datetime    not null            -- When the record has been modified by the GridEngine last time
+    ,check_ts      datetime    not null            -- Check timestamp used to implement a round-robin checking loop
+    ,action_info   varchar(128)                    -- Temporary directory path containing further info to accomplish the requested operation
     ,primary key(task_id,action)
     ,index(task_id)
     ,index(action)
