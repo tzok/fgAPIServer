@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-2-gc14b32b-c14b32b-3"
+__version__    = "v0.0.1-3-ga6d61e0-a6d61e0-4"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -40,8 +40,11 @@ class fgapiserver_cfg:
 				                                      ,self.fgConfig['fgapiver'])
         self.fgConfig['fgapisrv_host'     ] = config.get('fgapiserver','fgapisrv_host')
         self.fgConfig['fgapisrv_port'     ] = config.get('fgapiserver','fgapisrv_port')
+        self.fgConfig['fgapisrv_debug'    ] = config.get('fgapiserver','fgapisrv_debug')
         self.fgConfig['fgapisrv_iosandbox'] = config.get('fgapiserver','fgapisrv_iosandbox')
         self.fgConfig['fgapisrv_geappid'  ] = config.get('fgapiserver','fgapisrv_geappid')
+        self.fgConfig['fgapisrv_key'      ] = config.get('fgapiserver','fgapisrv_key')
+        self.fgConfig['fgapisrv_crt'      ] = config.get('fgapiserver','fgapisrv_crt')
 
         # fgapiserver_db
         self.fgConfig['fgapisrv_db_host'] = config.get('fgapiserver_db','fgapisrv_db_host')
@@ -63,6 +66,7 @@ class fgapiserver_cfg:
         elif key == 'fgapiserver_name'  : def_value = 'GridEngine API Server % s' % self.getConfValue('fgapiver')
         elif key == 'fgapisrv_host'     : def_value = 'localhost'
         elif key == 'fgapisrv_port'     : def_value = '8888'
+        elif key == 'fgapisrv_debug'    : def_value = 'True'
         elif key == 'fgapisrv_db_host'  : def_value = 'localhost'
         elif key == 'fgapisrv_db_port'  : def_value = '3306'
         elif key == 'fgapisrv_db_user'  : def_value = 'localhost'
@@ -71,6 +75,8 @@ class fgapiserver_cfg:
         elif key == 'fgapisrv_iosandbox': def_value = '/tmp'
         elif key == 'fgapisrv_geappid'  : def_value = '10000'
         elif key == 'fgjson_indent'     : def_value = '4'
+        elif key == 'fgapisrv_key'      : def_value = ''
+        elif key == 'fgapisrv_crt'      : def_value = ''
         else:
 			print "[WARNING] Not found default value for key: '%s'" % key
         return self.fgConfig.get(key,def_value)

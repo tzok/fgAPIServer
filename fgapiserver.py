@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-2-gc14b32b-c14b32b-3"
+__version__    = "v0.0.1-3-ga6d61e0-a6d61e0-4"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -31,6 +31,7 @@ from flask import Flask
 from flask import request
 from flask import Response
 from flask import jsonify
+from OpenSSL import SSL
 from werkzeug import secure_filename
 from fgapiserver_db import fgapiserver_db
 from fgapiserver_cfg import fgapiserver_cfg
@@ -56,9 +57,12 @@ fgapiver           =     fg_config.getConfValue('fgapiver')
 fgapiserver_name   =     fg_config.getConfValue('fgapiserver_name')
 fgapisrv_host      =     fg_config.getConfValue('fgapisrv_host')
 fgapisrv_port      = int(fg_config.getConfValue('fgapisrv_port'))
+fgapisrv_debug     =    (fg_config.getConfValue('fgapisrv_debug') == 'True')
 fgapisrv_iosandbox =     fg_config.getConfValue('fgapisrv_iosandbox')
 fgapisrv_geappid   = int(fg_config.getConfValue('fgapisrv_geappid'))
 fgjson_indent      = int(fg_config.getConfValue('fgjson_indent'))
+fgapisrv_key       =     fg_config.getConfValue('fgapisrv_key')
+fgapisrv_crt       =     fg_config.getConfValue('fgapisrv_crt')
 
 # fgapiserver database settings
 fgapisrv_db_host =     fg_config.getConfValue('fgapisrv_db_host')
@@ -526,6 +530,11 @@ def after_request(response):
 
 # The app starts here
 if __name__ == "__main__":
-    app.debug = True
-    app.run(host=fgapisrv_host, port=fgapisrv_port)
+    if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
+        context = SSL.Context(SSL.SSLv23_METHOD)
+        context.use_privatekey_file(fgapisrv_key)
+        context.use_certificate_file(fgapisrv_crt)
+        app.run(host=fgapisrv_host, port=fgapisrv_port, ssl_context=context, debug=fgapisrv_debug)
+    else:
+        app.run(host=fgapisrv_host, port=fgapisrv_port,debug=fgapisrv_debug)
 
