@@ -1,0 +1,9 @@
+# https://www.digitalocean.com/community/tutorials/openssl-essentials-working-with-ssl-certificates-private-keys-and-csrs
+#openssl req -newkey rsa:2048 -nodes -keyout domain.key -x509 -days 365 -out domain.crt -subj "/C=Catania/O=INDIGO-DC/CN=futuregateway"
+#openssl x509 -in domain.crt -signkey domain.key -x509toreq -out domain.csr
+#openssl x509 -signkey domain.key -in domain.csr -req -days 365 -out domain.crt
+
+# Alternative
+openssl genrsa -out domain_key.pem 2048 
+openssl req -new -key domain_key.pem -out domain_csr.pem
+openssl req -x509 -days 365 -key domain_key.pem -in domain_csr.pem -out domain_crt.pem

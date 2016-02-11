@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-5-g3a6b162-3a6b162-6"
+__version__    = "v0.0.1-6-g7380a37-7380a37-10"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -619,7 +619,10 @@ class fgapiserver_db:
         # If the inputsandbox is ready the job will be triggered for execution
         if self.isInputSandboxReady(task_id):
             # The input_sandbox is completed; trigger the Executor for this task
-            self.submitTask(task_id)
+            # only if the completed sandbox consists of overridden files or no
+            # files are specified in the application_file table for this app_id
+            if self.isOverriddenSandbox(app_id):
+                self.submitTask(task_id)
 
         return task_id
 
@@ -907,6 +910,29 @@ class fgapiserver_db:
         finally:
             self.closeDB(db,cursor,True)
         return status
+
+    """
+    isOverriddenSandbox - True if all files of the specified application have the override flag True
+                          If no files are specified in application_file the function returns True
+    """
+    def isOverriddenSandbox(app_id):
+        db     = None
+        cursor = None
+        no_override = False
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select if(sum(override) is NULL,TRUE,count(*)=sum(override)) override\n'
+                 'from application_file\n'
+                 'where app_id=%s;')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            no_override = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return 1==int(no_override)
 
 """
 --  SQL steps to add an application
