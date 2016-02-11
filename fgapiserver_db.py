@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-4-g53dd5a6-53dd5a6-5"
+__version__    = "v0.0.1-5-g3a6b162-3a6b162-6"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -830,8 +830,8 @@ class fgapiserver_db:
                  '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
                  '  ,creation      -- When the action is enqueued\n'
                  '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
+                 '  ,check_ts      -- Check timestamp used to implement a round-robin strategy loop\n'
                  '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                 '  ,check_ts      -- Check timestamp used to implement a round-robin strategy loop'
                  ') values (%s,NULL,\'GridEngine\',\'CLEAN\',\'QUEUED\',NULL,now(),now(),now(),%s);'
                 )
             sql_data=(task_info['id'],task_info['iosandbox'])
