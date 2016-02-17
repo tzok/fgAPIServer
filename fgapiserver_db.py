@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-8-ge2ff689-e2ff689-12"
+__version__    = "v0.0.1-9-g40c7859-40c7859-13"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -212,6 +212,7 @@ class fgapiserver_db:
                 task_args+=[arg[0],]
             # Task input files
             sql=('select file\n'
+                 '      ,if(path is null,\'NEEDED\',\'READY\') status\n'
                  'from task_input_file\n'
                  'where task_id=%s\n'
                  'order by file_id asc;')
@@ -219,7 +220,11 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             task_ifiles=[]
             for ifile in cursor:
-                task_ifiles+=[ifile[0],]
+                ifile_entry = {
+                     'name': ifile[0]
+                    ,'status': ifile[1]
+                }
+                task_ifiles+=[ifile_entry,]
             # Task output files
             sql=('select file\n'
                  '      ,if(path is NULL,\'\',path)\n'
