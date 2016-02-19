@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-9-g40c7859-40c7859-13"
+__version__    = "v0.0.1-10-gc80cb0a-c80cb0a-14"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -300,7 +300,7 @@ class fgapiserver_db:
             db=self.connect()
             cursor = db.cursor()
             sql=('select file\n'
-                 '      ,if(path is null,\'waiting\',\'ready\')\n'
+                 '      ,if(path is null,\'NEEDED\',\'READY\') status\n'
                  'from task_input_file\n'
                  'where task_id = %s;')
             sql_data=(task_id,)

@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-9-g40c7859-40c7859-13"
+__version__    = "v0.0.1-10-gc80cb0a-c80cb0a-14"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -114,7 +114,7 @@ def tasks():
     per_page = request.values.get('per_page')
     status   = request.values.get('status')
     user     = request.values.get('user')
-    app_id   = request.values.get('app_id')
+    app_id   = request.values.get('application')
     task_state = 0
     if request.method == 'GET':
         # Show the whole task list
