@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-10-gc80cb0a-c80cb0a-14"
+__version__    = "v0.0.1-11-ge8c585a-e8c585a-15"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -790,6 +790,8 @@ class fgapiserver_db:
       getTaskList - Get the list of tasks associated to a user and/or app_id
     """
     def getTaskList(self,user,app_id):
+        db=None
+        cursor=None
         task_ids = []
         try:
             # Get Task ids preparing the right query (user/app_id)
@@ -822,6 +824,8 @@ class fgapiserver_db:
       delete - Delete a given task
     """
     def delete(self,task_id):
+        db=None
+        cursor=None
         status=False
         # Get task information
         task_info = self.getTaskInfo(task_id)
@@ -858,6 +862,8 @@ class fgapiserver_db:
       patch_task - Patches a given task with provided runtime_data values
     """
     def patch_task(self,task_id,runtime_data):
+        db=None
+        cursor=None
         status=False
         try:
             db=self.connect()

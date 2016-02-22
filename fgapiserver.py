@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-10-gc80cb0a-c80cb0a-14"
+__version__    = "v0.0.1-11-ge8c585a-e8c585a-15"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -75,6 +75,21 @@ fgapisrv_db_name =     fg_config.getConfValue('fgapisrv_db_name')
 app = Flask(__name__)
 
 ##
+## Helper functions
+##
+
+# paginate the incoming response json vector, accordinlgly to page and per_page values
+def paginate_response(response,page,per_page):
+    # page in range [0..(len(task_response)/per_page)-1)]
+    if page is not None and per_page is not None:
+        pg=int(page)
+        ppg=int(per_page)
+        return response[pg*ppg:(pg+1)*ppg]
+    else:
+        return response
+
+
+##
 ## Routes as specified for APIServer at http://docs.csgfapis.apiary.io
 ##
 
@@ -90,6 +105,7 @@ def index():
                 ,'media-types': ({'type':'application/json'})
                 ,'status': 'prototype'
                 ,'updated': '2015-10-19'
+                ,'build:': __version__
                 },)
     index_response = {
         'versions' : versions
@@ -180,7 +196,10 @@ def tasks():
                                               }]
                         },]
                         task_state = 200
-        js = json.dumps(task_response,indent=fgjson_indent)
+        # When page, per_page are not none (page=0..(len(task_response)/per_page)-1)
+        # if page is not None and per_page is not None:
+        # task_response = task_response[page*per_page:(page+1)*per_page]
+        js = json.dumps(paginate_response(task_response,page,per_page),indent=fgjson_indent)
         resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
