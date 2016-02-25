@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.1-11-ge8c585a-e8c585a-15
+-- Version: v0.0.1-12-ge204c62-e204c62-16
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
@@ -108,13 +108,13 @@ create table infrastructure_parameter (
 
 -- Infra for helloworld app@csgfsdk
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (1,1,"hello@csgfsdk","hostname application csgfsdk (SSH)",now(),true);
+values (1,1,"hello@csgfsdk","hostname application localhost (SSH)",now(),true);
 -- Infra for sayhello app@csgfsdk
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (1,2,"sayhello@csgfsdk","sayhello application csgfsdk (SSH)",now(),true);
+values (1,2,"sayhello@csgfsdk","sayhello application localhost (SSH)",now(),true);
 -- Infra for sayhello app@nebula
 insert into infrastructure (id,app_id,name,description,creation,enabled)
-values (2,2,"sayhello@nebula","hostname application csgfsdk (rOCCI)",now(),false);
+values (2,2,"sayhello@nebula","hostname application nebula-1 (rOCCI)",now(),false);
 -- Infra for helloworld app@eumed
 insert into infrastructure (id,app_id,name,description,creation,enabled)
 values (3,1,"hello@eumed","hostname application eumed (wms)",now(),false);

@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-11-ge8c585a-e8c585a-15"
+__version__    = "v0.0.1-12-ge204c62-e204c62-16"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -188,15 +188,15 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             task_dbrec=cursor.fetchone()
             if task_dbrec is not None:
-                task_dicrec={ 'id'          : task_dbrec[0]
-                             ,'status'      : task_dbrec[1]
-                             ,'creation'    : task_dbrec[2]
-                             ,'last_change' : task_dbrec[3]
-                             ,'application' : task_dbrec[4]
-                             ,'description' : task_dbrec[5]
-                             ,'status'      : task_dbrec[6]
-                             ,'user'        : task_dbrec[7]
-                             ,'iosandbox'   : task_dbrec[8]
+                task_dicrec={ "id"          : task_dbrec[0]
+                             ,"status"      : task_dbrec[1]
+                             ,"creation"    : task_dbrec[2]
+                             ,"last_change" : task_dbrec[3]
+                             ,"application" : task_dbrec[4]
+                             ,"description" : task_dbrec[5]
+                             ,"status"      : task_dbrec[6]
+                             ,"user"        : task_dbrec[7]
+                             ,"iosandbox"   : task_dbrec[8]
                             }
             else:
                 return {}
@@ -221,8 +221,8 @@ class fgapiserver_db:
             task_ifiles=[]
             for ifile in cursor:
                 ifile_entry = {
-                     'name': ifile[0]
-                    ,'status': ifile[1]
+                     "name": ifile[0]
+                    ,"status": ifile[1]
                 }
                 task_ifiles+=[ifile_entry,]
             # Task output files
@@ -236,9 +236,9 @@ class fgapiserver_db:
             task_ofiles=[]
             for ofile in cursor:
                 ofile_entry = {
-                    'name' : ofile[0]
-                   ,'url'  : 'file?%s' % urllib.urlencode({'path':ofile[1]
-                                                          ,'name':ofile[0]})
+                    "name" : ofile[0]
+                   ,"url"  : 'file?%s' % urllib.urlencode({"path":ofile[1]
+                                                          ,"name":ofile[0]})
                 }
                 task_ofiles+=[ofile_entry,]
             # runtime_data
@@ -255,27 +255,27 @@ class fgapiserver_db:
             runtime_data=[]
             for rtdata in cursor:
                 rtdata_entry = {
-                    'name'        : rtdata[0]
-                   ,'value'       : rtdata[1]
-                   ,'description' : rtdata[2]
-                   ,'creation'    : str(rtdata[3])
-                   ,'last_change' : str(rtdata[4])
+                    "name"        : rtdata[0]
+                   ,"value"       : rtdata[1]
+                   ,"description" : rtdata[2]
+                   ,"creation"    : str(rtdata[3])
+                   ,"last_change" : str(rtdata[4])
                 }
                 runtime_data+=[rtdata_entry,]
             # Prepare output
             task_record= {
-                 'id'          : str(task_dicrec['id'])
-                ,'status'      : task_dicrec['status']
-                ,'creation'    : str(task_dicrec['creation'])
-                ,'last_change' : str(task_dicrec['last_change'])
-                ,'application' : str(task_dicrec['application'])
-                ,'description' : task_dicrec['description']
-                ,'user'        : task_dicrec['user']
-                ,'arguments'   : task_args
-                ,'input_files' : task_ifiles
-                ,'output_files': task_ofiles
-                ,'runtime_data': runtime_data
-                ,'iosandbox'   : task_dicrec['iosandbox']
+                 "id"          : str(task_dicrec['id'])
+                ,"status"      : task_dicrec['status']
+                ,"creation"    : str(task_dicrec['creation'])
+                ,"last_change" : str(task_dicrec['last_change'])
+                ,"application" : str(task_dicrec['application'])
+                ,"description" : task_dicrec['description']
+                ,"user"        : task_dicrec['user']
+                ,"arguments"   : task_args
+                ,"input_files" : task_ifiles
+                ,"output_files": task_ofiles
+                ,"runtime_data": runtime_data
+                ,"iosandbox"   : task_dicrec['iosandbox']
             }
         except MySQLdb.Error, e:
             self.catchDBError(e,db,True)
@@ -307,8 +307,8 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             for ifile in cursor:
                 file_info = {
-                    'name'  : ifile[0]
-                   ,'status': ifile[1]
+                    "name"  : ifile[0]
+                   ,"status": ifile[1]
                 }
                 task_ifiles+=(file_info,)
         except MySQLdb.Error, e:
@@ -335,8 +335,8 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             for ifile in cursor:
                 file_info = {
-                    'name'  : ifile[0]
-                   ,'status': ifile[1]
+                    "name"  : ifile[0]
+                   ,"status": ifile[1]
                 }
                 task_ifiles+=(file_info,)
         except MySQLdb.Error, e:
@@ -366,11 +366,11 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             app_record=cursor.fetchone()
             app_detail = {
-                'id'          : app_record[0]
-               ,'name'        : app_record[1]
-               ,'description' : app_record[2]
-               ,'creation'    : str(app_record[3])
-               ,'enabled'     : app_record[4]
+                "id"          : str(app_record[0])
+               ,"name"        : app_record[1]
+               ,"description" : app_record[2]
+               ,"creation"    : str(app_record[3])
+               ,"enabled"     : app_record[4]
             }
             # Add now app parameters
             sql=('select pname\n'
@@ -383,8 +383,8 @@ class fgapiserver_db:
             app_parameters=[]
             for param in cursor:
                 parameter = {
-                     'param_name' : param[0]
-                    ,'param_value': param[1]
+                     "param_name" : param[0]
+                    ,"param_value": param[1]
                 }
                 app_parameters+=[parameter,]
             app_detail['parameters']=app_parameters
@@ -402,11 +402,11 @@ class fgapiserver_db:
             infrastructures = []
             for infra in cursor:
                 infra_details = {
-                     'id'         : str(infra[0])
-                    ,'name'       : infra[1]
-                    ,'description': infra[2]
-                    ,'creation'   : str(infra[3])
-                    ,'status'     : infra[4]
+                     "id"         : str(infra[0])
+                    ,"name"       : infra[1]
+                    ,"description": infra[2]
+                    ,"creation"   : str(infra[3])
+                    ,"status"     : infra[4]
                 }
                 infrastructures+=[infra_details,]
             # Now loop over infrastructures to get their parameters
@@ -420,8 +420,8 @@ class fgapiserver_db:
                 infra_parameters = []
                 for param in cursor:
                     param_details = {
-                         'name' : param[0]
-                        ,'value': param[1]
+                         "name" : param[0]
+                        ,"value": param[1]
                     }
                     infra_parameters+=[param_details,]
                 infra['parameters']=infra_parameters
@@ -476,9 +476,9 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             for app_file in cursor:
                 app_files+= [{
-                     'file'    : app_file[0]
-                    ,'path'    : app_file[1]
-                    ,'override': app_file[2]
+                     "file"    : app_file[0]
+                    ,"path"    : app_file[1]
+                    ,"override": app_file[2]
                 },]
         except MySQLdb.Error, e:
             self.catchDBError(e,db,False)
@@ -544,8 +544,8 @@ class fgapiserver_db:
             # Insert Task input_files
             # Process input files specified in the REST URL (input_files)
             # producing a new vector called inp_file having the same structure
-            # of app_files: [ { 'name': <filname>
-            #                  ,'path': <path to file> },...]
+            # of app_files: [ { "name": <filname>
+            #                  ,"path": <path to file> },...]
             # except for the 'override' key not necessary in this second array.
             # For each file specified inside input_file, verify if it exists alredy
             # in the app_file vector. If the file exists there are two possibilities:
@@ -566,8 +566,8 @@ class fgapiserver_db:
                             break
                 if not skip_file:
                     # The file is not in app_file
-                    inp_file += [{ 'path': None
-                                  ,'file': file['name'] },]
+                    inp_file += [{ "path": None
+                                  ,"file": file['name'] },]
             # Files can be registered in task_input_files
             for inpfile in app_files+inp_file:
                 # Not None paths refers to existing app_files that could be copied
@@ -598,7 +598,7 @@ class fgapiserver_db:
             sql_data=(app_id,)
             cursor.execute(sql,sql_data)
             for out_file in cursor:
-                output_files+=[ { 'name': out_file[0]},]
+                output_files+=[ { "name": out_file[0]},]
             # Insert Task output_files specified by user
             for outfile in output_files:
                 sql=('insert into task_output_file (task_id\n'
@@ -739,9 +739,11 @@ class fgapiserver_db:
             self.err_flag = True
             self.err_msg  = 'No suitable infrastructures found for task_id: %s' % task_id
             return False
+        # Determine the correct executor (GridEngine is now fixed)
+        # an if else if chain should be placed here selecting the
+        # right enqueue<Executor> call
         return self.enqueueGridEngine(task_info)
 
-    #def enqueueGridEngine(self,task_info,ge_desc):
     def enqueueGridEngine(self,task_info):
         db      = None
         cursor  = None
