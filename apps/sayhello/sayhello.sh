@@ -3,11 +3,12 @@ INPFILE=sayhello.txt
 DATAFILE=sayhello.data
 DELAY=2
 printf "starting at: " ; date
+printf "running on: "; $(hostname -f)
 printf "whoami: "; whoami
 printf "home: "; echo $HOME
 printf "listing home:\n"
 ls -l $HOME
-printf "pwd: "; pwd
+printf "working directory: "; pwd
 printf "listing working directory:\n"
 ls -l $PWD
 if [ "${@}" = "" ]; then
