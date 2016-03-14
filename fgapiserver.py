@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-13-gfb11259-fb11259-19"
+__version__    = "v0.0.1-14-gccb26df-ccb26df-21"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -164,6 +164,7 @@ def tasks():
             else:
                 # Prepare response
                 task_response = []
+                task_state = 200
                 for task_id in task_list:
                     task_record = fgapisrv_db.getTaskRecord(task_id)
                     db_state=fgapisrv_db.getState()
@@ -195,7 +196,6 @@ def tasks():
                                                 ,'href': '/%s/tasks/%s/input' % (fgapiver,task_id)
                                               }]
                         },]
-                        task_state = 200
         # When page, per_page are not none (page=0..(len(task_response)/per_page)-1)
         # if page is not None and per_page is not None:
         # task_response = task_response[page*per_page:(page+1)*per_page]
