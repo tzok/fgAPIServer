@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-14-gccb26df-ccb26df-21"
+__version__    = "v0.0.1-15-g1527c76-1527c76-22"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -33,6 +33,7 @@ import os
 import random
 import urllib
 import shutil
+import logging
 
 """
  Database connection default settings
@@ -74,7 +75,7 @@ class fgapiserver_db:
     message  = ''
 
     """
-      geapiserver_db - Constructor may override default values defined at the top of the file
+      fgapiserver_db - Constructor may override default values defined at the top of the file
     """
     def __init__(self,*args, **kwargs):
         self.db_host          = kwargs.get('db_host',def_db_host)
@@ -84,12 +85,28 @@ class fgapiserver_db:
         self.db_name          = kwargs.get('db_name',def_db_name)
         self.iosandbbox_dir   = kwargs.get('iosandbbox_dir',def_iosandbbox_dir)
         self.geapiserverappid = kwargs.get('geapiserverappid',def_geapiserverappid)
+        logging.debug("\n[DB settings]\n
+                      " host: '%s'\n"
+                      " port: '%s'\n"
+                      " user: '%s'\n"
+                      " pass: '%s'\n"
+                      " name: '%s'\n"
+                      " iosandbox_dir: '%s'\n"
+                      " geapiserverappid: '%s'\n"
+                      % (self.db_host
+                        ,self.db_port
+                        ,self.db_user
+                        ,self.db_pass
+                        ,self.db_name
+                        ,self.iosandbbox_dir
+                        ,self.geapiserverappid)
+                      )
 
     """
       catchDBError - common operations performed upon database query/transaction failure
     """
     def catchDBError(self,e,db,rollback):
-        print "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        logging.debug "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
         if rollback is True:
             db.rollback()
         self.err_flag = True
@@ -887,7 +904,6 @@ class fgapiserver_db:
                     self.err_msg  = "[ERROR] Unable to patch task id: %s" % task_id
                 else:
                     data_count = result[0]
-                print "Data_count %s" % data_count
                 if data_count == 0:
                     # First data insertion
                     sql=('insert into runtime_data (task_id\n'

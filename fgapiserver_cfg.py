@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-14-gccb26df-ccb26df-21"
+__version__    = "v0.0.1-15-g1527c76-1527c76-22"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -37,7 +37,7 @@ class fgapiserver_cfg:
         # fgapiserver
         self.fgConfig['fgapiver'          ] = config.get('fgapiserver','fgapiver')
         self.fgConfig['fgapiserver_name'  ] = "%s %s" % (config.get('fgapiserver','fgapiserver_name')
-				                                      ,self.fgConfig['fgapiver'])
+				                                        ,self.fgConfig['fgapiver'])
         self.fgConfig['fgapisrv_host'     ] = config.get('fgapiserver','fgapisrv_host')
         self.fgConfig['fgapisrv_port'     ] = config.get('fgapiserver','fgapisrv_port')
         self.fgConfig['fgapisrv_debug'    ] = config.get('fgapiserver','fgapisrv_debug')
@@ -45,6 +45,7 @@ class fgapiserver_cfg:
         self.fgConfig['fgapisrv_geappid'  ] = config.get('fgapiserver','fgapisrv_geappid')
         self.fgConfig['fgapisrv_key'      ] = config.get('fgapiserver','fgapisrv_key')
         self.fgConfig['fgapisrv_crt'      ] = config.get('fgapiserver','fgapisrv_crt')
+        self.fgConfig['fgapisrv_logcfg'   ] = config.get('fgapiserver','fgapisrv_logcfg')
 
         # fgapiserver_db
         self.fgConfig['fgapisrv_db_host'] = config.get('fgapiserver_db','fgapisrv_db_host')
@@ -52,13 +53,12 @@ class fgapiserver_cfg:
         self.fgConfig['fgapisrv_db_user'] = config.get('fgapiserver_db','fgapisrv_db_user')
         self.fgConfig['fgapisrv_db_pass'] = config.get('fgapiserver_db','fgapisrv_db_pass')
         self.fgConfig['fgapisrv_db_name'] = config.get('fgapiserver_db','fgapisrv_db_name')
-        self.showConf()
+        print self.showConf()
 
     def showConf(self):
-        config = ("FutureGateway API Server config\n"
+        return ("FutureGateway API Server config\n"
                "----------------------------------\n"
 			   "%s\n" % json.dumps(self.fgConfig, indent=4))
-        print config
 
     def getConfValue(self,key):
         def_value = None
@@ -77,6 +77,7 @@ class fgapiserver_cfg:
         elif key == 'fgjson_indent'     : def_value = '4'
         elif key == 'fgapisrv_key'      : def_value = ''
         elif key == 'fgapisrv_crt'      : def_value = ''
+        elif key == 'fgapisrv_logcfg'   : def_value = 'fgapiserver_log.conf'
         else:
 			print "[WARNING] Not found default value for key: '%s'" % key
         return self.fgConfig.get(key,def_value)

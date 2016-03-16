@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.1-14-gccb26df-ccb26df-21"
+__version__    = "%VERSION%"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -41,6 +41,8 @@ import uuid
 import time
 import json
 import ConfigParser
+import logging
+import logging.config
 
 # setup path
 fgapirundir=os.path.dirname(os.path.abspath(__file__))+'/'
@@ -63,6 +65,7 @@ fgapisrv_geappid   = int(fg_config.getConfValue('fgapisrv_geappid'))
 fgjson_indent      = int(fg_config.getConfValue('fgjson_indent'))
 fgapisrv_key       =     fg_config.getConfValue('fgapisrv_key')
 fgapisrv_crt       =     fg_config.getConfValue('fgapisrv_crt')
+fgapisrv_logcfg    =     fg_config.getConfValue('fgapisrv_logcfg')
 
 # fgapiserver database settings
 fgapisrv_db_host =     fg_config.getConfValue('fgapisrv_db_host')
@@ -70,6 +73,11 @@ fgapisrv_db_port = int(fg_config.getConfValue('fgapisrv_db_port'))
 fgapisrv_db_user =     fg_config.getConfValue('fgapisrv_db_user')
 fgapisrv_db_pass =     fg_config.getConfValue('fgapisrv_db_pass')
 fgapisrv_db_name =     fg_config.getConfValue('fgapisrv_db_name')
+
+# Logging
+logging.config.fileConfig(fgapisrv_logcfg)
+logger = logging.getLogger(__name__)
+logger.debug(fg_config.showConf())
 
 # setup Flask app
 app = Flask(__name__)
