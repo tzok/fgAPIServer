@@ -85,7 +85,7 @@ class fgapiserver_db:
         self.db_name          = kwargs.get('db_name',def_db_name)
         self.iosandbbox_dir   = kwargs.get('iosandbbox_dir',def_iosandbbox_dir)
         self.geapiserverappid = kwargs.get('geapiserverappid',def_geapiserverappid)
-        logging.debug("\n[DB settings]\n
+        logging.debug("[DB settings]\n"
                       " host: '%s'\n"
                       " port: '%s'\n"
                       " user: '%s'\n"
@@ -106,11 +106,11 @@ class fgapiserver_db:
       catchDBError - common operations performed upon database query/transaction failure
     """
     def catchDBError(self,e,db,rollback):
-        logging.debug "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        logging.debug("[ERROR] %d: %s" % (e.args[0], e.args[1]))
         if rollback is True:
             db.rollback()
         self.err_flag = True
-        self.err_msg  = "[ERROR] %d: %s\n" % (e.args[0], e.args[1])
+        self.err_msg  = "[ERROR] %d: %s" % (e.args[0], e.args[1])
 
     """
       closeDB - common operatoins performed closing DB query/transaction
@@ -777,7 +777,7 @@ class fgapiserver_db:
                 sql=('insert into as_queue (\n'
                      '   task_id       -- Taks reference for this GridEngine queue entry\n'
                      '  ,target_id     -- UsersTracking\' ActiveGridInteraction id reference\n'
-					 '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
+                                         '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
                      '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
                      '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
                      '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
@@ -855,7 +855,7 @@ class fgapiserver_db:
             sql=('insert into as_queue (\n'
                  '   task_id       -- Taks reference for this GridEngine queue entry\n'
                  '  ,target_id     -- (GridEngine) UsersTracking\' ActiveGridInteraction id reference\n'
-				 '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
+                                 '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
                  '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
                  '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
                  '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
