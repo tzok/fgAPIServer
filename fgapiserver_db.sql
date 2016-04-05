@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-029d055-23
+-- Version: v0.0.2-1-ga27459a-a27459a-24
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
@@ -62,11 +62,13 @@ insert into application_parameter (app_id,param_id,pname,pvalue) values (1,1,'jo
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,2,'jobdesc_arguments','-f');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,3,'jobdesc_output','stdout.txt');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,4,'jobdesc_error','stderr.txt');
+insert into application_parameter (app_id,param_id,pname,pvalue) values (1,5,'target_executor','GridEngine');
 -- App 2
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,1,'jobdesc_executable','/bin/bash');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,2,'jobdesc_arguments','sayhello.sh');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,3,'jobdesc_output','sayhello.out');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,4,'jobdesc_error','sayhello.err');
+insert into application_parameter (app_id,param_id,pname,pvalue) values (2,5,'target_executor','GridEngine');
 
 -- Application files
 create table application_file (
@@ -120,9 +122,9 @@ insert into infrastructure (id,app_id,name,description,creation,enabled)
 values (3,1,"hello@eumed","hostname application eumed (wms)",now(),false);
 
 -- Parameters for infrastructure helloworld@csgfsdk (SSH)
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','ssh://90.147.74.95');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,2,'username','jobtest');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,3,'password','Xvf56jZ751f');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice'     ,'ssh://90.147.74.95');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,2,'username'       ,'jobtest');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,3,'password'       ,'Xvf56jZ751f');
 
 -- Parameters for infrastructure sayhello@nebula (rOCCI)
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 1,'jobservice'      ,'rocci://nebula-server-01.ct.infn.it:9000');
@@ -137,14 +139,14 @@ insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,10,'rfc_proxy'       ,'true');
 
 -- Parameters for infrastructure sayhello@eumed (wms)
-insert into infrastructure_parameter values (3,1,'jobservice'  ,'wms://wms.ulakbim.gov.tr:7443/glite_wms_wmproxy_server');
-insert into infrastructure_parameter values (3,2,'bdii'        ,'ldap://bdii.eumedgrid.eu:2170');
-insert into infrastructure_parameter values (3,3,'eToken_host' ,'etokenserver2.ct.infn.it');
-insert into infrastructure_parameter values (3,4,'eToken_port' ,'8082');
-insert into infrastructure_parameter values (3,5,'eToken_id'   ,'bc681e2bd4c3ace2a4c54907ea0c379b');
-insert into infrastructure_parameter values (3,6,'voms'        ,'eumed');
-insert into infrastructure_parameter values (3,7,'voms_role'   ,'eumed');
-insert into infrastructure_parameter values (3,8,'rfc_proxy'   ,'false');
+insert into infrastructure_parameter values (3,1,'jobservice'     ,'wms://wms.ulakbim.gov.tr:7443/glite_wms_wmproxy_server');
+insert into infrastructure_parameter values (3,2,'bdii'           ,'ldap://bdii.eumedgrid.eu:2170');
+insert into infrastructure_parameter values (3,3,'eToken_host'    ,'etokenserver2.ct.infn.it');
+insert into infrastructure_parameter values (3,4,'eToken_port'    ,'8082');
+insert into infrastructure_parameter values (3,5,'eToken_id'      ,'bc681e2bd4c3ace2a4c54907ea0c379b');
+insert into infrastructure_parameter values (3,6,'voms'           ,'eumed');
+insert into infrastructure_parameter values (3,7,'voms_role'      ,'eumed');
+insert into infrastructure_parameter values (3,8,'rfc_proxy'      ,'false');
 
 -- Task table
 create table task (

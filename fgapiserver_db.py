@@ -720,7 +720,7 @@ class fgapiserver_db:
 
     """
       submitTask - Trigger the GridEngine to submit the given task
-                   This function takes care of all GridEngine needs to properly submit the applciation
+                   This function takes care of all APIServerDaemon needs to properly submit the applciation
     """
     def submitTask(self,task_id):
         # Get task information
@@ -756,12 +756,10 @@ class fgapiserver_db:
             self.err_flag = True
             self.err_msg  = 'No suitable infrastructures found for task_id: %s' % task_id
             return False
-        # Determine the correct executor (GridEngine is now fixed)
-        # an if else if chain should be placed here selecting the
-        # right enqueue<Executor> call
-        return self.enqueueGridEngine(task_info)
+        # All checks have been done, it is possible to enqueue the Task request
+        return self.enqueueTaskRequest(task_info)
 
-    def enqueueGridEngine(self,task_info):
+    def enqueueTaskRequest(self, task_info):
         db      = None
         cursor  = None
         self.err_flag = False
@@ -770,24 +768,30 @@ class fgapiserver_db:
             # <task_iosandbox_dir>/<task_id>.json
             as_file=open('%s/%s.json' % (task_info['iosandbox'],task_info['id']),"w")
             as_file.write(str(task_info))
+            # Determine the application target executor (default GridEngine)
+            target_executor='GridEngine'
+            for app_param in task_info['application']['parameters']:
+                if app_param['param_name'] == 'target_executor':
+                    target_executor=app_param['param_value']
+                    break
             try:
-                # Insert task record in the GridEngine' queue
+                # Insert task record in the APIServerDaemon' queue
                 db=self.connect()
                 cursor = db.cursor()
                 sql=('insert into as_queue (\n'
-                     '   task_id       -- Taks reference for this GridEngine queue entry\n'
+                     '   task_id       -- Taks reference for this task queue entry\n'
                      '  ,target_id     -- UsersTracking\' ActiveGridInteraction id reference\n'
-                                         '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
+                     '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
                      '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
                      '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
-                     '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
+                     '  ,target_status -- Specific target executor status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
                      '  ,creation      -- When the action is enqueued\n'
-                     '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
+                     '  ,last_change   -- When the record has been modified by the target executor last time\n'
                      '  ,check_ts      -- Checking timestamp used to perform a round-robin loop\n'
                      '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                     ') values (%s,NULL,\'GridEngine\',\'SUBMIT\',\'QUEUED\',NULL,now(),now(),now(),%s);'
+                     ') values (%s,NULL,%s,\'SUBMIT\',\'QUEUED\',NULL,now(),now(),now(),%s);'
                     )
-                sql_data=(task_info['id'],task_info['iosandbox'])
+                sql_data=(task_info['id'],target_executor,task_info['iosandbox'])
                 cursor.execute(sql,sql_data)
                 sql=('update task set status=\'SUBMIT\', last_change=now() where id=%s;'
                     )
