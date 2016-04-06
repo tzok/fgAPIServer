@@ -34,6 +34,7 @@ import random
 import urllib
 import shutil
 import logging
+import json
 
 """
  Database connection default settings
@@ -767,7 +768,7 @@ class fgapiserver_db:
             # Save native APIServer JSON file, having the format:
             # <task_iosandbox_dir>/<task_id>.json
             as_file=open('%s/%s.json' % (task_info['iosandbox'],task_info['id']),"w")
-            as_file.write(str(task_info))
+            as_file.write(json.dumps(task_info))
             # Determine the application target executor (default GridEngine)
             target_executor='GridEngine'
             for app_param in task_info['application']['parameters']:
