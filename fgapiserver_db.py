@@ -1255,6 +1255,48 @@ class fgapiserver_db:
             self.closeDB(db,cursor,True)
         return app_id
 
+    """
+      appDelete delete application with a given id
+    """
+    def appDelete(self,app_id):
+        # Start deleting app
+        db     = None
+        cursor = None
+        try:
+            # Delete given application records
+            db=self.connect()
+            cursor = db.cursor()
+            #
+            # (!) Pay attention infrastructures belonging to
+            #     different applications may share the same
+            #    id (infra_id in parameters); a check is
+            #    necessary here ...
+            #
+            sql=('delete from infrastructure_parameter\n'
+                 'where infra_id in (select id from infrastructure where app_id=%s);')
+            sql_data = (app_id,)
+            cursor.execute(sql,sql_data)
+            sql=('delete from infrastructure where app_id=%s;')
+            sql_data = (app_id,)
+            cursor.execute(sql,sql_data)
+            sql=('delete from application_file where app_id=%s;')
+            sql_data = (app_id,)
+            cursor.execute(sql,sql_data)
+            sql=('delete from application_parameter where app_id=%s;')
+            sql_data = (app_id,)
+            cursor.execute(sql,sql_data)
+            sql=('delete from application where id=%s;')
+            sql_data = (app_id,)
+            cursor.execute(sql,sql_data)
+        except IOError as (errno, strerror):
+            self.err_flag = True
+            self.err_msg  =  "I/O error({0}): {1}".format(errno, strerror)
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,True)
+        finally:
+            self.closeDB(db,cursor,True)
+        return app_id
+
 
 """
 --  SQL steps to add an application

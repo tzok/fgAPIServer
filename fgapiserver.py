@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.2-4-g6451ece-6451ece-27"
+__version__    = "v0.0.2-5-g91e7043-91e7043-28"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -755,20 +755,20 @@ def app_id(app_id=None):
             response = {
                 "message" : db_state[1]
             }
-        elif not fgapisrv_db.appExists(task_id):
+        elif not fgapisrv_db.appExists(app_id):
             status = 404
             response = {
-                "message" : "Unable to find task with id: %s" % task_id
+                "message" : "Unable to find application with id: %s" % app_id
             }
         elif not fgapisrv_db.appDelete(app_id):
             status = 410
             response = {
-                "message" : "Unable to delete task with id: %s" % task_id
+                "message" : "Unable to delete application with id: %s" % app_id
             }
         else:
             status = 200
             response = {
-                "message" : "Successfully removed task with id: %s" % task_id
+                "message" : "Successfully removed application with id: %s" % app_id
             }
         js = json.dumps(response,indent=fgjson_indent)
         resp = Response(js, status=status, mimetype='application/json')
