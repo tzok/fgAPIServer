@@ -968,6 +968,294 @@ class fgapiserver_db:
             self.closeDB(db,cursor,False)
         return 1==int(no_override)
 
+#
+# Application
+#
+    """
+      appExists - Return True if the given app_id exists False otherwise
+    """
+    def appExists(self,app_id):
+        db     = None
+        cursor = None
+        count = 0
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select count(*)\n'
+                 'from application\n'
+                 'where id = %s;')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            count = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return count > 0
+
+    """
+      getAppList - Get the list of applications
+    """
+    def getAppList(self):
+        db=None
+        cursor=None
+        app_ids = []
+        try:
+            # Get Task ids preparing the right query (user/app_id)
+            db=self.connect()
+            cursor = db.cursor()
+            sql_data = ()
+            sql=('select id\n'
+                 'from application;')
+            cursor.execute(sql)
+            for app_id in cursor:
+                app_ids+=[app_id[0],]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return app_ids
+
+    """
+       getAppRecord
+    """
+    def getAppRecord(self,app_id):
+        db     = None
+        cursor = None
+        app_record = {}
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            # Task record
+            sql=('select name\n'
+                 '      ,description\n'
+                 '      ,creation\n'
+                 '      ,enabled\n'
+                 'from application\n'
+                 'where id=%s;')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            app_dbrec=cursor.fetchone()
+            if app_dbrec is not None:
+                app_dicrec={ "id"          : str(app_id)
+                             ,"name"       : app_dbrec[0]
+                             ,"description": app_dbrec[1]
+                             ,"creation"   : str(app_dbrec[2])
+                             ,"enabled"    : app_dbrec[3]
+                            }
+            else:
+                return {}
+            # Application parameters
+            sql=('select pname\n'
+                 '      ,pvalue\n'
+                 'from application_parameter\n'
+                 'where app_id=%s\n'
+                 'order by param_id asc;')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            app_params=[]
+            for param in cursor:
+                app_params+= [{ "name"       : param[0]
+                               ,"value"      : param[1]
+                               ,"description": ""
+                              },]
+            # Application input files
+            sql=('select file\n'
+                 '      ,path\n'
+                 '      ,override\n'
+                 'from application_file\n'
+                 'where app_id=%s\n'
+                 'order by file_id asc;')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            app_ifiles=[]
+            for ifile in cursor:
+                ifile_entry = {
+                     "name"    : ifile[0]
+                    ,"path"    : ifile[1]
+                    ,"override": ifile[2]
+                }
+                app_ifiles+=[ifile_entry,]
+            # Application infrastructures
+            sql=('select id\n'
+                '      ,name\n'
+                '      ,description\n'
+                '      ,creation\n'
+                '      ,enabled\n'
+                'from infrastructure\n'
+                'where app_id=%s;')
+            sql_data=(app_id,)
+            cursor.execute(sql,sql_data)
+            app_infras=[]
+            for app_infra in cursor:
+                app_infra_entry =  {
+                 "id"             : str(app_infra[0])
+                ,"name"           : app_infra[1]
+                ,"description"    : app_infra[2]
+                ,"creation"       : str(app_infra[3])
+                ,"enabled"        : app_infra[4]
+                ,"virtual"        : False
+                #,"parameters"     : []
+                }
+                app_infras+=[app_infra_entry,]
+            for app_infra in app_infras:
+                sql=('select pname\n'
+                     '      ,pvalue\n'
+                     'from infrastructure_parameter\n'
+                     'where infra_id=%s\n'
+                     'order by param_id asc;')
+                sql_data=(app_infra['id'],)
+                cursor.execute(sql,sql_data)
+                infra_params=[]
+                for infra_param in cursor:
+                    infra_params+=[{
+                        "name" : infra_param[0]
+                       ,"value": infra_param[1]
+                    },]
+                app_infra["parameters"] = infra_params
+            # Prepare output
+            app_record= {
+                 "id"             : str(app_id)
+                ,"name"           : app_dicrec['name']
+                ,"description"    : app_dicrec['description']
+                ,"creation"       : str(app_dicrec['creation'])
+                ,"enabled"        : app_dicrec['enabled']
+                ,"parameters"     : app_params
+                ,"input_files"    : app_ifiles
+                ,"infrastructures": app_infras
+            }
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,True)
+        finally:
+            self.closeDB(db,cursor,True)
+        return app_record
+
+    """
+      initApp initialize an application
+      from the given parameters: name
+                                ,description
+                                ,enabled
+                                ,parameters
+                                ,inp_files
+                                ,infrastructures
+    """
+    def initApp(self,name,description,enabled,parameters,inp_files,infrastructures):
+        # Start creating app
+        db     = None
+        cursor = None
+        app_id=-1
+        try:
+            # Insert new application record
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('insert into application (id\n'
+                 '                        ,name\n'
+                 '                        ,description\n'
+                 '                        ,creation\n'
+                 '                        ,enabled)\n'
+                 'select if(max(id) is NULL,1,max(id)+1) -- new id\n'
+                 '      ,%s                              -- name\n'
+                 '      ,%s                              -- description\n'
+                 '      ,now()                           -- creation\n'
+                 '      ,%s                              -- enabled\n'
+                 'from application;\n'
+                )
+            sql_data = (name,description,enabled)
+            cursor.execute(sql,sql_data)
+            # Get inserted application_id
+            sql='select max(id) from application;'
+            sql_data=''
+            cursor.execute(sql)
+            app_id = cursor.fetchone()[0]
+            # Insert Application parameters
+            if parameters != []:
+                for param in parameters:
+                    sql=('insert into application_parameter (app_id\n'
+                         '                                  ,param_id\n'
+                         '                                  ,pname\n'
+                         '                                  ,pvalue)\n'
+                         'select %s                                          -- app_id\n'
+                         '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
+                         '      ,%s                                          -- pname\n'
+                         '      ,%s                                          -- pvalue\n'
+                         'from application_parameter\n'
+                         'where app_id=%s'
+                        )
+                    sql_data=(app_id,param['name'],param['value'],app_id)
+                    cursor.execute(sql,sql_data)
+            # Insert Application input_files
+            for ifile in inp_files:
+               sql=('insert into application_file (app_id\n'
+                     '                            ,file_id\n'
+                     '                            ,file\n'
+                     '                            ,path\n'
+                     '                            ,override)\n'
+                     'select %s                                          -- app_id\n'
+                     '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
+                     '      ,%s                                          -- file\n'
+                     '      ,%s                                          -- path\n'
+                     '      ,%s                                          -- override\n'
+                     'from application_file\n'
+                     'where app_id=%s'
+                    )
+               sql_data=(app_id,ifile['name'],ifile['path'],ifile['override'],app_id)
+               cursor.execute(sql,sql_data)
+            # Insert Application infrastructures
+            for infra in infrastructures:
+                sql=('insert into infrastructure (id\n'
+                     '                           ,app_id\n'
+                     '                           ,name\n'
+                     '                           ,description\n'
+                     '                           ,creation\n'
+                     '                           ,enabled\n'
+                    #'                           ,virtual\n'
+                     '                           )\n'
+                     'select if(max(id) is NULL,1,max(id)+1) -- id\n'
+                     '      ,%s                              -- app_id\n'
+                     '      ,%s                              -- name\n'
+                     '      ,%s                              -- description\n'
+                     '      ,now()                           -- creation\n'
+                     '      ,%s                              -- enabled\n'
+                    #'      ,%s                              -- virtual\n'
+                     'from infrastructure;'
+                    )
+                sql_data=(app_id
+                         ,infra['name']
+                         ,infra['description']
+                         ,infra['enabled']
+                        #,infra['virtual']
+                         )
+                cursor.execute(sql,sql_data)
+                # Get inserted infrastructure_id
+                sql='select max(id) from infrastructure;'
+                sql_data=''
+                cursor.execute(sql)
+                infra_id = cursor.fetchone()[0]
+                # Insert Application infrastructure parameters
+                for param in infra['parameters']:
+                    sql=('insert into infrastructure_parameter (infra_id\n'
+                         '                                     ,param_id\n'
+                         '                                     ,pname\n'
+                         '                                     ,pvalue)\n'
+                         'select %s                                          -- infra_id\n'
+                         '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
+                         '      ,%s                                          -- pname\n'
+                         '      ,%s                                          -- pvalue\n'
+                         'from infrastructure_parameter\n'
+                         'where infra_id = %s;'
+                         )
+                    sql_data=(infra_id,param['name'],param['value'],infra_id)
+                    cursor.execute(sql,sql_data)
+        except IOError as (errno, strerror):
+            self.err_flag = True
+            self.err_msg  =  "I/O error({0}): {1}".format(errno, strerror)
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,True)
+        finally:
+            self.closeDB(db,cursor,True)
+        return app_id
+
+
 """
 --  SQL steps to add an application
 START TRANSACTION;
