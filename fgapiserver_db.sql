@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-5-g91e7043-91e7043-28
+-- Version: v0.0.2-8-gb7510d1-b7510d1-29
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
@@ -228,5 +228,20 @@ create table as_queue (
     ,index(action)
 --  ,index(target)	
     ,index(last_change)
+);
+
+--
+-- Interface (Executors) tables
+--
+
+-- simple_tosca table
+create table simple_tosca (
+    id           int unsigned not null
+   ,task_id      int unsigned not null
+   ,tosca_id     varchar(256) not null
+   ,tosca_status varchar(32)  not null
+   ,creation     datetime     not null -- When the action is enqueued
+   ,last_change  datetime     not null -- When the record has been modified by the GridEngine last time
+   ,primary key(id)
 );
 

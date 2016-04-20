@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.2-5-g91e7043-91e7043-28"
+__version__    = "v0.0.2-8-gb7510d1-b7510d1-29"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
