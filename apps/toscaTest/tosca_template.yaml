@@ -41,6 +41,7 @@ topology_template:
             credential:
               user: root
               token: c@r0nt3
+              token_type: password
 
   outputs:
     node_ip:
