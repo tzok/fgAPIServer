@@ -15,14 +15,17 @@
 . ./patch_functions.sh
 
 PATCH="0.0.2"
-FGENV=$FGLOCATION/setenv.sh
+check_patch $PATCH
 
 # 1st setup DBUtils
-ASDBCHK=$(set | grep "asdb\ ()")
-UTDBCHK=$(set | grep "utdb\ ()")
+FGENV=$FGLOCATION/setenv.sh
+ASDBCHK=$(cat $FGENV | grep asdb | wc -l)
+UTDBCHK=$(cat $FGENV | grep utdb | wc -l)
 
-if [ "$ASDBCHK" = "" ];
-  cat >> $FGENV <<EOF
+if [ $ASDBCHK -eq 0 ]; then
+  TMP=$(mktemp)
+  out "asdb and utdb tools not existing; installing them"
+  cat >$TMP <<EOF
 # DB functions
 asdb() {
   cmd=\$(echo "\$*" | sed s/\$0//)
@@ -31,6 +34,18 @@ asdb() {
   fi
   eval mysql -h localhost -P 3306 -u fgapiserver -pfgapiserver_password fgapiserver \$cmd
 }
+EOF
+  cat $TMP >> $FGENV
+  source $TMP
+  rm -f $TMP
+else
+  out "asdb utility already defined"
+fi
+
+if [ $UTDBCHK -eq 0 ]; then
+  TMP=$(mktemp)
+  out "utdb tool not existing; installing it"
+  cat >> $TMP <<EOF
 utdb() {
   cmd=\$(echo "\$*" | sed s/\$0//)
     if [ "\$cmd" != "" ]; then
@@ -39,18 +54,21 @@ utdb() {
   eval mysql -h localhost -P 3306 -u tracking_user -pusertracking userstracking \$cmd
 }
 EOF
+  cat $TMP >> $FGENV
+  source $TMP
+  rm -f $TMP
+else
+  out "utdb utility already defined"
+fi
 
-
-
-# Load asdb/utdb utilities
-source $FGENV
+# Create a temporary SQL file
+SQLTMP=$(mktemp)
 
 # Check for runtime_data
-RUNTIMEDATA=$(asdb "desc runtime_data;" 2>/dev/null)
+RUNTIMEDATA=$(asdb_cmd "desc runtime_data;" 2>/dev/null)
 if [ "$RUNTIMEDATA" = "" ]; then
-  SQLTMP=%(mktemp)
   cat >$SQLTMP <<EOF
-create table runtime_data1 (
+create table runtime_data (
    task_id      int unsigned  not null      -- id of the task owning data
   ,data_id      int unsigned  not null      -- data identifier (a progressive number)
   ,data_name    varchar(128)  not null      -- name of data field
@@ -63,19 +81,15 @@ create table runtime_data1 (
 );
 EOF
   asdb_file $SQLTMP
-  rm -f $RUNTIMEDATA
 fi
 
 #
 # Missing columns/tables
 #
 
-# Creating SQL file
-SQLTMP=%(mktemp)
-
 # as_queue.retry
 out "Checking as_queue.retry"
-NEWCOL=$(asdb "select count(retry) from as_queue;" 2>/dev/null | grep -v '+' | grep -v count)
+NEWCOL=$(asdb_cmd "select count(retry) from as_queue;" 2>/dev/null)
 if [ "$NEWCOL" = "" ]; then
   out "as_queue.retry missing; patching db"
   echo "alter table as_queue add retry int unsigned not null default 0;" > $SQLTMP
@@ -86,7 +100,7 @@ else
 fi
 
 # as_queue.check_ts
-NEWCOL=$(asdb "select count(check_ts) from as_queue;" 2>/dev/null | grep -v '+' | grep -v count)
+NEWCOL=$(asdb_cmd "select count(check_ts) from as_queue;" 2>/dev/null)
 if [ "$NEWCOL" = "" ]; then
   out "as_queue.check_ts missing; patching db"
   echo "alter table as_queue add check_ts datetime;"              > $SQLTMP
@@ -98,8 +112,8 @@ else
   out "as_queue.check_ts column already exists"
 fi
 
-# application_parameter.pdesc 
-NEWCOL=$(asdb "select count(pdesc) from application_parameter;" 2>/dev/null | grep -v '+' | grep -v count)
+# application_parameter.pdesc
+NEWCOL=$(asdb_cmd "select count(pdesc) from application_parameter;" 2>/dev/null)
 if [ "$NEWCOL" = "" ]; then
   out "application_parameter.pdesc missing; patching db"
   echo "alter table application_parameter add pdesc varchar(1024);" > $SQLTMP
@@ -110,13 +124,13 @@ else
 fi
 
 # db_patch table
-NEWTAB=$(asdb "select count(*) from db_patch; -s" 2>/dev/null | grep -v '+' | grep -v count)
+NEWTAB=$(asdb_cmd "select count(*) from db_patches;" 2>/dev/null)
 if [ "$NEWTAB" = "" ]; then
   out "db_patch table missing; patching db"
   cat >$SQLTMP <<EOF
 create table db_patches (
     id           int unsigned not null -- Patch Id
-   ,version      varcher(32)  not null -- Current database version
+   ,version      varchar(32)  not null -- Current database version
    ,name         varchar(256) not null -- Name of the patch (it describes the involved feature)
    ,file         varchar(256) not null -- file refers to fgAPIServer/db_patches directory
    ,applied      datetime              -- Patch application timestamp
@@ -133,6 +147,7 @@ fi
 # Removing SQL file
 rm -f $SQLTMP
 
-out "registering patch $"
-regisger_patch "$PATCH" "patch_${PATCH}.sh" "first database patch" 
+out "registering patch $PATCH"
+register_patch "$PATCH" "patch_${PATCH}.sh" "first database patch"
 out "patch registered"
+
