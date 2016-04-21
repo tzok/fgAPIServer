@@ -32,7 +32,7 @@ asdb() {
   if [ "\$cmd" != "" ]; then
     cmd="-e \\"\$cmd\\""
   fi
-  eval mysql -h localhost -P 3306 -u fgapiserver -pfgapiserver_password fgapiserver \$cmd
+  eval "mysql -h localhost -P 3306 -u fgapiserver -pfgapiserver_password \$ASDB_OPTS fgapiserver \$cmd"
 }
 EOF
   cat $TMP >> $FGENV
@@ -51,7 +51,7 @@ utdb() {
     if [ "\$cmd" != "" ]; then
     cmd="-e \\"\$cmd\\""
   fi
-  eval mysql -h localhost -P 3306 -u tracking_user -pusertracking userstracking \$cmd
+  eval "mysql -h localhost -P 3306 -u tracking_user -pusertracking \$UTDB_OPTS userstracking \$cmd"
 }
 EOF
   cat $TMP >> $FGENV
