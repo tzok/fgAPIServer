@@ -123,6 +123,27 @@ else
   out "application_parameter.pdesc already exists"
 fi
 
+# simple_tosca
+NEWTAB=$(asdb_cmd "select count(*) from simple_tosca;" 2>/dev/null)
+if [ "$NEWTAB" = "" ]; then
+  out "simple_tosca table missing; creating it"
+  cat >$SQLTMP <<EOF
+create table simple_tosca (
+    id           int unsigned not null
+   ,task_id      int unsigned not null
+   ,tosca_id     varchar(256) not null
+   ,tosca_status varchar(32)  not null
+   ,creation     datetime     not null -- When the action is enqueued
+   ,last_change  datetime     not null -- When the record has been modified by the GridEngine last time
+   ,primary key(id)
+);
+EOF
+  asdb_file $SQLTMP
+  out "simple_tosca table created"
+else
+  out "simple_tosca table already exists"
+fi
+
 # db_patch table
 NEWTAB=$(asdb_cmd "select count(*) from db_patches;" 2>/dev/null)
 if [ "$NEWTAB" = "" ]; then

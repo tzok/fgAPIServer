@@ -44,10 +44,18 @@ EOF
   rm -f $SQL
 }
 
+get_dbver() {
+  DBVER=$(ASDB_OPTS="-N -s"; asdb "select max(version) from db_patches;" 2>/dev/null)
+  if [ "$DBVER" = "" ]; then
+    DBVER=$DEFAULTDBVER
+  fi
+  echo $DBVER
+}
+
 check_patch() {
   VER=$1
   VERCHK=$(asdb_cmd "select count(*) from db_patches where version=\"$VER\"")
-  if [ $VERCHK -ne 0 ]; then
+  if [ "$VERCHK" != "" -a $VERCHK -ne 0 ]; then
     out "Patch $VER already applied"
     exit 1
   else
