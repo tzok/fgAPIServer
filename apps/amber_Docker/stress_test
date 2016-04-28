@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "Performing test"
+APPID=$(mysql -h localhost -P 3306 -u fgapiserver -pfgapiserver_password fgapiserver -s -N -e "select id from application where name='amber_test';")
+TMP=$(mktemp)
+JDESC=$(echo "'{\"application\":\"$APPID\", \"description\":\"amber_test test run\", \"output_files\": [{\"name\":\"pro.tgz\"}]}'")
+CMD="curl -i -H \"Content-Type: application/json\" -X POST -d $JDESC http://localhost:8888/v1.0/tasks?user=brunor"
+eval $CMD > $TMP
+TASKID=$(cat $TMP | grep id | awk -F":" '{ print $2 }' | tr \" ' ' | awk '{print $1}' | xargs echo)
+curl -i -X POST http://localhost:8888/v1.0/tasks/$TASKID/input?user=brunor
+rm -f $TMP
