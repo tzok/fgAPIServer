@@ -14,7 +14,7 @@ for i in $(seq 1 $SUBMIT_COUNT)
 do
   echo "Submitting job #$i"
   TMP=$(mktemp)
-  CMD="curl -i -H \"Content-Type: application/json\" -X POST -d '{\"application\":\""$APP_ID"\",\"description\":\"tosca test run\"}' http://localhost:8888/v1.0/tasks?user=$USER | tee $TMP"
+  CMD="curl -i -H \"Content-Type: application/json\" -X POST -d '{\"application\":\""$APP_ID"\",\"description\":\"tosca test run\", \"output_files\": [{\"name\":\"pro.tgz\"}]}' http://localhost:8888/v1.0/tasks?user=$USER | tee $TMP"
   eval $CMD
   id=$(cat $TMP | grep id | awk -F":" '{ print $2 }' | tr \" ' ' | awk '{print $1}' | xargs echo)
   if [ "$id" != "" ]; then
