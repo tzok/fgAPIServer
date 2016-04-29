@@ -57,7 +57,7 @@ DBPATCHES=$(/bin/ls -1 *.sh |\
             grep -E '[0-9]+\.sh' |\
             awk -F'_' '{ print $2 }' |\
             awk -F'.sh' -v ver=$DBVER '{ if($1 > ver) print $1}')
-out "Selected patch versions: "$(echo $DBPATCHES | sed s/\ /,\ /g)
+out "Selected patch versions: '"$(echo $DBPATCHES | sed s/\ /,\ /g)"'"
 # Apply selected patches
 COUNT=0
 STOPPED=0
