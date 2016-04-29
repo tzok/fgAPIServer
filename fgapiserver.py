@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.2-20-ge626f8b-e626f8b-32"
+__version__    = "v0.0.2-26-ga906978-a906978-33"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -594,6 +594,7 @@ def applications():
             else:
                 # Prepare response
                 response = []
+                applications = []
                 state = 200
                 for app_id in app_list:
                     app_record = fgapisrv_db.getAppRecord(app_id)
@@ -606,7 +607,7 @@ def applications():
                             "message" : db_state[1]
                         }
                     else:
-                        response += [{
+                        applications += [{
                              "id"             : app_record['id']
                             ,"name"           : app_record['name']
                             ,"description"    : app_record['description']
@@ -619,6 +620,8 @@ def applications():
                                                   ,"href": "/%s/application/%s" % (fgapiver,app_id)
                                                  }]
                         },]
+                response = { "applications": applications }
+
         # When page, per_page are not none (page=0..(len(task_response)/per_page)-1)
         # if page is not None and per_page is not None:
         # task_response = task_response[page*per_page:(page+1)*per_page]

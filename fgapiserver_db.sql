@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-20-ge626f8b-e626f8b-32
+-- Version: v0.0.2-26-ga906978-a906978-33
 --
 --
 drop database if exists fgapiserver;
@@ -99,6 +99,18 @@ create table infrastructure (
    ,primary key(id,app_id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
+);
+
+-- Inifrastructure task
+-- Virtual Infrastructure are depending form the task that created it
+create table infrastructure_task (
+   infra_id     int unsigned not null       -- Infrastructure Id (see infrastructure.id)
+  ,task_id      int unsigned not null       -- id of the task owning this infrastructure
+  ,app_id       int unsigned not null       -- id of the application responsible to create the infrastructure
+  ,creation     datetime not null           -- Virtual infrastructure creation timestamp
+  ,foreign key(infra_id) references infrastructure(id)
+  ,foreign key(app_id) references application(id)
+  ,foreign key(task_id) references task(id)
 );
 
 -- Infrastructure parameter
@@ -228,6 +240,7 @@ create table as_queue (
     ,check_ts      datetime    not null            -- Check timestamp used to implement a round-robin checking loop
     ,action_info   varchar(128)                    -- Temporary directory path containing further info to accomplish the requested operation
     ,primary key(task_id,action)
+    ,foreign key (task_id) references task(id)
     ,index(task_id)
     ,index(action)
 --  ,index(target)	
