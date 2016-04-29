@@ -23,7 +23,8 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-8-gb7510d1-b7510d1-29
+-- Version: v0.0.2-18-gae2bf46-ae2bf46-30
+--
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
@@ -33,11 +34,11 @@ use fgapiserver;
 
 -- Application
 create table application (
-    id           int unsigned not null auto_increment
-   ,name         varchar(256)
-   ,description  varchar(256)
-   ,creation     datetime
-   ,enabled      boolean default false
+    id           int unsigned not null auto_increment -- Application id
+   ,name         varchar(256)                         -- Application name
+   ,description  varchar(256)                         -- Application description
+   ,creation     datetime                             -- Application creation timestamp
+   ,enabled      boolean default false                -- Enabled application flag
    ,primary key(id)
 );
 
@@ -48,10 +49,10 @@ values (2,"SayHello","A more complex app using I/O Sandboxing",now(),true);
 
 -- Application parameters
 create table application_parameter (
-    app_id        int unsigned not null
-   ,param_id      int unsigned not null
-   ,pname         varchar(64) not null
-   ,pvalue        varchar(256)
+    app_id        int unsigned not null  -- application id
+   ,param_id      int unsigned not null  -- parameter id
+   ,pname         varchar(64)  not null  -- parameter name
+   ,pvalue        varchar(256)           -- parameter value
    ,primary key(app_id,param_id)
    ,foreign key (app_id) references application(id)
 );
@@ -87,12 +88,13 @@ insert into application_file (app_id,file_id,file,path,override) values (2,2,'sa
 
 -- Infrastructure
 create table infrastructure (
-    id           int unsigned not null auto_increment
-   ,app_id       int unsigned not null
-   ,name         varchar(256) not null
-   ,description  varchar(256) not null
-   ,creation     datetime not null
-   ,enabled      boolean default false not null
+    id           int unsigned not null auto_increment    -- Infrastructure id
+   ,app_id       int unsigned not null                   -- Infrastructure app_id
+   ,name         varchar(256) not null                   -- Infrastructure name
+   ,description  varchar(256) not null                   -- Infrastructure description
+   ,creation     datetime not null                       -- Creation timestamp
+   ,enabled      boolean default false not null          -- Enabled infrastructure flag
+   ,virtual      boolean default false not null          -- True if a virtual infrastructure
    ,primary key(id,app_id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
@@ -100,10 +102,11 @@ create table infrastructure (
 
 -- Infrastructure parameter
 create table infrastructure_parameter (
-    infra_id     int unsigned not null
-   ,param_id     int unsigned not null 
-   ,pname        varchar(64) not null
-   ,pvalue       varchar(256) not null
+    infra_id     int unsigned not null -- Infrastructure Id (see infrastructure.id)
+   ,param_id     int unsigned not null -- Parameter id
+   ,pname        varchar(64)  not null -- Parameter name
+   ,pvalue       varchar(256) not null -- Parameter value
+   ,pdesc        varchar(1024)         -- App. parameter description as in specs.
    ,primary key(infra_id,param_id)
    ,foreign key(infra_id) references infrastructure(id)
 );
@@ -245,3 +248,23 @@ create table simple_tosca (
    ,primary key(id)
 );
 
+
+--
+-- Patching mechanism
+--
+-- Futuregateway provides automated scripts exploiting GITHub to automatically
+-- provide the latest available code
+-- The same functionality should be ensured to keep database content consisent
+-- with the lates code version
+--
+create table db_patches (
+    id           int unsigned not null -- Patch Id
+   ,version      varchar(32)  not null -- Current database version
+   ,name         varchar(256) not null -- Name of the patch (it describes the involved feature)
+   ,file         varchar(256) not null -- file refers to fgAPIServer/db_patches directory
+   ,applied      datetime              -- Patch application timestamp
+   ,primary key(id)
+);
+
+-- Default value for baseline setup (this script)
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.3','baseline setup','../fgapiserver_db.sql',now())
