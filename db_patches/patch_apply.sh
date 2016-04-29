@@ -75,6 +75,7 @@ do
 	break
   else
     COUNT=$((COUNT+1))
+    DBVER=$ver
   fi
 done
 # Report about execution
@@ -85,7 +86,7 @@ if [ $STOPPED -ne 0 ]; then
   err "apply patches"
 else
   out "Applied $COUNT patches"
-  out "DB is now version $ver"
+  out "DB is now version $DBVER"
   out "Done"
 fi
 
