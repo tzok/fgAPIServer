@@ -4,6 +4,8 @@
 #
 # Author: Riccardo Bruno <riccardo.bruno@ct.infn.it>
 #
+. patch_functions.sh
+
 DEFAULTDBVER="0.0.1" # Baseline setup version
 
 ts() {
@@ -35,7 +37,7 @@ local_exec() {
 }
 
 get_dbver() {
-  DBVER=$(ASDB_OPTS="-N -s"; asdb "select max(version) from db_patches;" 2>/dev/null)
+  DBVER=$(asdb_cmd "select max(version) from db_patches;" 2>/dev/null)
   if [ "$DBVER" = "" ]; then
     DBVER=$DEFAULTDBVER
   fi
