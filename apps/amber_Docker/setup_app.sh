@@ -14,10 +14,10 @@ CURLDATA="'{\"infrastructures\": [{\"description\": \"$APPDESC\",\"parameters\":
 
 # Setup application, retrieve id and sets stress_test app_id
 TMP=$(mktemp)
-CMD="curl -i -H \"Content-Type: application/json\" -X POST -d $CURLDATA http://localhost:8888/v1.0/applications?user=$USER" 
+CMD="curl -H \"Content-Type: application/json\" -X POST -d $CURLDATA http://localhost:8888/v1.0/applications?user=$USER" 
 # echo $CMD
 eval $CMD | tee $TMP
 #APPID=$(cat $TMP | grep "\"id\"" | awk -F":" '{ print $2 }' | xargs echo | sed s/,//g)
-APPID=$(cat $TMP | jq .id)
+APPID=$(cat $TMP | jq .id | xargs echo)
 sed -i -e "s/<app_id>/$APPID/" stress_test.sh
 rm -f $TMP
