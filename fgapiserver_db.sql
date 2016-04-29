@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-19-gfd90d48-fd90d48-31
+-- Version: v0.0.2-20-ge626f8b-e626f8b-32
 --
 --
 drop database if exists fgapiserver;
@@ -53,6 +53,7 @@ create table application_parameter (
    ,param_id      int unsigned not null  -- parameter id
    ,pname         varchar(64)  not null  -- parameter name
    ,pvalue        varchar(256)           -- parameter value
+   ,pdesc         varchar(1024)          -- parameter description
    ,primary key(app_id,param_id)
    ,foreign key (app_id) references application(id)
 );
