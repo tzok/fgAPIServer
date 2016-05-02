@@ -24,7 +24,7 @@ $DIRAE/sander -O -i sander0.in -o sander0.out -p prmtop -c prmcrd -r sander0.crd
 $DIRAE/ambpdb -p prmtop < sander0.crd > amber_final0.pdb
 
 # Collect output
-tar cvfz pro.tgz ./* --exclude in.tgz --exclude run_amber.sh
+tar cvfz pro.tgz ./* --exclude in.tgz --exclude run_amber.sh --exclude tosca_template.yaml --exclude stderr.txt --exclude stdout.txt --exclude sander0.in --exclude prmcrd --exclude prmtop
 
 # Notify end
 echo "Done"
