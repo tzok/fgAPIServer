@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-26-ga906978-a906978-33
+-- Version: v0.0.2-29-ge0d90af-e0d90af-34
 --
 --
 drop database if exists fgapiserver;
@@ -99,18 +99,6 @@ create table infrastructure (
    ,primary key(id,app_id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
-);
-
--- Inifrastructure task
--- Virtual Infrastructure are depending form the task that created it
-create table infrastructure_task (
-   infra_id     int unsigned not null       -- Infrastructure Id (see infrastructure.id)
-  ,task_id      int unsigned not null       -- id of the task owning this infrastructure
-  ,app_id       int unsigned not null       -- id of the application responsible to create the infrastructure
-  ,creation     datetime not null           -- Virtual infrastructure creation timestamp
-  ,foreign key(infra_id) references infrastructure(id)
-  ,foreign key(app_id) references application(id)
-  ,foreign key(task_id) references task(id)
 );
 
 -- Infrastructure parameter
@@ -219,6 +207,19 @@ create table runtime_data (
     ,primary key(task_id,data_id)
     ,foreign key (task_id) references task(id)
 );
+
+-- Inifrastructure task
+-- Virtual Infrastructure are depending form the task that created it
+create table infrastructure_task (
+   infra_id     int unsigned not null       -- Infrastructure Id (see infrastructure.id)
+  ,task_id      int unsigned not null       -- id of the task owning this infrastructure
+  ,app_id       int unsigned not null       -- id of the application responsible to create the infrastructure
+  ,creation     datetime not null           -- Virtual infrastructure creation timestamp
+  ,foreign key(infra_id) references infrastructure(id)
+  ,foreign key(app_id) references application(id)
+  ,foreign key(task_id) references task(id)
+);
+
 
 --
 -- APIServer queue table
