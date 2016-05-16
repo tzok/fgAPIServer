@@ -80,9 +80,6 @@ logging.config.fileConfig(fgapisrv_logcfg)
 logger = logging.getLogger(__name__)
 logger.debug(fg_config.showConf())
 
-# Consistency db version check
-checkDbVer()
-
 # setup Flask app
 app = Flask(__name__)
 
@@ -103,13 +100,13 @@ def checkDbVer():
     db_state=fgapisrv_db.getState()
     if db_state[0] != 0:
         # Couldn't contact database
-        print "Unble to connect to the database!"
+        print "Unable to connect to the database!"
         sys.exit(1)
     else:
         # getDBVersion
         dbVer = fgapisrv_db.getDbVer()
         if fgapisrv_dbver is None or fgapisrv_dbver == '' or fgapisrv_dbver != dbVer:
-            print "Database version '%s' is not compatible with this version of the API server front-end"
+            print "Database version '%s' is not compatible with this version of the API server front-end; version %s is required" % (dbVer,fgapisrv_dbver)
             sys.exit(1)
 
 # paginate the incoming response json vector, accordinlgly to page and per_page values
@@ -825,7 +822,14 @@ def after_request(response):
   response.headers.add('Server',fgapiserver_name)
   return response
 
+#
 # The app starts here
+#
+
+# First check the db
+checkDbVer()
+
+# Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":
     if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
         context = SSL.Context(SSL.SSLv23_METHOD)
@@ -834,4 +838,3 @@ if __name__ == "__main__":
         app.run(host=fgapisrv_host, port=fgapisrv_port, ssl_context=context, debug=fgapisrv_debug)
     else:
         app.run(host=fgapisrv_host, port=fgapisrv_port,debug=fgapisrv_debug)
-

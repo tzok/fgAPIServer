@@ -1163,7 +1163,7 @@ class fgapiserver_db:
                                 ,inp_files
                                 ,infrastructures
     """
-    def initApp(self,name,description,enabled,parameters,inp_files,infrastructures):
+    def initApp(self,name,description,outcome,enabled,parameters,inp_files,infrastructures):
         # Start creating app
         db     = None
         cursor = None
@@ -1175,11 +1175,13 @@ class fgapiserver_db:
             sql=('insert into application (id\n'
                  '                        ,name\n'
                  '                        ,description\n'
+                 '                        ,outcome\n'
                  '                        ,creation\n'
                  '                        ,enabled)\n'
                  'select if(max(id) is NULL,1,max(id)+1) -- new id\n'
                  '      ,%s                              -- name\n'
                  '      ,%s                              -- description\n'
+                 '      ,%s                              -- outcome\n'
                  '      ,now()                           -- creation\n'
                  '      ,%s                              -- enabled\n'
                  'from application;\n'
