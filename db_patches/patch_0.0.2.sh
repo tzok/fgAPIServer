@@ -169,6 +169,6 @@ fi
 rm -f $SQLTMP
 
 out "registering patch $PATCH"
-register_patch "$PATCH" "patch_${PATCH}.sh" "first database patch"
+register_patch "$PATCH" "patch_${PATCH}.sh" "adding patching mechanism, simple_tosca, check on as_queue table"
 out "patch registered"
 

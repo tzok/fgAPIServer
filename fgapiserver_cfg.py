@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.2-29-ge0d90af-e0d90af-34"
+__version__    = "v0.0.2-30-g37540b8-37540b8-37"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -46,6 +46,7 @@ class fgapiserver_cfg:
         self.fgConfig['fgapisrv_key'      ] = config.get('fgapiserver','fgapisrv_key')
         self.fgConfig['fgapisrv_crt'      ] = config.get('fgapiserver','fgapisrv_crt')
         self.fgConfig['fgapisrv_logcfg'   ] = config.get('fgapiserver','fgapisrv_logcfg')
+        self.fgConfig['fgapisrv_dbver'    ] = config.get('fgapiserver','fgapisrv_dbver')
 
         # fgapiserver_db
         self.fgConfig['fgapisrv_db_host'] = config.get('fgapiserver_db','fgapisrv_db_host')
@@ -78,6 +79,7 @@ class fgapiserver_cfg:
         elif key == 'fgapisrv_key'      : def_value = ''
         elif key == 'fgapisrv_crt'      : def_value = ''
         elif key == 'fgapisrv_logcfg'   : def_value = 'fgapiserver_log.conf'
+        elif key == 'fgapisrv_dbver'    : def_value = ''
         else:
 			print "[WARNING] Not found default value for key: '%s'" % key
         return self.fgConfig.get(key,def_value)

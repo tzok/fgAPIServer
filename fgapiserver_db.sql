@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-29-ge0d90af-e0d90af-34
+-- Version: v0.0.2-30-g37540b8-37540b8-37
 --
 --
 drop database if exists fgapiserver;
@@ -35,17 +35,18 @@ use fgapiserver;
 -- Application
 create table application (
     id           int unsigned not null auto_increment -- Application id
-   ,name         varchar(256)                         -- Application name
-   ,description  varchar(256)                         -- Application description
+   ,name         varchar(64) not null                 -- Application name
+   ,description  varchar(256) not null                -- Application description
+   ,outcome      varchar(32)  not null                -- Application outcome (JOB,RESOURCE,...)
    ,creation     datetime                             -- Application creation timestamp
    ,enabled      boolean default false                -- Enabled application flag
    ,primary key(id)
 );
 
-insert into application (id,name,description,creation,enabled) 
-values (1,"hostname","hostname tester application",now(),true);
-insert into application (id,name,description,creation,enabled)
-values (2,"SayHello","A more complex app using I/O Sandboxing",now(),true);
+insert into application (id,name,description,outcome,creation,enabled)
+values (1,"hostname","hostname tester application","JOB",now(),true);
+insert into application (id,name,description,outcome,creation,enabled)
+values (2,"SayHello","A more complex app using I/O Sandboxing","JOB",now(),true);
 
 -- Application parameters
 create table application_parameter (

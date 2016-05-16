@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.2-29-ge0d90af-e0d90af-34"
+__version__    = "v0.0.2-30-g37540b8-37540b8-37"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -66,6 +66,7 @@ fgjson_indent      = int(fg_config.getConfValue('fgjson_indent'))
 fgapisrv_key       =     fg_config.getConfValue('fgapisrv_key')
 fgapisrv_crt       =     fg_config.getConfValue('fgapisrv_crt')
 fgapisrv_logcfg    =     fg_config.getConfValue('fgapisrv_logcfg')
+fgapisrv_dbver     =     fg_config.getConfValue('fgapisrv_dbver')
 
 # fgapiserver database settings
 fgapisrv_db_host =     fg_config.getConfValue('fgapisrv_db_host')
@@ -79,12 +80,37 @@ logging.config.fileConfig(fgapisrv_logcfg)
 logger = logging.getLogger(__name__)
 logger.debug(fg_config.showConf())
 
+# Consistency db version check
+checkDbVer()
+
 # setup Flask app
 app = Flask(__name__)
 
 ##
 ## Helper functions
 ##
+
+# database versioning check
+def checkDbVer():
+    # Connect database
+    fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                ,db_port=fgapisrv_db_port
+                                ,db_user=fgapisrv_db_user
+                                ,db_pass=fgapisrv_db_pass
+                                ,db_name=fgapisrv_db_name
+                                ,iosandbbox_dir=fgapisrv_iosandbox
+                                ,fgapiserverappid=fgapisrv_geappid)
+    db_state=fgapisrv_db.getState()
+    if db_state[0] != 0:
+        # Couldn't contact database
+        print "Unble to connect to the database!"
+        sys.exit(1)
+    else:
+        # getDBVersion
+        dbVer = fgapisrv_db.getDbVer()
+        if fgapisrv_dbver is None or fgapisrv_dbver == '' or fgapisrv_dbver != dbVer:
+            print "Database version '%s' is not compatible with this version of the API server front-end"
+            sys.exit(1)
 
 # paginate the incoming response json vector, accordinlgly to page and per_page values
 def paginate_response(response,page,per_page):

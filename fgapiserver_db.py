@@ -154,6 +154,26 @@ class fgapiserver_db:
             self.closeDB(db,cursor,False)
 
     """
+      getDbVer - Return the database version
+    """
+    def getDbVer(self):
+        db     = None
+        cursor = None
+        dbver = ''
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select max(version) from db_patches;')
+            sql_data=(,)
+            cursor.execute(sql,sql_data)
+            dbver = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return dbver
+
+    """
       getState returns the status and message of the last action on the DB
     """
     def getState(self):
@@ -376,6 +396,7 @@ class fgapiserver_db:
             sql=('select id\n'
                  '      ,name\n'
                  '      ,description\n'
+                 '      ,outcome\n'
                  '      ,creation\n'
                  '      ,enabled\n'
                  'from application\n'
@@ -387,8 +408,9 @@ class fgapiserver_db:
                 "id"          : str(app_record[0])
                ,"name"        : app_record[1]
                ,"description" : app_record[2]
-               ,"creation"    : str(app_record[3])
-               ,"enabled"     : app_record[4]
+               ,"outcome"     : app_record[3]
+               ,"creation"    : str(app_record[4])
+               ,"enabled"     : app_record[5]
             }
             # Add now app parameters
             sql=('select pname\n'
@@ -413,6 +435,7 @@ class fgapiserver_db:
                  '      ,description\n'
                  '      ,creation\n'
                  '      ,if(enabled,\'enabled\',\'disabled\') status\n'
+                 '      ,if(virtual,\'virtual\',\'real\') status\n'
                  'from infrastructure\n'
                  'where app_id=%s;')
             sql_data=(app_id,)
@@ -425,6 +448,7 @@ class fgapiserver_db:
                     ,"description": infra[2]
                     ,"creation"   : str(infra[3])
                     ,"status"     : infra[4]
+                    ,"virtual"    : infra[5]
                 }
                 infrastructures+=[infra_details,]
             # Now loop over infrastructures to get their parameters
