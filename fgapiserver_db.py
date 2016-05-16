@@ -164,7 +164,7 @@ class fgapiserver_db:
             db=self.connect()
             cursor = db.cursor()
             sql=('select max(version) from db_patches;')
-            sql_data=(,)
+            sql_data=()
             cursor.execute(sql,sql_data)
             dbver = cursor.fetchone()[0]
         except MySQLdb.Error, e:
