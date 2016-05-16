@@ -1053,6 +1053,7 @@ class fgapiserver_db:
             # Task record
             sql=('select name\n'
                  '      ,description\n'
+                 '      ,outcome\n'
                  '      ,creation\n'
                  '      ,enabled\n'
                  'from application\n'
@@ -1064,8 +1065,9 @@ class fgapiserver_db:
                 app_dicrec={ "id"          : str(app_id)
                              ,"name"       : app_dbrec[0]
                              ,"description": app_dbrec[1]
-                             ,"creation"   : str(app_dbrec[2])
-                             ,"enabled"    : app_dbrec[3]
+                             ,"outcome"    : app_dbrec[2]
+                             ,"creation"   : str(app_dbrec[3])
+                             ,"enabled"    : app_dbrec[4]
                             }
             else:
                 return {}
@@ -1142,6 +1144,7 @@ class fgapiserver_db:
                  "id"             : str(app_id)
                 ,"name"           : app_dicrec['name']
                 ,"description"    : app_dicrec['description']
+                ,"outcome"        : app_dicrec['outcome']
                 ,"creation"       : str(app_dicrec['creation'])
                 ,"enabled"        : app_dicrec['enabled']
                 ,"parameters"     : app_params

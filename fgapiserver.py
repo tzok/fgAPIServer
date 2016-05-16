@@ -106,7 +106,8 @@ def checkDbVer():
         # getDBVersion
         dbVer = fgapisrv_db.getDbVer()
         if fgapisrv_dbver is None or fgapisrv_dbver == '' or fgapisrv_dbver != dbVer:
-            print "Database version '%s' is not compatible with this version of the API server front-end; version %s is required" % (dbVer,fgapisrv_dbver)
+            print "Current database version '%s' is not compatible with this version of the API server front-end; version %s is required" % (dbVer,fgapisrv_dbver)
+            print "It is suggested to update your database applying new available patches"
             sys.exit(1)
 
 # paginate the incoming response json vector, accordinlgly to page and per_page values
