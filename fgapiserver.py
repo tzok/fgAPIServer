@@ -635,6 +635,7 @@ def applications():
                              "id"             : app_record['id']
                             ,"name"           : app_record['name']
                             ,"description"    : app_record['description']
+                            ,"outcome"        : app_record['outcome']
                             ,"enabled"        : app_record['enabled']
                             ,"parameters"     : app_record['parameters']
                             ,"input_files"    : app_record['input_files']
