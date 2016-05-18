@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-34-gf581636-f581636-41
+-- Version: v0.0.2-35-ge57e73e-e57e73e-42
 --
 --
 drop database if exists fgapiserver;
@@ -221,6 +221,139 @@ create table infrastructure_task (
   ,foreign key(task_id) references task(id)
 );
 
+--
+-- Tables defining: Users, Groups and Roles
+--
+
+-- Users table, owns only user information
+create table fg_user (
+    id           int unsigned not null auto_increment  -- record id
+   ,name         varchar(128)  not null                -- name identifier
+   ,password     varchar(4096) not null                -- shadowed password
+   ,first_name   varchar(128)  not null                -- first name
+   ,last_name    varchar(128)  not null                -- last name
+   ,institute    varchar(256)  not null                -- institution
+   ,mail         varchar(1024) not null                -- email, more addresses as comma separated values
+   ,creation     datetime      not null                -- When user has been inserted
+   ,modified     datetime      not null                -- When user has been modified
+   ,primary key(id,name)
+);
+
+-- Users baseline values; users and passwords must be replaced with real values
+insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
+values (1,'futuregateway',password('futuregateway'),'FutureGateway','FutureGateway','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
+insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
+values (2,'test',password('test'),'Test','Test','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
+insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
+values (3,'brunor',password('brunor'),'Riccardo','Bruno','INFN','riccardo.bruno@ct.infn.it',now(),now());
+
+
+-- Groups table, users may belong to one or more groups defined below
+create table fg_group (
+    id           int unsigned not null auto_increment  -- record id
+   ,name         varchar(128)  not null                -- name identifier
+   ,creation     datetime      not null                -- When group has been inserted
+   ,modified     datetime      not null                -- When group has been modified
+   ,primary key(id)
+);
+
+-- Groups baseline values
+insert into fg_group (id,name,creation,modified) values (1,'administrator',now(),now()); -- Can do anything
+insert into fg_group (id,name,creation,modified) values (2,'test',now(),now());          -- Can do tests only
+insert into fg_group (id,name,creation,modified) values (3,'generic user',now(),now());  -- Restricted user (view only)
+
+--  Roles table, different actions can be done by users and groups
+create table fg_role (
+    id           int unsigned not null auto_increment  -- record id
+   ,name         varchar(128)  not null                -- name identifier
+   ,creation     datetime      not null                -- when group has been inserted
+   ,modified     datetime      not null                -- when group has been modified
+   ,primary key(id)
+);
+
+-- Roles baseline values
+insert into fg_role (id,name,creation,modified) values ( 1,'app_install',now(),now());       -- Install an application
+insert into fg_role (id,name,creation,modified) values ( 2,'app_change',now(),now());        -- Modify an application
+insert into fg_role (id,name,creation,modified) values ( 3,'app_delete',now(),now());        -- Delete an application
+insert into fg_role (id,name,creation,modified) values ( 4,'app_view',now(),now());          -- Run an application
+insert into fg_role (id,name,creation,modified) values ( 5,'app_run',now(),now());           -- Run an application
+insert into fg_role (id,name,creation,modified) values ( 6,'infra_add',now(),now());         -- Add an infrastructure
+insert into fg_role (id,name,creation,modified) values ( 7,'infra_change',now(),now());      -- Change infrastructure
+insert into fg_role (id,name,creation,modified) values ( 8,'infra_delete',now(),now());      -- Delete an infrastructure
+insert into fg_role (id,name,creation,modified) values ( 9,'infra_view',now(),now());        -- View an infrastructure
+insert into fg_role (id,name,creation,modified) values (10,'infra_attach',now(),now());      -- Attach an infrastructure to an application
+insert into fg_role (id,name,creation,modified) values (11,'infra_detach',now(),now());      -- Detach an infrastructure from an application
+insert into fg_role (id,name,creation,modified) values (12,'task_delete',now(),now());       -- Delete a task
+insert into fg_role (id,name,creation,modified) values (13,'task_view',now(),now());         -- View a task
+insert into fg_role (id,name,creation,modified) values (14,'task_userdata',now(),now());     -- Manage userdata on task
+insert into fg_role (id,name,creation,modified) values (15,'user_add',now(),now());          -- Can add users
+insert into fg_role (id,name,creation,modified) values (16,'user_del',now(),now());          -- Can remove users
+insert into fg_role (id,name,creation,modified) values (17,'user_change',now(),now());       -- Can change users
+insert into fg_role (id,name,creation,modified) values (18,'user_impersonate',now(),now());  -- Can impersonate any other users
+insert into fg_role (id,name,creation,modified) values (19,'group_impersonate',now(),now()); -- Can impersonate other users in the same group
+--
+-- CrossTables applying Roles to Groups and Users
+--
+
+-- UserGroups, associate the user membership in groups
+create table fg_user_group (
+    user_id     int unsigned not null -- user id
+   ,group_id    int unsigned not null -- user id
+   ,creation    datetime     not null -- when association has been done
+   ,foreign key (user_id) references fg_user(id)
+   ,foreign key (group_id) references fg_group(id)
+);
+
+-- UserGroups baseline values
+insert into fg_user_group (user_id,group_id,creation) values (1,1,now()); -- futuregateway user to Administrator group
+insert into fg_user_group (user_id,group_id,creation) values (2,2,now()); -- test user to Test group
+insert into fg_user_group (user_id,group_id,creation) values (3,3,now()); -- brunor to generic user group
+
+-- GroupRoles, associate roles to groups
+create table fg_group_role (
+    group_id    int unsigned not null -- user id
+   ,role_id     int unsigned not null -- user id
+   ,creation    datetime     not null -- when association has been done
+   ,foreign key (group_id) references fg_group(id)
+   ,foreign key (role_id) references fg_role(id)
+);
+
+-- Administrator roles (grant all privileges)
+insert into fg_group_role (group_id,role_id,creation)
+select 1,id,now() from fg_role;
+
+-- Test roles
+insert into fg_group_role (group_id,role_id,creation) values (2, 4, now()); -- Test can view applications
+insert into fg_group_role (group_id,role_id,creation) values (2, 5, now()); -- Test can run applications
+insert into fg_group_role (group_id,role_id,creation) values (2,12, now()); -- Test can delete tasks
+insert into fg_group_role (group_id,role_id,creation) values (2,13, now()); -- Test can view tasks
+insert into fg_group_role (group_id,role_id,creation) values (2,14, now()); -- Test can manage userdata on tasks
+
+-- Generic user
+insert into fg_group_role (group_id,role_id,creation) values (3, 4, now()); -- GenericUser can view applications
+
+-- Associate applications to Groups
+create table fg_group_apps (
+    group_id    int unsigned not null -- group id
+   ,app_id      int unsigned not null -- app id
+   ,creation    datetime     not null -- when association has been done
+   ,foreign key (group_id) references fg_group(id)
+   ,foreign key (app_id) references application(id)
+);
+
+insert into fg_group_apps (group_id, app_id, creation) values (1,1,now()); -- Administrator access to hostname
+insert into fg_group_apps (group_id, app_id, creation) values (1,2,now()); -- Administrator access to helloworld
+insert into fg_group_apps (group_id, app_id, creation) values (2,1,now()); -- Test access to hostname
+insert into fg_group_apps (group_id, app_id, creation) values (2,2,now()); -- Test access to helloworld
+
+-- AccessTokens
+-- Any API call needs an access token which uniquelly authorized and identifies the issuer
+create table fg_token (
+    token    varchar(64)  not null -- access token
+   ,user_id  int unsigned not null -- the associated user
+   ,creation datetime     not null -- when token has been created
+   ,expiry   integer               -- number of seconds of validity (default 24 hours)
+);
 
 --
 -- APIServer queue table
@@ -283,4 +416,4 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.3','baseline setup','../fgapiserver_db.sql',now())
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.4','baseline setup','../fgapiserver_db.sql',now())

@@ -20,10 +20,12 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.2-34-gf581636-f581636-41"
+__version__    = "v0.0.2-35-ge57e73e-e57e73e-42"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
+import random
+import string
 import json
 import ConfigParser
 
@@ -47,6 +49,7 @@ class fgapiserver_cfg:
         self.fgConfig['fgapisrv_crt'      ] = config.get('fgapiserver','fgapisrv_crt')
         self.fgConfig['fgapisrv_logcfg'   ] = config.get('fgapiserver','fgapisrv_logcfg')
         self.fgConfig['fgapisrv_dbver'    ] = config.get('fgapiserver','fgapisrv_dbver')
+        self.fgConfig['fgapisrv_secret'   ] = config.get('fgapiserver','fgapisrv_secret')
 
         # fgapiserver_db
         self.fgConfig['fgapisrv_db_host'] = config.get('fgapiserver_db','fgapisrv_db_host')
@@ -80,6 +83,7 @@ class fgapiserver_cfg:
         elif key == 'fgapisrv_crt'      : def_value = ''
         elif key == 'fgapisrv_logcfg'   : def_value = 'fgapiserver_log.conf'
         elif key == 'fgapisrv_dbver'    : def_value = ''
+        elif key == 'fgapisrv_secret'   : def_value = ''.join(random.choice(string.uppercase) for x in range(16))
         else:
 			print "[WARNING] Not found default value for key: '%s'" % key
         return self.fgConfig.get(key,def_value)

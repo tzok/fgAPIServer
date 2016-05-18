@@ -108,6 +108,7 @@ class fgapiserver_db:
     """
     def catchDBError(self,e,db,rollback):
         logging.debug("[ERROR] %d: %s" % (e.args[0], e.args[1]))
+        #print "[ERROR] %d: %s" % (e.args[0], e.args[1])
         if rollback is True:
             db.rollback()
         self.err_flag = True
@@ -178,6 +179,153 @@ class fgapiserver_db:
     """
     def getState(self):
         return (self.err_flag,self.err_msg)
+
+    """
+      createSessionToken - Starting from the given triple(username,password,timestamp) produce a valid access token
+    """
+    def createSessionToken(self,username,password,logts):
+        # logtimestamp is currently ignored; old timestamps should not be considered
+        db       = None
+        cursor   = None
+        sestoken = ''
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select if(count(*)>0,uuid(),NULL) acctoken \n'
+                 'from fg_user \n'
+                 'where name=%s and fg_user.password=password(%s);')
+            sql_data=(username,password)
+            cursor.execute(sql,sql_data)
+            sestoken = cursor.fetchone()[0]
+            if sestoken is not None:
+                sql=('insert into fg_token \n'
+                     '  select %s, id, now() creation, 24*60*60 \n'
+                     '  from  fg_user \n'
+                     '  where name=%s \n'
+                     '    and fg_user.password=password(%s);')
+                sql_data=(sestoken,username,password)
+                cursor.execute(sql,sql_data)
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,True)
+        finally:
+            self.closeDB(db,cursor,True)
+        return sestoken
+
+    """
+      verifySessionToken - Check if the passed token is valid and return the user id and its name
+    """
+    def verifySessionToken(self,sestoken):
+        db       = None
+        cursor   = None
+        user_id  = ''
+        user_name= ''
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select if((creation+expiry)-now()>0,user_id,NULL) user_id  \n'
+                 '      ,(select name from fg_user where id=user_id) name \n'
+                 'from fg_token \n'
+                 'where token=%s;')
+            sql_data=(sestoken,)
+            cursor.execute(sql,sql_data)
+            user_rec  = cursor.fetchone()
+            if user_rec is not None:
+                user_id   = user_rec[0]
+                user_name = user_rec[1]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return user_id, user_name
+
+    """
+      verifyUserRole - Verify if the given user has the given role
+    """
+    def verifyUserRole(self,user_id,role_name):
+        db     = None
+        cursor = None
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select count(*)>0      \n'
+                 'from fg_user        u  \n'
+                 '    ,fg_group       g  \n'
+                 '    ,fg_user_group ug  \n'
+                 '    ,fg_group_role gr  \n'
+                 '    ,fg_role        r  \n'
+                 'where u.id=%s          \n'
+                 '  and u.id=ug.user_id  \n'
+                 '  and g.id=ug.group_id \n'
+                 '  and g.id=gr.group_id \n'
+                 '  and r.id=gr.role_id  \n'
+                 '  and r.name = %s;')
+            sql_data=(user_id,role_name)
+            cursor.execute(sql,sql_data)
+            result = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return result
+
+    """
+      verifyUserApp - Verify if the given user has the given app in its roles
+    """
+    def verifyUserApp(self,user_id,app_id):
+        db     = None
+        cursor = None
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select count(*)>0      \n'
+                 'from fg_user        u  \n'
+                 '    ,fg_group       g  \n'
+                 '    ,application    a  \n'
+                 '    ,fg_user_group ug  \n'
+                 '    ,fg_group_apps ga  \n'
+                 'where u.id=%s          \n'
+                 '  and u.id=ug.user_id  \n'
+                 '  and a.id=%s          \n'
+                 '  and a.id=ga.app_id   \n'
+                 '  and g.id=ug.group_id \n'
+                 '  and g.id=ga.group_id;')
+            sql_data=(user_id,app_id)
+            cursor.execute(sql,sql_data)
+            result = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return result
+
+    """
+      sameGroup - Return True if given users belong to the same group
+    """
+    def sameGroup(self,user_1, user_2):
+        db     = None
+        cursor = None
+        result = ''
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select count(*)>1               \n'
+                 'from fg_user_group              \n'
+                 'where user_id = (select id      \n'
+                 '                 from fg_user   \n'
+                 '                 where name=%s) \n'
+                 '   or user_id = (select id      \n'
+                 '                 from fg_user   \n'
+                 '                 where name=%s) \n'
+                 'group by group_id               \n'
+                 'having count(*) > 1;')
+            sql_data=(user_1,user_2)
+            cursor.execute(sql,sql_data)
+            result = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return result
 
     """
       taskExists - Return True if the given task_id exists False otherwise
@@ -848,7 +996,7 @@ class fgapiserver_db:
             user_clause = ''
             app_clause = ''
             sql_data = ()
-            if user is not None:
+            if user != '*':
                 user_clause = '  and user = %s\n'
                 sql_data +=(user,)
             if app_id is not None:
