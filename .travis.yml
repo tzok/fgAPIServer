@@ -1,6 +1,10 @@
 language: python
 python:
   - "2.7"
+install: 
+  - pip install pycrypto
+  - pip install Flask
+  - pip isntall flask-login
 script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
   - python tests/test_mklogtoken.py 
