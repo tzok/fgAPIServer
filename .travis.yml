@@ -1,12 +1,9 @@
 language: python
 python:
   - "2.7"
-before_script stage:
-  export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
-# command to install dependencies
-test:
-  ls
-#python tests/test_mklogtoken.py 
+script:
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
+  - python tests/test_mklogtoken.py 
 branches:
   only:
     - master
