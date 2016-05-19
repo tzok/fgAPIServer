@@ -4,8 +4,9 @@ python:
 before_script stage:
   export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
 # command to install dependencies
-test: 
-  python tests/test_mklogtoken.py 
+test:
+  ls
+#python tests/test_mklogtoken.py 
 branches:
   only:
     - master
