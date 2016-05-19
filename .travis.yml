@@ -4,7 +4,7 @@ python:
 install: 
   - pip install pycrypto
   - pip install Flask
-  - pip isntall flask-login
+  - pip install flask-login
 script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
   - python tests/test_mklogtoken.py 
