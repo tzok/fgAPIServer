@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-35-ge57e73e-e57e73e-42
+-- Version: v0.0.2-36-g161e84e-161e84e-44
 --
 --
 drop database if exists fgapiserver;

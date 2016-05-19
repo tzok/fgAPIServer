@@ -320,7 +320,9 @@ class fgapiserver_db:
                  'having count(*) > 1;')
             sql_data=(user_1,user_2)
             cursor.execute(sql,sql_data)
-            result = cursor.fetchone()[0]
+            record = cursor.fetchone()
+            if record is not None:
+                result = record[0]
         except MySQLdb.Error, e:
             self.catchDBError(e,db,False)
         finally:

@@ -1,9 +1,11 @@
 language: python
 python:
   - "2.7"
-
+before_script stage:
+  export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
 # command to install dependencies
-script: nosetests fgapiserver.py 
+test: 
+  python tests/test_mklogtoken.py 
 branches:
   only:
     - master
