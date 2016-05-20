@@ -16,14 +16,13 @@ script:
     password="futuregateway"
     print tokenEncode(key,username,password)
     EOF
-  - TOKEN=$(python getlogtoken.py)
   - ./fgapiserver.py >fgapiserver.runlog 2>fgapiserver.runlog &
   - |
     cat > dotest.sh <<EOF
     LOGTK=$(python getlogtoken.py)
     SSTKN=$(curl -H "Content-Type: application/json" -H "Authorization: Bearer $LOGTK" -X POST http://localhost:8888/v1.0/auth)
     TASKS=$(curl -H "Authorization: $SSTKN" http://localhost:8888/v1.0/tasks)
-    echo "Token        : $TOKEN"
+    echo "Token        : $LOGTK"
     echo "Session token: $SSTKN"
     echo "Tasks        : $TASKS"
     EOF
