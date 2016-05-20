@@ -18,11 +18,16 @@ script:
     EOF
   - TOKEN=$(python getlogtoken.py)
   - ./fgapiserver.py >fgapiserver.runlog 2>fgapiserver.runlog &
-  - SSTKN=$(curl -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -X POST http://localhost:8888/v1.0/auth)
-  - TASKS=$(curl -H "Authorization: $SSTKN" http://localhost:8888/v1.0/tasks)
-  - echo "Token        : $TOKEN"
-  - echo "Session token: $SSTKN"
-  - echo "Tasks        : $TASKS"
+  - |
+    cat > dotest.sh <<EOF
+    LOGTK=$(python getlogtoken.py)
+    SSTKN=$(curl -H "Content-Type: application/json" -H "Authorization: Bearer $LOGTK" -X POST http://localhost:8888/v1.0/auth)
+    TASKS=$(curl -H "Authorization: $SSTKN" http://localhost:8888/v1.0/tasks)
+    echo "Token        : $TOKEN"
+    echo "Session token: $SSTKN"
+    echo "Tasks        : $TASKS"
+    EOF
+  - /bin/bash dotest.sh
 branches:
   only:
     - master
