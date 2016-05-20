@@ -90,7 +90,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 ##
-## flask_login User Class
+## flask-login User Class
 ##
 class User(UserMixin):
 
@@ -161,6 +161,8 @@ def verifySessionToken(sestoken):
                                 ,fgapiserverappid=fgapisrv_geappid)
     db_state=fgapisrv_db.getState()
     if db_state[0] == 0:
+        # verifySessionToken returns user_id, usern_name associated to the
+        # session token
         return fgapisrv_db.verifySessionToken(sestoken)
     return None
 
@@ -253,22 +255,28 @@ def authorizeUser(current_user,app_id,user,reqrole):
     # Check if requested action is in the user group roles
     authZ = authZ and fgapisrv_db.verifyUserRole(user_id,reqrole)
     if not authZ:
-        message="User does not have '%s' role\n" % reqrole
+        message="User '%s' does not have '%s' role\n" % (user_name,reqrole)
     # Check current_user and filter user are different
     if user_name != user:
         user_impersonate  = fgapisrv_db.verifyUserRole(user_id,'user_impersonate')
-        group_impersonate = fgapisrv_db.sameGroup(user_name,user) and fgapisrv_db.verifyUserRole(user_id,'group_impersonate')
+        if user != "@":
+            group_impersonate = fgapisrv_db.sameGroup(user_name,user) and fgapisrv_db.verifyUserRole(user_id,'group_impersonate')
+        else:
+            group_impersonate = fgapisrv_db.verifyUserRole(user_id,'group_impersonate')
         authZ = authZ and (user_impersonate or group_impersonate)
         if not authZ:
             if user == "*":
-                user = 'any'
-            message="User cannot impersonate '%s' user\n" % user
-
+                user_text = "any user"
+            elif user == "@":
+                user_text = "group-wide users"
+            else:
+                user_text = "'%s' user" % user
+            message="User '%s' cannot impersonate %s\n" % (user_name,user_text)
     # Check if app belongs to Group apps
     if(app_id is not None):
         authZ = authZ and fgapisrv_db.verifyUserApp(user_id,app_id)
         if not authZ:
-            message="User cannot perform any activity on application having id: '%s'\n" % app_id
+            message="User '%s' cannot perform any activity on application having id: '%s'\n" % (usern_name,app_id)
 
     return authZ,message
 
@@ -314,8 +322,11 @@ def load_user(request):
     if token is None:
         token = request.args.get('token')
 
+    print "login_manager - token: '%s'" % token
+
     if token is not None:
         user_rec = verifySessionToken(token)
+        print "login_manager - user_rec(0): '%s',user_rec(1): '%s'" % (user_rec[0],user_rec[1])
         if user_rec is not None and user_rec[0] is not None:
             return  User(user_rec[0],user_rec[1])
     return None
@@ -393,11 +404,13 @@ def auth():
 @app.route('/%s/tasks' % fgapiver,methods=['GET','POST'])
 @login_required
 def tasks():
-    page     = request.values.get('page')
-    per_page = request.values.get('per_page')
-    status   = request.values.get('status')
-    user     = request.values.get('user',current_user.getName())
-    app_id   = request.values.get('application')
+    user_name = current_user.getName()
+    user_id   = current_user.getId()
+    page      = request.values.get('page')
+    per_page  = request.values.get('per_page')
+    status    = request.values.get('status')
+    user      = request.values.get('user',user_name)
+    app_id    = request.values.get('application')
     task_state = 0
 
     if request.method == 'GET':
@@ -426,7 +439,15 @@ def tasks():
                     "message" : db_state[1]
                 }
             else:
-                # call to get tasks
+                # Before call user list check if * means ALL users or group restricted users (@)
+                user_impersonate  = fgapisrv_db.verifyUserRole(user_id,'user_impersonate')
+                group_impersonate = fgapisrv_db.sameGroup(user_name,user) and fgapisrv_db.verifyUserRole(user_id,'group_impersonate')
+                if user == "*" and user_impersonate == False and group_impersonate == True:
+                    user = "@" # Restrict tasks only to group members
+                # Add the usernname info in case of * or @ filters
+                if user == "*" or user == "@":
+                    user=user+user_name
+                # call to get tasks list
                 task_list = fgapisrv_db.getTaskList(user,app_id)
                 db_state=fgapisrv_db.getState()
                 if db_state[0] != 0:
@@ -479,74 +500,82 @@ def tasks():
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        if not authorizeUser(current_user,app_id,user,"app_run"):
+        print "username %s - %s" % (user_name,user)
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_run")
+        if not auth_state:
             task_state = 402
             task_response = {
-                "message" : "Not authorized to perform this request"
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
             # Getting values
             params = request.get_json()
-            app_id   = params.get('application','')
-            app_desc = params.get('description','')
-            app_args = params.get('arguments'  ,[])
-            app_inpf = params.get('input_files',[])
-            app_outf = params.get('output_files',[])
-            # Connect database
-            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                        ,db_port=fgapisrv_db_port
-                                        ,db_user=fgapisrv_db_user
-                                        ,db_pass=fgapisrv_db_pass
-                                        ,db_name=fgapisrv_db_name
-                                        ,iosandbbox_dir=fgapisrv_iosandbox
-                                        ,geapiserverappid=fgapisrv_geappid)
-            db_state=fgapisrv_db.getState()
-            if db_state[0] != 0:
-                # Couldn't contact database
-                # Prepare for 404 not found
-                task_state = 404
-                task_response = {
-                    "message" : db_state[1]
-                }
-            else:
-                # Create task
-                task_id = fgapisrv_db.initTask(app_id
-                                              ,app_desc
-                                              ,user
-                                              ,app_args
-                                              ,app_inpf
-                                              ,app_outf)
-                if task_id < 0:
-                    task_state = fgapisrv_db.getState()
-                    # Error initializing task
-                    # Prepare for 410 error
-                    task_state = 410
+            if params is not None:
+                app_id   = params.get('application','')
+                app_desc = params.get('description','')
+                app_args = params.get('arguments'  ,[])
+                app_inpf = params.get('input_files',[])
+                app_outf = params.get('output_files',[])
+                # Connect database
+                fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                            ,db_port=fgapisrv_db_port
+                                            ,db_user=fgapisrv_db_user
+                                            ,db_pass=fgapisrv_db_pass
+                                            ,db_name=fgapisrv_db_name
+                                            ,iosandbbox_dir=fgapisrv_iosandbox
+                                            ,geapiserverappid=fgapisrv_geappid)
+                db_state=fgapisrv_db.getState()
+                if db_state[0] != 0:
+                    # Couldn't contact database
+                    # Prepare for 404 not found
+                    task_state = 404
                     task_response = {
-                        'message' : task_state[1]
+                        "message" : db_state[1]
                     }
                 else:
-                    # Prepare response
-                    task_state = 200
-                    task_record = fgapisrv_db.getTaskRecord(task_id)
-                    task_response = {
-                         "id"          : task_record['id']
-                        ,"application" : task_record['application']
-                        ,"description" : task_record['description']
-                        ,"arguments"   : task_record['arguments']
-                        ,"input_files" : task_record['input_files']
-                        ,"output_files": task_record['output_files']
-                        ,"status"      : task_record['status']
-                        ,"user"        : task_record['user']
-                        ,"date"        : str(task_record['last_change'])
-                        ,"_links"      : [{
-                                             "rel" : "self"
-                                            ,"href": "/%s/tasks/%s" % (fgapiver,task_id)
-                                          }
-                                         ,{
-                                             "rel" : "input"
-                                            ,"href": "/%s/tasks/%s/input" % (fgapiver,task_id)
-                                          }]
-                    }
+                    # Create task
+                    task_id = fgapisrv_db.initTask(app_id
+                                                  ,app_desc
+                                                  ,user
+                                                  ,app_args
+                                                  ,app_inpf
+                                                  ,app_outf)
+                    if task_id < 0:
+                        task_state = fgapisrv_db.getState()
+                        # Error initializing task
+                        # Prepare for 410 error
+                        task_state = 410
+                        task_response = {
+                            'message' : task_state[1]
+                        }
+                    else:
+                        # Prepare response
+                        task_state = 200
+                        task_record = fgapisrv_db.getTaskRecord(task_id)
+                        task_response = {
+                             "id"          : task_record['id']
+                            ,"application" : task_record['application']
+                            ,"description" : task_record['description']
+                            ,"arguments"   : task_record['arguments']
+                            ,"input_files" : task_record['input_files']
+                            ,"output_files": task_record['output_files']
+                            ,"status"      : task_record['status']
+                            ,"user"        : task_record['user']
+                            ,"date"        : str(task_record['last_change'])
+                            ,"_links"      : [{
+                                                 "rel" : "self"
+                                                ,"href": "/%s/tasks/%s" % (fgapiver,task_id)
+                                              }
+                                             ,{
+                                                 "rel" : "input"
+                                                ,"href": "/%s/tasks/%s/input" % (fgapiver,task_id)
+                                              }]
+                        }
+            else:
+                task_state = 404
+                task_response = {
+                    "message" : "Did not find any application description json input"
+                }
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'

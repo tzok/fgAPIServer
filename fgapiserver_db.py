@@ -992,15 +992,35 @@ class fgapiserver_db:
         cursor=None
         task_ids = []
         try:
-            # Get Task ids preparing the right query (user/app_id)
+            # Get Task ids preparing the right query (user/*,@ wildcards/app_id)
             db=self.connect()
             cursor = db.cursor()
-            user_clause = ''
             app_clause = ''
             sql_data = ()
-            if user != '*':
+            user_filter=user[0]
+            if user_filter == '*':
+                user_name   = user[1:]
+                user_clause = ''
+            elif user_filter == '@':
+                user_name   = user[1:]
+                user_clause = '  and user in (select distinct(u.name)               \n' \
+                              '               from fg_user        u                 \n' \
+                              '                  , fg_group       g                 \n' \
+                              '                  , fg_user_group ug                 \n' \
+                              '               where u.id=ug.user_id                 \n' \
+                              '                 and g.id=ug.group_id                \n' \
+                              '                 and g.id in (select g.id            \n' \
+                              '                              from fg_user_group ug  \n' \
+                              '                                 , fg_user        u  \n' \
+                              '                                 , fg_group       g  \n' \
+                              '                              where ug.user_id=u.id  \n' \
+                              '                                and ug.group_id=g.id \n' \
+                              '                                and u.name=%s))'
+                sql_data +=(user_name,)
+            else:
+                user_name   = user
                 user_clause = '  and user = %s\n'
-                sql_data +=(user,)
+                sql_data +=(user_name,)
             if app_id is not None:
                 app_clause = '  and app_id = %s\n'
                 sql_data +=(app_id,)

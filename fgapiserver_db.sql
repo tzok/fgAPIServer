@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: %VERSION%
+-- Version: v0.0.2-51-g50c5ea2-50c5ea2-61
 --
 --
 drop database if exists fgapiserver;
@@ -289,8 +289,10 @@ insert into fg_role (id,name,creation,modified) values (14,'task_userdata',now()
 insert into fg_role (id,name,creation,modified) values (15,'user_add',now(),now());          -- Can add users
 insert into fg_role (id,name,creation,modified) values (16,'user_del',now(),now());          -- Can remove users
 insert into fg_role (id,name,creation,modified) values (17,'user_change',now(),now());       -- Can change users
-insert into fg_role (id,name,creation,modified) values (18,'user_impersonate',now(),now());  -- Can impersonate any other users
-insert into fg_role (id,name,creation,modified) values (19,'group_impersonate',now(),now()); -- Can impersonate other users in the same group
+insert into fg_role (id,name,creation,modified) values (18,'group_change',now(),now());      -- Can change groups
+insert into fg_role (id,name,creation,modified) values (19,'role_change',now(),now());       -- Can change roles
+insert into fg_role (id,name,creation,modified) values (20,'user_impersonate',now(),now());  -- Can impersonate any other users
+insert into fg_role (id,name,creation,modified) values (21,'group_impersonate',now(),now()); -- Can impersonate other users in the same group
 --
 -- CrossTables applying Roles to Groups and Users
 --
@@ -329,7 +331,7 @@ insert into fg_group_role (group_id,role_id,creation) values (2,12, now()); -- T
 insert into fg_group_role (group_id,role_id,creation) values (2,13, now()); -- Test can view tasks
 insert into fg_group_role (group_id,role_id,creation) values (2,14, now()); -- Test can manage userdata on tasks
 
--- Generic user
+-- Generic user roles
 insert into fg_group_role (group_id,role_id,creation) values (3, 4, now()); -- GenericUser can view applications
 
 -- Associate applications to Groups
@@ -341,8 +343,8 @@ create table fg_group_apps (
    ,foreign key (app_id) references application(id)
 );
 
-insert into fg_group_apps (group_id, app_id, creation) values (1,1,now()); -- Administrator access to hostname
-insert into fg_group_apps (group_id, app_id, creation) values (1,2,now()); -- Administrator access to helloworld
+insert into fg_group_apps (group_id, app_id, creation)
+select 1,id,now() from application;                                        -- Administrator access to all appications
 insert into fg_group_apps (group_id, app_id, creation) values (2,1,now()); -- Test access to hostname
 insert into fg_group_apps (group_id, app_id, creation) values (2,2,now()); -- Test access to helloworld
 

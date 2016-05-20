@@ -76,8 +76,11 @@ insert into fg_role (id,name,creation,modified) values (14,'task_userdata',now()
 insert into fg_role (id,name,creation,modified) values (15,'user_add',now(),now());
 insert into fg_role (id,name,creation,modified) values (16,'user_del',now(),now());
 insert into fg_role (id,name,creation,modified) values (17,'user_change',now(),now());
-insert into fg_role (id,name,creation,modified) values (18,'user_impersonate',now(),now());
-insert into fg_role (id,name,creation,modified) values (19,'group_impersonate',now(),now());
+insert into fg_role (id,name,creation,modified) values (18,'group_change',now(),now());      
+insert into fg_role (id,name,creation,modified) values (19,'role_change',now(),now());      
+insert into fg_role (id,name,creation,modified) values (20,'user_impersonate',now(),now());
+insert into fg_role (id,name,creation,modified) values (21,'group_impersonate',now(),now());
+
 create table fg_user_group (
     user_id     int unsigned not null
    ,group_id    int unsigned not null
@@ -110,8 +113,8 @@ create table fg_group_apps (
    ,foreign key (group_id) references fg_group(id)
    ,foreign key (app_id) references application(id)
 );
-insert into fg_group_apps (group_id, app_id, creation) values (1,1,now());
-insert into fg_group_apps (group_id, app_id, creation) values (1,2,now());
+insert into fg_group_apps (group_id, app_id, creation)
+	select 1,id,now() from application;                                 
 insert into fg_group_apps (group_id, app_id, creation) values (2,1,now());
 insert into fg_group_apps (group_id, app_id, creation) values (2,2,now());
 create table fg_token (
