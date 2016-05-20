@@ -17,11 +17,11 @@ script:
     print tokenEncode(key,username,password)
     EOF
   - TOKEN=$(python getlogtoken.py)
-  - echo "Token        : $TOKEN"
   - ./fgapiserver.py >fgapiserver.runlog 2>fgapiserver.runlog &
   - SSTKN=$(curl -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -X POST http://localhost:8888/v1.0/auth)
-  - echo "Session token: $SSTKN"  
   - TASKS=$(curl -H "Authorization: $SSTKN" http://localhost:8888/v1.0/tasks)
+  - echo "Token        : $TOKEN"
+  - echo "Session token: $SSTKN"
   - echo "Tasks        : $TASKS"
 branches:
   only:
