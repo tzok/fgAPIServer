@@ -9,12 +9,12 @@ script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
   - python tests/test_mklogtoken.py
   - cat > getlogtoken.py <<EOF
-  from mklogtoken import tokenEncode, tokenDecode, tokenInfo
-  key="0123456789ABCDEF"
-  username="futuregateway"
-  password="futuregateway"
-  print tokenEncode(key,username,password)
-  EOF
+from mklogtoken import tokenEncode, tokenDecode, tokenInfo
+key="0123456789ABCDEF"
+username="futuregateway"
+password="futuregateway"
+print tokenEncode(key,username,password)
+EOF
   - TOKEN=$(python getlogtoken.py)
   - ./fgapiserver.py >fgapiserver.runlog 2>fgapiserver.runlog &
   - SSTKN=$(curl -X POST -H "Authorization: Bearer $TOKEN" http://localhost:8888/v1.0/auth)
