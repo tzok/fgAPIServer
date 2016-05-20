@@ -27,6 +27,7 @@ script:
     echo "Tasks        : $TASKS"
     EOF
   - /bin/bash dotest.sh
+  - cat fgapiserver.runlog
 branches:
   only:
     - master
