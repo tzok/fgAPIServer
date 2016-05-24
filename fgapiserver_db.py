@@ -330,6 +330,47 @@ class fgapiserver_db:
         return result
 
     """
+      getUserInfoByName - Return full user info from the given username
+    """
+    def getUserInfoByName(self,name):
+        db        = None
+        cursor    = None
+        user_info = None
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select id        \n'
+                 '      ,name      \n'
+                 '      ,password  \n'
+                 '      ,first_name\n'
+                 '      ,last_name \n'
+                 '      ,institute \n'
+                 '      ,mail      \n'
+                 '      ,creation  \n'
+                 '      ,modified  \n'
+                 'from fg_user     \n'
+                 'where name=%s;')
+            sql_data=(name,)
+            cursor.execute(sql,sql_data)
+            record = cursor.fetchone()
+            if record is not None:
+                user_info = { "id"        : record[0]
+                            ,"name"      : record[1]
+                            ,"password"  : record[2]
+                            ,"first_name": record[3]
+                            ,"last_name" : record[4]
+                            ,"institute" : record[5]
+                            ,"mail"      : record[6]
+                            ,"creation"  : record[7]
+                            ,"modified"  : record[8]
+                           }
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return user_info
+
+    """
       taskExists - Return True if the given task_id exists False otherwise
     """
     def taskExists(self,task_id):

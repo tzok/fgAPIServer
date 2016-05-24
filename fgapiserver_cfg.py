@@ -20,7 +20,7 @@
 __author__     = "Riccardo Bruno"
 __copyright__  = "2015"
 __license__    = "Apache"
-__version__    = "v0.0.2-51-g50c5ea2-50c5ea2-61"
+__version__    = "v0.0.2-52-g929088b-929088b-62"
 __maintainer__ = "Riccardo Bruno"
 __email__      = "riccardo.bruno@ct.infn.it"
 
@@ -37,19 +37,21 @@ class fgapiserver_cfg:
         config = ConfigParser.ConfigParser()
         config.read(configFile)
         # fgapiserver
-        self.fgConfig['fgapiver'          ] = config.get('fgapiserver','fgapiver')
-        self.fgConfig['fgapiserver_name'  ] = "%s %s" % (config.get('fgapiserver','fgapiserver_name')
+        self.fgConfig['fgapiver'           ] = config.get('fgapiserver','fgapiver')
+        self.fgConfig['fgapiserver_name'   ] = "%s %s" % (config.get('fgapiserver','fgapiserver_name')
 				                                        ,self.fgConfig['fgapiver'])
-        self.fgConfig['fgapisrv_host'     ] = config.get('fgapiserver','fgapisrv_host')
-        self.fgConfig['fgapisrv_port'     ] = config.get('fgapiserver','fgapisrv_port')
-        self.fgConfig['fgapisrv_debug'    ] = config.get('fgapiserver','fgapisrv_debug')
-        self.fgConfig['fgapisrv_iosandbox'] = config.get('fgapiserver','fgapisrv_iosandbox')
-        self.fgConfig['fgapisrv_geappid'  ] = config.get('fgapiserver','fgapisrv_geappid')
-        self.fgConfig['fgapisrv_key'      ] = config.get('fgapiserver','fgapisrv_key')
-        self.fgConfig['fgapisrv_crt'      ] = config.get('fgapiserver','fgapisrv_crt')
-        self.fgConfig['fgapisrv_logcfg'   ] = config.get('fgapiserver','fgapisrv_logcfg')
-        self.fgConfig['fgapisrv_dbver'    ] = config.get('fgapiserver','fgapisrv_dbver')
-        self.fgConfig['fgapisrv_secret'   ] = config.get('fgapiserver','fgapisrv_secret')
+        self.fgConfig['fgapisrv_host'      ] = config.get('fgapiserver','fgapisrv_host')
+        self.fgConfig['fgapisrv_port'      ] = config.get('fgapiserver','fgapisrv_port')
+        self.fgConfig['fgapisrv_debug'     ] = config.get('fgapiserver','fgapisrv_debug')
+        self.fgConfig['fgapisrv_iosandbox' ] = config.get('fgapiserver','fgapisrv_iosandbox')
+        self.fgConfig['fgapisrv_geappid'   ] = config.get('fgapiserver','fgapisrv_geappid')
+        self.fgConfig['fgapisrv_key'       ] = config.get('fgapiserver','fgapisrv_key')
+        self.fgConfig['fgapisrv_crt'       ] = config.get('fgapiserver','fgapisrv_crt')
+        self.fgConfig['fgapisrv_logcfg'    ] = config.get('fgapiserver','fgapisrv_logcfg')
+        self.fgConfig['fgapisrv_dbver'     ] = config.get('fgapiserver','fgapisrv_dbver')
+        self.fgConfig['fgapisrv_secret'    ] = config.get('fgapiserver','fgapisrv_secret')
+        self.fgConfig['fgapisrv_notoken'   ] = config.get('fgapiserver','fgapisrv_notoken')
+        self.fgConfig['fgapisrv_notokenusr'] = config.get('fgapiserver','fgapisrv_notokenusr')
 
         # fgapiserver_db
         self.fgConfig['fgapisrv_db_host'] = config.get('fgapiserver_db','fgapisrv_db_host')
@@ -66,24 +68,26 @@ class fgapiserver_cfg:
 
     def getConfValue(self,key):
         def_value = None
-        if   key == 'fgapiver'          : def_value = 'v.10'
-        elif key == 'fgapiserver_name'  : def_value = 'GridEngine API Server % s' % self.getConfValue('fgapiver')
-        elif key == 'fgapisrv_host'     : def_value = 'localhost'
-        elif key == 'fgapisrv_port'     : def_value = '8888'
-        elif key == 'fgapisrv_debug'    : def_value = 'True'
-        elif key == 'fgapisrv_db_host'  : def_value = 'localhost'
-        elif key == 'fgapisrv_db_port'  : def_value = '3306'
-        elif key == 'fgapisrv_db_user'  : def_value = 'localhost'
-        elif key == 'fgapisrv_db_pass'  : def_value = 'fgapiserver_password'
-        elif key == 'fgapisrv_db_name'  : def_value = 'fgapiserver'
-        elif key == 'fgapisrv_iosandbox': def_value = '/tmp'
-        elif key == 'fgapisrv_geappid'  : def_value = '10000'
-        elif key == 'fgjson_indent'     : def_value = '4'
-        elif key == 'fgapisrv_key'      : def_value = ''
-        elif key == 'fgapisrv_crt'      : def_value = ''
-        elif key == 'fgapisrv_logcfg'   : def_value = 'fgapiserver_log.conf'
-        elif key == 'fgapisrv_dbver'    : def_value = ''
-        elif key == 'fgapisrv_secret'   : def_value = ''.join(random.choice(string.uppercase) for x in range(16))
+        if   key == 'fgapiver'           : def_value = 'v.10'
+        elif key == 'fgapiserver_name'   : def_value = 'GridEngine API Server % s' % self.getConfValue('fgapiver')
+        elif key == 'fgapisrv_host'      : def_value = 'localhost'
+        elif key == 'fgapisrv_port'      : def_value = '8888'
+        elif key == 'fgapisrv_debug'     : def_value = 'True'
+        elif key == 'fgapisrv_db_host'   : def_value = 'localhost'
+        elif key == 'fgapisrv_db_port'   : def_value = '3306'
+        elif key == 'fgapisrv_db_user'   : def_value = 'localhost'
+        elif key == 'fgapisrv_db_pass'   : def_value = 'fgapiserver_password'
+        elif key == 'fgapisrv_db_name'   : def_value = 'fgapiserver'
+        elif key == 'fgapisrv_iosandbox' : def_value = '/tmp'
+        elif key == 'fgapisrv_geappid'   : def_value = '10000'
+        elif key == 'fgjson_indent'      : def_value = '4'
+        elif key == 'fgapisrv_key'       : def_value = ''
+        elif key == 'fgapisrv_crt'       : def_value = ''
+        elif key == 'fgapisrv_logcfg'    : def_value = 'fgapiserver_log.conf'
+        elif key == 'fgapisrv_dbver'     : def_value = ''
+        elif key == 'fgapisrv_secret'    : def_value = ''.join(random.choice(string.uppercase) for x in range(16))
+        elif key == 'fgapisrv_notoken'   : def_value = 'False'
+        elif key == 'fgapisrv_notokenusr': def_value = 'futuregateway'
         else:
 			print "[WARNING] Not found default value for key: '%s'" % key
         return self.fgConfig.get(key,def_value)

@@ -58,19 +58,21 @@ fgapiserver_config_file = fgapirundir+'fgapiserver.conf'
 fg_config = fgapiserver_cfg(fgapiserver_config_file)
 
 # fgapiserver settings
-fgapiver           =     fg_config.getConfValue('fgapiver')
-fgapiserver_name   =     fg_config.getConfValue('fgapiserver_name')
-fgapisrv_host      =     fg_config.getConfValue('fgapisrv_host')
-fgapisrv_port      = int(fg_config.getConfValue('fgapisrv_port'))
-fgapisrv_debug     =    (fg_config.getConfValue('fgapisrv_debug') == 'True')
-fgapisrv_iosandbox =     fg_config.getConfValue('fgapisrv_iosandbox')
-fgapisrv_geappid   = int(fg_config.getConfValue('fgapisrv_geappid'))
-fgjson_indent      = int(fg_config.getConfValue('fgjson_indent'))
-fgapisrv_key       =     fg_config.getConfValue('fgapisrv_key')
-fgapisrv_crt       =     fg_config.getConfValue('fgapisrv_crt')
-fgapisrv_logcfg    =     fg_config.getConfValue('fgapisrv_logcfg')
-fgapisrv_dbver     =     fg_config.getConfValue('fgapisrv_dbver')
-fgapisrv_secret    =     fg_config.getConfValue('fgapisrv_secret')
+fgapiver            =     fg_config.getConfValue('fgapiver')
+fgapiserver_name    =     fg_config.getConfValue('fgapiserver_name')
+fgapisrv_host       =     fg_config.getConfValue('fgapisrv_host')
+fgapisrv_port       = int(fg_config.getConfValue('fgapisrv_port'))
+fgapisrv_debug      =    (fg_config.getConfValue('fgapisrv_debug').lower() == 'true')
+fgapisrv_iosandbox  =     fg_config.getConfValue('fgapisrv_iosandbox')
+fgapisrv_geappid    = int(fg_config.getConfValue('fgapisrv_geappid'))
+fgjson_indent       = int(fg_config.getConfValue('fgjson_indent'))
+fgapisrv_key        =     fg_config.getConfValue('fgapisrv_key')
+fgapisrv_crt        =     fg_config.getConfValue('fgapisrv_crt')
+fgapisrv_logcfg     =     fg_config.getConfValue('fgapisrv_logcfg')
+fgapisrv_dbver      =     fg_config.getConfValue('fgapisrv_dbver')
+fgapisrv_secret     =     fg_config.getConfValue('fgapisrv_secret')
+fgapisrv_notoken    =    (fg_config.getConfValue('fgapisrv_notoken').lower() == 'true')
+fgapisrv_notokenusr =     fg_config.getConfValue('fgapisrv_notokenusr')
 
 # fgapiserver database settings
 fgapisrv_db_host =     fg_config.getConfValue('fgapisrv_db_host')
@@ -235,6 +237,10 @@ def createSessionToken(**kwargs):
 #        reqrole      - The requested role: task_view, app_run, ...
 #
 def authorizeUser(current_user,app_id,user,reqrole):
+    # Return True if token management is disabled
+    if fgapisrv_notoken:
+        return True, 'Authorization disabled'
+
     # Database connection is necessary to perform the authorization
     fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
                                     ,db_port=fgapisrv_db_port
@@ -315,9 +321,29 @@ def index():
 
 # Retrieve the session token from Header Authorization field or from token in the argument list
 # This function verifies the session token and return the user object if the check is successful
-# The User object holds databese user id and the associated user name
+# The User object holds database user id and the associated user name
 @login_manager.request_loader
 def load_user(request):
+    # Login manager could be disabled in conf file
+    if fgapisrv_notoken:
+        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                    ,db_port=fgapisrv_db_port
+                                    ,db_user=fgapisrv_db_user
+                                    ,db_pass=fgapisrv_db_pass
+                                    ,db_name=fgapisrv_db_name
+                                    ,iosandbbox_dir=fgapisrv_iosandbox
+                                    ,fgapiserverappid=fgapisrv_geappid)
+        db_state=fgapisrv_db.getState()
+        if db_state[0] != 0:
+            user_id   = 0
+            user_name = 'Unknown'
+        else:
+            user_info = fgapisrv_db.getUserInfoByName(fgapisrv_notokenusr)
+            user_id   = user_info["id"]
+            user_name = user_info["name"]
+        print "Session token disabled; behaving has user: '%s' (%s)" % (user_name,user_id)
+        return User(int(user_info["id"]),user_info["name"])
+
     token = request.headers.get('Authorization')
     if token is None:
         token = request.args.get('token')
