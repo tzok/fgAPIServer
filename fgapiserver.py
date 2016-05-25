@@ -147,6 +147,39 @@ def paginate_response(response,page,per_page):
     else:
         return response
 
+# Return the application id associated to the given task_id
+def getTaskAppId(task_id):
+    fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                ,db_port=fgapisrv_db_port
+                                ,db_user=fgapisrv_db_user
+                                ,db_pass=fgapisrv_db_pass
+                                ,db_name=fgapisrv_db_name
+                                ,iosandbbox_dir=fgapisrv_iosandbox
+                                ,fgapiserverappid=fgapisrv_geappid)
+    db_state=fgapisrv_db.getState()
+    if db_state[0] == 0:
+        # verifySessionToken returns user_id, usern_name associated to the
+        # session token
+        return fgapisrv_db.getTaskInfo(task_id)['application']['id']
+    return None
+
+# Return the task id associated to the file name and output
+def getFileTaskId(file_name, file_path):
+    fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                ,db_port=fgapisrv_db_port
+                                ,db_user=fgapisrv_db_user
+                                ,db_pass=fgapisrv_db_pass
+                                ,db_name=fgapisrv_db_name
+                                ,iosandbbox_dir=fgapisrv_iosandbox
+                                ,fgapiserverappid=fgapisrv_geappid)
+    db_state=fgapisrv_db.getState()
+    if db_state[0] == 0:
+        # verifySessionToken returns user_id, usern_name associated to the
+        # session token
+        return fgapisrv_db.getFileTaskId(file_nane,file_path)
+    return None
+
+
 
 # verifySessionToken verifies the given session token returning user id and its name
 #                    user id and name will be later used to retrieve user priviledges
@@ -616,77 +649,96 @@ def tasks():
 # GET  - shows details
 # POST - could reshape the request (Delete/Recreate)
 @app.route('/%s/tasks/<task_id>' % fgapiver,methods=['GET','POST','DELETE','PATCH'])
+@login_required
 def task_id(task_id=None):
+    user_name = current_user.getName()
+    user_id   = current_user.getId()
+    app_id    = getTaskAppId(task_id)
+    user      = request.values.get('user',user_name)
     if request.method == 'GET':
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            task_status = 404
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"task_view")
+        if not auth_state:
+            task_state = 402
             task_response = {
-                "message" : db_state[1]
-            }
-        elif not fgapisrv_db.taskExists(task_id):
-            task_status = 404
-            task_response = {
-                "message" : "Unable to find task with id: %s" % task_id
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            # Get task details
-            task_response=fgapisrv_db.getTaskRecord(task_id)
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,fgapiserverappid=fgapisrv_geappid)
             db_state=fgapisrv_db.getState()
             if db_state[0] != 0:
-                # Couldn't get TaskRecord
+                # Couldn't contact database
                 # Prepare for 404 not found
                 task_status = 404
                 task_response = {
                     "message" : db_state[1]
                 }
+            elif not fgapisrv_db.taskExists(task_id):
+                task_status = 404
+                task_response = {
+                    "message" : "Unable to find task with id: %s" % task_id
+                }
             else:
-                task_status = 200
+                # Get task details
+                task_response=fgapisrv_db.getTaskRecord(task_id)
+                db_state=fgapisrv_db.getState()
+                if db_state[0] != 0:
+                    # Couldn't get TaskRecord
+                    # Prepare for 404 not found
+                    task_status = 404
+                    task_response = {
+                        "message" : db_state[1]
+                    }
+                else:
+                    task_status = 200
         # Display task details
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'DELETE':
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            task_status = 404
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"task_delete")
+        if not auth_state:
+            task_state = 402
             task_response = {
-                "message" : db_state[1]
-            }
-        elif not fgapisrv_db.taskExists(task_id):
-            task_status = 404
-            task_response = {
-                "message" : "Unable to find task with id: %s" % task_id
-            }
-        elif not fgapisrv_db.delete(task_id):
-            task_status = 410
-            task_response = {
-                "message" : "Unable to delete task with id: %s" % task_id
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            task_status = 200
-            task_response = {
-                "message" : "Successfully removed task with id: %s" % task_id
-            }
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,fgapiserverappid=fgapisrv_geappid)
+            db_state=fgapisrv_db.getState()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
+                task_status = 404
+                task_response = {
+                    "message" : db_state[1]
+                }
+            elif not fgapisrv_db.taskExists(task_id):
+                task_status = 404
+                task_response = {
+                    "message" : "Unable to find task with id: %s" % task_id
+                }
+            elif not fgapisrv_db.delete(task_id):
+                task_status = 410
+                task_response = {
+                    "message" : "Unable to delete task with id: %s" % task_id
+                }
+            else:
+                task_status = 200
+                task_response = {
+                    "message" : "Successfully removed task with id: %s" % task_id
+                }
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
@@ -702,45 +754,52 @@ def task_id(task_id=None):
         #  1) data_name does not exists, a new record will be created in runtime_data table
         #  2) data_name exists the new value will be updated to the existing
         #
-        params = request.get_json()
-        runtime_data = params.get('runtime_data',[])
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            task_status = 404
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"task_userdata")
+        if not auth_state:
+            task_state = 402
             task_response = {
-                "message" : db_state[1]
-            }
-        elif not fgapisrv_db.taskExists(task_id):
-            task_status = 404
-            task_response = {
-                "message" : "Unable to find task with id: %s" % task_id
-            }
-        elif not fgapisrv_db.patch_task(task_id,runtime_data):
-            task_status = 410
-            task_response = {
-                "message" : "Unable to delete task with id: %s" % task_id
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            task_status = 200
-            task_response = {
-                "message" : "Successfully patched task with id: %s" % task_id
-            }
+            params = request.get_json()
+            runtime_data = params.get('runtime_data',[])
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,fgapiserverappid=fgapisrv_geappid)
+            db_state=fgapisrv_db.getState()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
+                task_status = 404
+                task_response = {
+                    "message" : db_state[1]
+                }
+            elif not fgapisrv_db.taskExists(task_id):
+                task_status = 404
+                task_response = {
+                    "message" : "Unable to find task with id: %s" % task_id
+                }
+            elif not fgapisrv_db.patch_task(task_id,runtime_data):
+                task_status = 410
+                task_response = {
+                    "message" : "Unable to delete task with id: %s" % task_id
+                }
+            else:
+                task_status = 200
+                task_response = {
+                    "message" : "Successfully patched task with id: %s" % task_id
+                }
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
         task_response = {
-            "message" : "Not supported yet"
+            "message" : "Not supported method"
         }
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=404, mimetype='application/json')
@@ -751,206 +810,248 @@ def task_id(task_id=None):
 # GET  - shows input files
 # POST - specify input files
 @app.route('/%s/tasks/<task_id>/input' % fgapiver,methods=['GET','POST'])
+@login_required
 def task_id_input(task_id=None):
+    user_name = current_user.getName()
+    user_id   = current_user.getId()
+    app_id    = getTaskAppId(task_id)
+    user      = request.values.get('user',user_name)
     if request.method == 'GET':
-        # Display task_input_file details
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,geapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            task_status = 404
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"task_view")
+        if not auth_state:
+            task_state = 402
             task_response = {
-                "message" : db_state[1]
-            }
-        elif not fgapisrv_db.taskExists(task_id):
-            task_status = 404
-            task_response = {
-                "message" : "Unable to find task with id: %s" % task_id
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            task_status = 204
-            task_response = {}
+            # Display task_input_file details
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,geapiserverappid=fgapisrv_geappid)
+            db_state=fgapisrv_db.getState()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
+                task_status = 404
+                task_response = {
+                    "message" : db_state[1]
+                }
+            elif not fgapisrv_db.taskExists(task_id):
+                task_status = 404
+                task_response = {
+                    "message" : "Unable to find task with id: %s" % task_id
+                }
+            else:
+                task_status = 204
+                task_response = fgapisrv_db.getTaskRecord(task_id)['input_files']
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        # First determine IO Sandbox location for this task
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            task_status = 404
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_run")
+        if not auth_state:
+            task_state = 402
             task_response = {
-                "message" : db_state[1]
-            }
-        elif not fgapisrv_db.taskExists(task_id):
-            task_status = 404
-            task_response = {
-                "message" : "Unable to find task with id: %s" % task_id
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            task_sandbox = fgapisrv_db.getTaskIOSandbox(task_id)
-            if task_sandbox is None:
+            # First determine IO Sandbox location for this task
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,fgapiserverappid=fgapisrv_geappid)
+            db_state=fgapisrv_db.getState()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
                 task_status = 404
                 task_response = {
-                    "message" : 'Could not find IO Sandbox dir for task: %s' % task_id
+                    "message" : db_state[1]
+                }
+            elif not fgapisrv_db.taskExists(task_id):
+                task_status = 404
+                task_response = {
+                    "message" : "Unable to find task with id: %s" % task_id
                 }
             else:
-                # Now process files to upload
-                uploaded_files = request.files.getlist('file[]')
-                file_list = ()
-                for f in uploaded_files:
-                    filename = secure_filename(f.filename)
-                    f.save(os.path.join(task_sandbox, filename))
-                    fgapisrv_db.updateInputSandboxFile(task_id
-                                                      ,filename
-                                                      ,os.path.join(task_sandbox))
-                    file_list+=(filename,)
-                # Now get input_sandbox status
-                if fgapisrv_db.isInputSandboxReady(task_id):
-                    # The input_sandbox is completed; trigger the GE for this task
-                    if fgapisrv_db.submitTask(task_id):
+                task_sandbox = fgapisrv_db.getTaskIOSandbox(task_id)
+                if task_sandbox is None:
+                    task_status = 404
+                    task_response = {
+                        "message" : 'Could not find IO Sandbox dir for task: %s' % task_id
+                    }
+                else:
+                    # Now process files to upload
+                    uploaded_files = request.files.getlist('file[]')
+                    file_list = ()
+                    for f in uploaded_files:
+                        filename = secure_filename(f.filename)
+                        f.save(os.path.join(task_sandbox, filename))
+                        fgapisrv_db.updateInputSandboxFile(task_id
+                                                          ,filename
+                                                          ,os.path.join(task_sandbox))
+                        file_list+=(filename,)
+                    # Now get input_sandbox status
+                    if fgapisrv_db.isInputSandboxReady(task_id):
+                        # The input_sandbox is completed; trigger the GE for this task
+                        if fgapisrv_db.submitTask(task_id):
+                            task_status = 200
+                            task_response = {
+                                 "task"    : task_id
+                                ,"files"   : file_list
+                                ,"message" : "uploaded"
+                                ,"gestatus": "triggered"
+                            }
+                        else:
+                            task_status = 412
+                            task_response = {
+                                "message" : fgapisrv_db.getState()[1]
+                            }
+                    else:
                         task_status = 200
                         task_response = {
                              "task"    : task_id
                             ,"files"   : file_list
                             ,"message" : "uploaded"
-                            ,"gestatus": "triggered"
+                            ,"gestatus": "waiting"
                         }
-                    else:
-                        task_status = 412
-                        task_response = {
-                            "message" : fgapisrv_db.getState()[1]
-                        }
-                else:
-                    task_status = 200
-                    task_response = {
-                         "task"    : task_id
-                        ,"files"   : file_list
-                        ,"message" : "uploaded"
-                        ,"gestatus": "waiting"
-                    }
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
 
 @app.route('/%s/file' % fgapiver,methods=['GET',])
+@login_required
 def file():
-    if request.method == 'GET':
-        file_path = request.values.get('path')
-        file_name = request.values.get('name')
     serve_file = None
-    try:
-        serve_file = open('%s/%s' % (file_path,file_name),'rb')
-        serve_file_content = serve_file.read()
-        resp = Response(serve_file_content, status=200)
-        resp.headers['Content-type'] = 'application/octet-stream'
-        resp.headers.add('Content-Disposition','attachment; filename="%s"' % file_name)
-    except:
-        task_response = {
-            "message" : "Unable to get file: %s/%s" % (file_path,file_name)
-        }
+    user_name  = current_user.getName()
+    user_id    = current_user.getId()
+    app_id     = getTaskAppId(task_id)
+    user       = request.values.get('user',user_name)
+    file_path  = request.values.get('path',None)
+    file_name  = request.values.get('name',None)
+    task_id    = getFileTaskId(file_name,file_path)
+    app_id     = getTaskAppId(task_id)
+    if request.method == 'GET':
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_run")
+        if not auth_state:
+            task_state = 402
+            task_response = {
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
+            }
+        else:
+            try:
+                serve_file = open('%s/%s' % (file_path,file_name),'rb')
+                serve_file_content = serve_file.read()
+                resp = Response(serve_file_content, status=200)
+                resp.headers['Content-type'] = 'application/octet-stream'
+                resp.headers.add('Content-Disposition','attachment; filename="%s"' % file_name)
+            except:
+                task_response = {
+                    "message" : "Unable to get file: %s/%s" % (file_path,file_name)
+                }
+            finally:
+                if serve_file is not None:
+                    serve_file.close()
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=404)
         resp.headers['Content-type'] = 'application/json'
-    finally:
-        if serve_file is not None:
-            serve_file.close()
+
     return resp
-
-
 
 #
 # APPLICATION
 #
 
-
 # application - used to view o create a new application
 # GET  - View task info
 # POST - Create a new task; it only prepares the task for execution
 @app.route('/%s/applications' % fgapiver,methods=['GET','POST'])
+@login_required
 def applications():
+    user_name  = current_user.getName()
+    user_id    = current_user.getId()
+    app_id     = None
+    user       = request.values.get('user',user_name)
     page     = request.values.get('page')
     per_page = request.values.get('per_page')
     user     = request.values.get('user')
     state = 0
     if request.method == 'GET':
-        # Show the whole task list
-        # Connect database
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            state = 404
-            response = {
-                "message" : db_state[1]
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_view")
+        if not auth_state:
+            task_state = 402
+            task_response = {
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            # call to get tasks
-            app_list = fgapisrv_db.getAppList()
+            # Show the whole task list
+            # Connect database
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,fgapiserverappid=fgapisrv_geappid)
             db_state=fgapisrv_db.getState()
             if db_state[0] != 0:
-                # DBError getting TaskList
-                # Prepare for 402
-                state = 402
+                # Couldn't contact database
+                # Prepare for 404 not found
+                state = 404
                 response = {
                     "message" : db_state[1]
                 }
             else:
-                # Prepare response
-                response = []
-                applications = []
-                state = 200
-                for app_id in app_list:
-                    app_record = fgapisrv_db.getAppRecord(app_id)
-                    db_state=fgapisrv_db.getState()
-                    if db_state[0] != 0:
-                        # DBError getting TaskRecord
-                        # Prepare for 403
-                        state = 403
-                        response = {
-                            "message" : db_state[1]
-                        }
-                    else:
-                        applications += [{
-                             "id"             : app_record['id']
-                            ,"name"           : app_record['name']
-                            ,"description"    : app_record['description']
-                            ,"outcome"        : app_record['outcome']
-                            ,"enabled"        : app_record['enabled']
-                            ,"parameters"     : app_record['parameters']
-                            ,"input_files"    : app_record['input_files']
-                            ,"infrastructures": app_record['infrastructures']
-                            ,"_links"         : [{
-                                                   "rel" : "self"
-                                                  ,"href": "/%s/application/%s" % (fgapiver,app_id)
-                                                 }]
-                        },]
-                response = { "applications": applications }
-
+                # call to get tasks
+                app_list = fgapisrv_db.getAppList()
+                db_state=fgapisrv_db.getState()
+                if db_state[0] != 0:
+                    # DBError getting TaskList
+                    # Prepare for 402
+                    state = 402
+                    response = {
+                        "message" : db_state[1]
+                    }
+                else:
+                    # Prepare response
+                    response = []
+                    applications = []
+                    state = 200
+                    for app_id in app_list:
+                        app_record = fgapisrv_db.getAppRecord(app_id)
+                        db_state=fgapisrv_db.getState()
+                        if db_state[0] != 0:
+                            # DBError getting TaskRecord
+                            # Prepare for 403
+                            state = 403
+                            response = {
+                                "message" : db_state[1]
+                            }
+                        else:
+                            applications += [{
+                                 "id"             : app_record['id']
+                                ,"name"           : app_record['name']
+                                ,"description"    : app_record['description']
+                                ,"outcome"        : app_record['outcome']
+                                ,"enabled"        : app_record['enabled']
+                                ,"parameters"     : app_record['parameters']
+                                ,"input_files"    : app_record['input_files']
+                                ,"infrastructures": app_record['infrastructures']
+                                ,"_links"         : [{
+                                                       "rel" : "self"
+                                                      ,"href": "/%s/application/%s" % (fgapiver,app_id)
+                                                     }]
+                            },]
+                    response = { "applications": applications }
         # When page, per_page are not none (page=0..(len(task_response)/per_page)-1)
         # if page is not None and per_page is not None:
         # task_response = task_response[page*per_page:(page+1)*per_page]
@@ -959,64 +1060,71 @@ def applications():
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        # Getting values
-        params          = request.get_json()
-        name            = params.get('name','')
-        description     = params.get('description','')
-        enabled         = params.get('enabled'  ,[])
-        parameters      = params.get('parameters',[])
-        inp_files       = params.get('input_files',[])
-        infrastructures = params.get('infrastructures',[])
-        # Connect database
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,geapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            state = 404
-            response = {
-                "message" : db_state[1]
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_install")
+        if not auth_state:
+            task_state = 402
+            task_response = {
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            # Create task
-            app_id = fgapisrv_db.initApp(name
-                                        ,description
-                                        ,enabled
-                                        ,parameters
-                                        ,inp_files
-                                        ,infrastructures
-                                        )
-            if app_id < 0:
-                state = fgapisrv_db.getState()
-                # Error initializing task
-                # Prepare for 410 error
-                state = 410
+            # Getting values
+            params          = request.get_json()
+            name            = params.get('name','')
+            description     = params.get('description','')
+            enabled         = params.get('enabled'  ,[])
+            parameters      = params.get('parameters',[])
+            inp_files       = params.get('input_files',[])
+            infrastructures = params.get('infrastructures',[])
+            # Connect database
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,geapiserverappid=fgapisrv_geappid)
+            db_state=fgapisrv_db.getState()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
+                state = 404
                 response = {
-                    "message" : task_state[1]
+                    "message" : db_state[1]
                 }
             else:
-                # Prepare response
-                state = 200
-                app_record = fgapisrv_db.getAppRecord(app_id)
-                response = {
-                             "id"             : app_record['id']
-                            ,"name"           : app_record['name']
-                            ,"description"    : app_record['description']
-                            ,"enabled"        : app_record['enabled']
-                            ,"parameters"     : app_record['parameters']
-                            ,"input_files"    : app_record['input_files']
-                            ,"infrastructures": app_record['infrastructures']
-                            ,"_links"         : [{
-                                                   "rel" : "self"
-                                                  ,"href": "/%s/application/%s" % (fgapiver,app_id)
-                                                 }]
-                           }
+                # Create app
+                app_id = fgapisrv_db.initApp(name
+                                            ,description
+                                            ,enabled
+                                            ,parameters
+                                            ,inp_files
+                                            ,infrastructures
+                                            )
+                if app_id < 0:
+                    state = fgapisrv_db.getState()
+                    # Error initializing task
+                    # Prepare for 410 error
+                    state = 410
+                    response = {
+                        "message" : task_state[1]
+                    }
+                else:
+                    # Prepare response
+                    state = 200
+                    app_record = fgapisrv_db.getAppRecord(app_id)
+                    response = {
+                                 "id"             : app_record['id']
+                                ,"name"           : app_record['name']
+                                ,"description"    : app_record['description']
+                                ,"enabled"        : app_record['enabled']
+                                ,"parameters"     : app_record['parameters']
+                                ,"input_files"    : app_record['input_files']
+                                ,"infrastructures": app_record['infrastructures']
+                                ,"_links"         : [{
+                                                       "rel" : "self"
+                                                      ,"href": "/%s/application/%s" % (fgapiver,app_id)
+                                                     }]
+                               }
         js = json.dumps(response,indent=fgjson_indent)
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
@@ -1031,84 +1139,102 @@ def applications():
 # GET  - shows details
 # POST - could reshape the request (Delete/Recreate)
 @app.route('/%s/applications/<app_id>' % fgapiver,methods=['GET', 'DELETE', 'POST'])
+@login_required
 def app_id(app_id=None):
+    user_name  = current_user.getName()
+    user_id    = current_user.getId()
+    user       = request.values.get('user',user_name)
     if request.method == 'GET':
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            status = 404
-            response = {
-                "message" : db_state[1]
-            }
-        elif not fgapisrv_db.appExists(app_id):
-            status = 404
-            response = {
-                "message" : "Unable to find application with id: %s" % app_id
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_view")
+        if not auth_state:
+            task_state = 402
+            task_response = {
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            # Get task details
-            response=fgapisrv_db.getAppRecord(app_id)
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,fgapiserverappid=fgapisrv_geappid)
             db_state=fgapisrv_db.getState()
             if db_state[0] != 0:
-                # Couldn't get TaskRecord
+                # Couldn't contact database
                 # Prepare for 404 not found
                 status = 404
                 response = {
                     "message" : db_state[1]
                 }
+            elif not fgapisrv_db.appExists(app_id):
+                status = 404
+                response = {
+                    "message" : "Unable to find application with id: %s" % app_id
+                }
             else:
-                status = 200
+                # Get task details
+                response=fgapisrv_db.getAppRecord(app_id)
+                db_state=fgapisrv_db.getState()
+                if db_state[0] != 0:
+                    # Couldn't get TaskRecord
+                    # Prepare for 404 not found
+                    status = 404
+                    response = {
+                        "message" : db_state[1]
+                    }
+                else:
+                    status = 200
         # Display task details
         js = json.dumps(response,indent=fgjson_indent)
         resp = Response(js, status=status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'DELETE':
-        fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
-                                    ,db_port=fgapisrv_db_port
-                                    ,db_user=fgapisrv_db_user
-                                    ,db_pass=fgapisrv_db_pass
-                                    ,db_name=fgapisrv_db_name
-                                    ,iosandbbox_dir=fgapisrv_iosandbox
-                                    ,fgapiserverappid=fgapisrv_geappid)
-        db_state=fgapisrv_db.getState()
-        if db_state[0] != 0:
-            # Couldn't contact database
-            # Prepare for 404 not found
-            status = 404
-            response = {
-                "message" : db_state[1]
-            }
-        elif not fgapisrv_db.appExists(app_id):
-            status = 404
-            response = {
-                "message" : "Unable to find application with id: %s" % app_id
-            }
-        elif not fgapisrv_db.appDelete(app_id):
-            status = 410
-            response = {
-                "message" : "Unable to delete application with id: %s" % app_id
+        auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_delete")
+        if not auth_state:
+            task_state = 402
+            task_response = {
+                "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
-            status = 200
-            response = {
-                "message" : "Successfully removed application with id: %s" % app_id
-            }
+            fgapisrv_db = fgapiserver_db(db_host=fgapisrv_db_host
+                                        ,db_port=fgapisrv_db_port
+                                        ,db_user=fgapisrv_db_user
+                                        ,db_pass=fgapisrv_db_pass
+                                        ,db_name=fgapisrv_db_name
+                                        ,iosandbbox_dir=fgapisrv_iosandbox
+                                        ,fgapiserverappid=fgapisrv_geappid)
+            db_state=fgapisrv_db.getState()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
+                status = 404
+                response = {
+                    "message" : db_state[1]
+                }
+            elif not fgapisrv_db.appExists(app_id):
+                status = 404
+                response = {
+                    "message" : "Unable to find application with id: %s" % app_id
+                }
+            elif not fgapisrv_db.appDelete(app_id):
+                status = 410
+                response = {
+                    "message" : "Unable to delete application with id: %s" % app_id
+                }
+            else:
+                status = 200
+                response = {
+                    "message" : "Successfully removed application with id: %s" % app_id
+                }
         js = json.dumps(response,indent=fgjson_indent)
         resp = Response(js, status=status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
         task_response = {
-            "message" : "Not supported yet"
+            "message" : "Not supported method"
         }
         js = json.dumps(task_response,indent=fgjson_indent)
         resp = Response(js, status=404, mimetype='application/json')

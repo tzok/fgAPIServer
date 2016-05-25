@@ -1203,6 +1203,25 @@ class fgapiserver_db:
             self.closeDB(db,cursor,False)
         return 1==int(no_override)
 
+    """
+      getFileTaskId
+    """
+    def getFileTaskId(self,file_name,file_path):
+        db      = None
+        cursor  = None
+        task_id = None
+        try:
+            db=self.connect()
+            cursor = db.cursor()
+            sql=('select task_id from task_output_file where file=%s and path=%s;')
+            sql_data=(file_name,file_path)
+            cursor.execute(sql,sql_data)
+            task_id = cursor.fetchone()[0]
+        except MySQLdb.Error, e:
+            self.catchDBError(e,db,False)
+        finally:
+            self.closeDB(db,cursor,False)
+        return task_id
 #
 # Application
 #
