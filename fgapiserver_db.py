@@ -441,7 +441,7 @@ class fgapiserver_db:
                 task_args+=[arg[0],]
             # Task input files
             sql=('select file\n'
-                 '      ,if(path is null,\'NEEDED\',\'READY\') status\n'
+                 '      ,if(path is null or length(path)=0,\'NEEDED\',\'READY\') status\n'
                  'from task_input_file\n'
                  'where task_id=%s\n'
                  'order by file_id asc;')
@@ -803,9 +803,10 @@ class fgapiserver_db:
                                   ,"file": file['name'] },]
             # Files can be registered in task_input_files
             for inpfile in app_files+inp_file:
-                # Not None paths refers to existing app_files that could be copied
-                # into the iosandbox task directory; then use iosandbox path
-                if inpfile['path'] is not None:
+                # Not None paths having not empty content refers to an existing
+                # app_file that could be copied into the iosandbox task directory
+                # and path can be modifies with the iosandbox path
+                if inpfile['path'] is not None and len(inpfile['path']) > 0:
                     shutil.copy('%s/%s' % (inpfile['path'],inpfile['file'])
                                ,'%s/%s' % (iosandbox,inpfile['file']))
                     inpfile['path'] = iosandbox
