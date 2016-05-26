@@ -1419,7 +1419,7 @@ class fgapiserver_db:
                  '      ,%s                              -- enabled\n'
                  'from application;\n'
                 )
-            sql_data = (name,description,enabled)
+            sql_data = (name,description,outcome,enabled)
             cursor.execute(sql,sql_data)
             # Get inserted application_id
             sql='select max(id) from application;'

@@ -1071,6 +1071,7 @@ def applications():
             params          = request.get_json()
             name            = params.get('name','')
             description     = params.get('description','')
+            outcome         = params.get('outcome','JOB')
             enabled         = params.get('enabled'  ,[])
             parameters      = params.get('parameters',[])
             inp_files       = params.get('input_files',[])
@@ -1095,6 +1096,7 @@ def applications():
                 # Create app
                 app_id = fgapisrv_db.initApp(name
                                             ,description
+                                            ,outcome
                                             ,enabled
                                             ,parameters
                                             ,inp_files
