@@ -518,7 +518,8 @@ def tasks():
                     }
                 else:
                     # Prepare response
-                    task_response = []
+                    task_response = {}
+                    task_array = []
                     task_state = 200
                     for task_id in task_list:
                         task_record = fgapisrv_db.getTaskRecord(task_id)
@@ -527,11 +528,11 @@ def tasks():
                             # DBError getting TaskRecord
                             # Prepare for 403
                             task_state = 403
-                            task_response = {
+                            task_array = {
                                 "message" : db_state[1]
                             }
                         else:
-                            task_response += [{
+                            task_array += [{
                                  "id"          : task_record['id']
                                 ,"application" : task_record['application']
                                 ,"description" : task_record['description']
@@ -551,6 +552,7 @@ def tasks():
                                                     ,"href": "/%s/tasks/%s/input" % (fgapiver,task_id)
                                                   }]
                             },]
+                    task_response = { "tasks" : task_array }
         # When page, per_page are not none (page=0..(len(task_response)/per_page)-1)
         # if page is not None and per_page is not None:
         # task_response = task_response[page*per_page:(page+1)*per_page]
