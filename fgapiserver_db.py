@@ -405,8 +405,8 @@ class fgapiserver_db:
             # Task record
             sql=('select id\n'
                  '      ,status\n'
-                 '      ,creation\n'
-                 '      ,date_format(last_change, \'%Y-%m-%dT%TZ\') last_change\n'
+                 '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                 '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                  '      ,app_id\n'
                  '      ,description\n'
                  '      ,status\n'
@@ -417,10 +417,10 @@ class fgapiserver_db:
             cursor.execute(sql,sql_data)
             task_dbrec=cursor.fetchone()
             if task_dbrec is not None:
-                task_dicrec={ "id"          : task_dbrec[0]
+                task_dicrec={ "id"          : str(task_dbrec[0])
                              ,"status"      : task_dbrec[1]
-                             ,"creation"    : task_dbrec[2]
-                             ,"last_change" : task_dbrec[3]
+                             ,"creation"    : str(task_dbrec[2])
+                             ,"last_change" : str(task_dbrec[3])
                              ,"application" : task_dbrec[4]
                              ,"description" : task_dbrec[5]
                              ,"status"      : task_dbrec[6]
@@ -474,8 +474,8 @@ class fgapiserver_db:
             sql=('select data_name\n'
                  '      ,data_value\n'
                  '      ,data_desc\n'
-                 '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
-                 '      ,date_format(last_change, \'%Y-%m-%dT%TZ\') last_change\n'
+                 '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                 '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                  'from runtime_data\n'
                  'where task_id=%s\n'
                  'order by data_id asc;')
@@ -588,7 +588,7 @@ class fgapiserver_db:
                  '      ,name\n'
                  '      ,description\n'
                  '      ,outcome\n'
-                 '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
+                 '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                  '      ,enabled\n'
                  'from application\n'
                  'where id=%s;')
@@ -624,7 +624,7 @@ class fgapiserver_db:
             sql=('select id\n'
                  '      ,name\n'
                  '      ,description\n'
-                 '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
+                 '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                  '      ,if(enabled,\'enabled\',\'disabled\') status\n'
                  '      ,if(virtual,\'virtual\',\'real\') status\n'
                  'from infrastructure\n'
@@ -1285,7 +1285,7 @@ class fgapiserver_db:
             sql=('select name\n'
                  '      ,description\n'
                  '      ,outcome\n'
-                 '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
+                 '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                  '      ,enabled\n'
                  'from application\n'
                  'where id=%s;')
@@ -1337,7 +1337,7 @@ class fgapiserver_db:
             sql=('select id\n'
                 '      ,name\n'
                 '      ,description\n'
-                '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
+                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                 '      ,enabled\n'
                 'from infrastructure\n'
                 'where app_id=%s;')
