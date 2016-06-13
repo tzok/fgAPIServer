@@ -124,6 +124,7 @@ def checkDbVer():
                                 ,db_name=fgapisrv_db_name
                                 ,iosandbbox_dir=fgapisrv_iosandbox
                                 ,fgapiserverappid=fgapisrv_geappid)
+    fgapisrv_db.test()
     db_state=fgapisrv_db.getState()
     if db_state[0] != 0:
         # Couldn't contact database

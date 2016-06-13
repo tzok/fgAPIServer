@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-58-g5752a17-5752a17-69
+-- Version: v0.0.2-59-g0ffc2c8-0ffc2c8-72
 --
 --
 drop database if exists fgapiserver;
@@ -390,12 +390,12 @@ create table as_queue (
 
 -- simple_tosca table
 create table simple_tosca (
-    id           int unsigned not null
-   ,task_id      int unsigned not null
-   ,tosca_id     varchar(256) not null
-   ,tosca_status varchar(32)  not null
-   ,creation     datetime     not null -- When the action is enqueued
-   ,last_change  datetime     not null -- When the record has been modified by the GridEngine last time
+    id           int unsigned  not null
+   ,task_id      int unsigned  not null
+   ,tosca_id     varchar(1024) not null
+   ,tosca_status varchar(32)   not null
+   ,creation     datetime      not null -- When the action is enqueued
+   ,last_change  datetime      not null -- When the record has been modified by the GridEngine last time
    ,primary key(id)
 );
 
@@ -418,4 +418,4 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.4','baseline setup','../fgapiserver_db.sql',now())
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.5','baseline setup','../fgapiserver_db.sql',now())

@@ -22,7 +22,7 @@ SQLTMP=$(mktemp)
 # Missing columns/tables
 #
 
-out "Modifying application table"
+out "Users Groups and Roles definition"
 cat >$SQLTMP <<EOF
 create table fg_user (
     id           int unsigned not null auto_increment

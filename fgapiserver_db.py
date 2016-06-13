@@ -133,6 +133,7 @@ class fgapiserver_db:
                               ,passwd=self.db_pass
                               ,db=self.db_name
                               ,port=self.db_port)
+
     """
      test - DB connection tester function
     """
