@@ -937,7 +937,6 @@ def file():
     serve_file = None
     user_name  = current_user.getName()
     user_id    = current_user.getId()
-    app_id     = getTaskAppId(task_id)
     user       = request.values.get('user',user_name)
     file_path  = request.values.get('path',None)
     file_name  = request.values.get('name',None)
@@ -947,7 +946,7 @@ def file():
         auth_state, auth_msg = authorizeUser(current_user,app_id,user,"app_run")
         if not auth_state:
             task_state = 402
-            task_response = {
+            file_response = {
                 "message" : "Not authorized to perform this request:\n%s" % auth_msg
             }
         else:
@@ -957,18 +956,18 @@ def file():
                 resp = Response(serve_file_content, status=200)
                 resp.headers['Content-type'] = 'application/octet-stream'
                 resp.headers.add('Content-Disposition','attachment; filename="%s"' % file_name)
+                return resp
             except:
-                task_response = {
+                file_response = {
                     "message" : "Unable to get file: %s/%s" % (file_path,file_name)
                 }
             finally:
                 if serve_file is not None:
                     serve_file.close()
-        js = json.dumps(task_response,indent=fgjson_indent)
+        js = json.dumps(file_response,indent=fgjson_indent)
         resp = Response(js, status=404)
         resp.headers['Content-type'] = 'application/json'
-
-    return resp
+        return resp
 
 #
 # APPLICATION
