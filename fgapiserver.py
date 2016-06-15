@@ -31,7 +31,7 @@ from flask import Flask
 from flask import request
 from flask import Response
 from flask import jsonify
-from flask.ext.login import LoginManager, UserMixin, login_required, current_user
+from flask_login import LoginManager, UserMixin, login_required, current_user
 from Crypto.Cipher import ARC4
 from OpenSSL import SSL
 from werkzeug import secure_filename
