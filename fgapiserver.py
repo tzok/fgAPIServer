@@ -177,7 +177,7 @@ def getFileTaskId(file_name, file_path):
     if db_state[0] == 0:
         # verifySessionToken returns user_id, usern_name associated to the
         # session token
-        return fgapisrv_db.getFileTaskId(file_nane,file_path)
+        return fgapisrv_db.getFileTaskId(file_name,file_path)
     return None
 
 
