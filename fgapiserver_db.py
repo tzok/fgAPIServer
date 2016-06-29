@@ -90,16 +90,22 @@ class fgapiserver_db:
         self.iosandbbox_dir = kwargs.get('iosandbbox_dir', def_iosandbbox_dir)
         self.geapiserverappid = kwargs.get(
             'geapiserverappid', def_geapiserverappid)
-        logging.debug("[DB settings]\n"
-                      " host: '%s'\n"
-                      " port: '%s'\n"
-                      " user: '%s'\n"
-                      " pass: '%s'\n"
-                      " name: '%s'\n"
-                      " iosandbox_dir: '%s'\n"
-                      " geapiserverappid: '%s'\n"
-                      % (self.db_host, self.db_port, self.db_user, self.db_pass, self.db_name, self.iosandbbox_dir, self.geapiserverappid)
-                      )
+        logging.debug(
+            "[DB settings]\n"
+            " host: '%s'\n"
+            " port: '%s'\n"
+            " user: '%s'\n"
+            " pass: '%s'\n"
+            " name: '%s'\n"
+            " iosandbox_dir: '%s'\n"
+            " geapiserverappid: '%s'\n" %
+            (self.db_host,
+             self.db_port,
+             self.db_user,
+             self.db_pass,
+             self.db_name,
+             self.iosandbbox_dir,
+             self.geapiserverappid))
 
     """
       catchDBError - common operations performed upon database query/transaction failure
@@ -130,7 +136,12 @@ class fgapiserver_db:
     """
 
     def connect(self):
-        return MySQLdb.connect(host=self.db_host, user=self.db_user, passwd=self.db_pass, db=self.db_name, port=self.db_port)
+        return MySQLdb.connect(
+            host=self.db_host,
+            user=self.db_user,
+            passwd=self.db_pass,
+            db=self.db_name,
+            port=self.db_port)
 
     """
      test - DB connection tester function
@@ -149,7 +160,7 @@ class fgapiserver_db:
             data = cursor.fetchone()
             self.err_flag = False
             self.err_msg = 'Database version : %s' % data[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -169,7 +180,7 @@ class fgapiserver_db:
             sql_data = ()
             cursor.execute(sql, sql_data)
             dbver = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -209,7 +220,7 @@ class fgapiserver_db:
                        '    and fg_user.password=password(%s);')
                 sql_data = (sestoken, username, password)
                 cursor.execute(sql, sql_data)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -227,17 +238,18 @@ class fgapiserver_db:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select if((creation+expiry)-now()>0,user_id,NULL) user_id  \n'
-                   '      ,(select name from fg_user where id=user_id) name \n'
-                   'from fg_token \n'
-                   'where token=%s;')
+            sql = (
+                'select if((creation+expiry)-now()>0,user_id,NULL) user_id  \n'
+                '      ,(select name from fg_user where id=user_id) name \n'
+                'from fg_token \n'
+                'where token=%s;')
             sql_data = (sestoken,)
             cursor.execute(sql, sql_data)
             user_rec = cursor.fetchone()
             if user_rec is not None:
                 user_id = user_rec[0]
                 user_name = user_rec[1]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -268,7 +280,7 @@ class fgapiserver_db:
             sql_data = (user_id, role_name)
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -299,7 +311,7 @@ class fgapiserver_db:
             sql_data = (user_id, app_id)
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -331,7 +343,7 @@ class fgapiserver_db:
             record = cursor.fetchone()
             if record is not None:
                 result = record[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -363,9 +375,17 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             record = cursor.fetchone()
             if record is not None:
-                user_info = {"id": record[0], "name": record[1], "password": record[2], "first_name": record[3], "last_name": record[4], "institute": record[5], "mail": record[6], "creation": record[7], "modified": record[8]
-                             }
-        except MySQLdb.Error, e:
+                user_info = {
+                    "id": record[0],
+                    "name": record[1],
+                    "password": record[2],
+                    "first_name": record[3],
+                    "last_name": record[4],
+                    "institute": record[5],
+                    "mail": record[6],
+                    "creation": record[7],
+                    "modified": record[8]}
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -388,7 +408,7 @@ class fgapiserver_db:
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -406,22 +426,34 @@ class fgapiserver_db:
             db = self.connect()
             cursor = db.cursor()
             # Task record
-            sql = ('select id\n'
-                   '      ,status\n'
-                   '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                   '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
-                   '      ,app_id\n'
-                   '      ,description\n'
-                   '      ,status\n'
-                   '      ,user\n'
-                   '      ,iosandbox\n'
-                   'from task where id=%s;')
+            sql = (
+                'select id\n'
+                '      ,status\n'
+                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                '      ,app_id\n'
+                '      ,description\n'
+                '      ,status\n'
+                '      ,user\n'
+                '      ,iosandbox\n'
+                'from task where id=%s;')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             task_dbrec = cursor.fetchone()
             if task_dbrec is not None:
-                task_dicrec = {"id": str(task_dbrec[0]), "status": task_dbrec[1], "creation": str(task_dbrec[2]), "last_change": str(task_dbrec[3]), "application": task_dbrec[4], "description": task_dbrec[5], "status": task_dbrec[6], "user": task_dbrec[7], "iosandbox": task_dbrec[8]
-                               }
+                task_dicrec = {
+                    "id": str(
+                        task_dbrec[0]),
+                    "status": task_dbrec[1],
+                    "creation": str(
+                        task_dbrec[2]),
+                    "last_change": str(
+                        task_dbrec[3]),
+                    "application": task_dbrec[4],
+                    "description": task_dbrec[5],
+                    "status": task_dbrec[6],
+                    "user": task_dbrec[7],
+                    "iosandbox": task_dbrec[8]}
             else:
                 return {}
             # Task arguments
@@ -435,11 +467,12 @@ class fgapiserver_db:
             for arg in cursor:
                 task_args += [arg[0], ]
             # Task input files
-            sql = ('select file\n'
-                   '      ,if(path is null or length(path)=0,\'NEEDED\',\'READY\') status\n'
-                   'from task_input_file\n'
-                   'where task_id=%s\n'
-                   'order by file_id asc;')
+            sql = (
+                'select file\n'
+                '      ,if(path is null or length(path)=0,\'NEEDED\',\'READY\') status\n'
+                'from task_input_file\n'
+                'where task_id=%s\n'
+                'order by file_id asc;')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             task_ifiles = []
@@ -458,32 +491,51 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             task_ofiles = []
             for ofile in cursor:
-                ofile_entry = {
-                    "name": ofile[0], "url": 'file?%s' % urllib.urlencode({"path": ofile[1], "name": ofile[0]})
-                }
+                ofile_entry = {"name": ofile[0], "url": 'file?%s' % urllib.urlencode(
+                    {"path": ofile[1], "name": ofile[0]})}
                 task_ofiles += [ofile_entry, ]
             # runtime_data
-            sql = ('select data_name\n'
-                   '      ,data_value\n'
-                   '      ,data_desc\n'
-                   '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                   '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
-                   'from runtime_data\n'
-                   'where task_id=%s\n'
-                   'order by data_id asc;')
+            sql = (
+                'select data_name\n'
+                '      ,data_value\n'
+                '      ,data_desc\n'
+                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                'from runtime_data\n'
+                'where task_id=%s\n'
+                'order by data_id asc;')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             runtime_data = []
             for rtdata in cursor:
                 rtdata_entry = {
-                    "name": rtdata[0], "value": rtdata[1], "description": rtdata[2], "creation": str(rtdata[3]), "last_change": str(rtdata[4])
-                }
+                    "name": rtdata[0],
+                    "value": rtdata[1],
+                    "description": rtdata[2],
+                    "creation": str(
+                        rtdata[3]),
+                    "last_change": str(
+                        rtdata[4])}
                 runtime_data += [rtdata_entry, ]
             # Prepare output
             task_record = {
-                "id": str(task_dicrec['id']), "status": task_dicrec['status'], "creation": str(task_dicrec['creation']), "last_change": str(task_dicrec['last_change']), "application": str(task_dicrec['application']), "description": task_dicrec['description'], "user": task_dicrec['user'], "arguments": task_args, "input_files": task_ifiles, "output_files": task_ofiles, "runtime_data": runtime_data, "iosandbox": task_dicrec['iosandbox']
-            }
-        except MySQLdb.Error, e:
+                "id": str(
+                    task_dicrec['id']),
+                "status": task_dicrec['status'],
+                "creation": str(
+                    task_dicrec['creation']),
+                "last_change": str(
+                    task_dicrec['last_change']),
+                "application": str(
+                    task_dicrec['application']),
+                "description": task_dicrec['description'],
+                "user": task_dicrec['user'],
+                "arguments": task_args,
+                "input_files": task_ifiles,
+                "output_files": task_ofiles,
+                "runtime_data": runtime_data,
+                "iosandbox": task_dicrec['iosandbox']}
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -518,7 +570,7 @@ class fgapiserver_db:
                     "name": ifile[0], "status": ifile[1]
                 }
                 task_ifiles += (file_info,)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -546,7 +598,7 @@ class fgapiserver_db:
                     "name": ifile[0], "status": ifile[1]
                 }
                 task_ifiles += (file_info,)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -563,20 +615,27 @@ class fgapiserver_db:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select id\n'
-                   '      ,name\n'
-                   '      ,description\n'
-                   '      ,outcome\n'
-                   '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                   '      ,enabled\n'
-                   'from application\n'
-                   'where id=%s;')
+            sql = (
+                'select id\n'
+                '      ,name\n'
+                '      ,description\n'
+                '      ,outcome\n'
+                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,enabled\n'
+                'from application\n'
+                'where id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             app_record = cursor.fetchone()
             app_detail = {
-                "id": str(app_record[0]), "name": app_record[1], "description": app_record[2], "outcome": app_record[3], "creation": str(app_record[4]), "enabled": app_record[5]
-            }
+                "id": str(
+                    app_record[0]),
+                "name": app_record[1],
+                "description": app_record[2],
+                "outcome": app_record[3],
+                "creation": str(
+                    app_record[4]),
+                "enabled": app_record[5]}
             # Add now app parameters
             sql = ('select pname\n'
                    '      ,pvalue\n'
@@ -594,21 +653,28 @@ class fgapiserver_db:
             app_detail['parameters'] = app_parameters
             # Get now application ifnrastructures with their params
             infrastructures = ()
-            sql = ('select id\n'
-                   '      ,name\n'
-                   '      ,description\n'
-                   '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                   '      ,if(enabled,\'enabled\',\'disabled\') status\n'
-                   '      ,if(virtual,\'virtual\',\'real\') status\n'
-                   'from infrastructure\n'
-                   'where app_id=%s;')
+            sql = (
+                'select id\n'
+                '      ,name\n'
+                '      ,description\n'
+                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,if(enabled,\'enabled\',\'disabled\') status\n'
+                '      ,if(virtual,\'virtual\',\'real\') status\n'
+                'from infrastructure\n'
+                'where app_id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             infrastructures = []
             for infra in cursor:
                 infra_details = {
-                    "id": str(infra[0]), "name": infra[1], "description": infra[2], "creation": str(infra[3]), "status": infra[4], "virtual": infra[5]
-                }
+                    "id": str(
+                        infra[0]),
+                    "name": infra[1],
+                    "description": infra[2],
+                    "creation": str(
+                        infra[3]),
+                    "status": infra[4],
+                    "virtual": infra[5]}
                 infrastructures += [infra_details, ]
             # Now loop over infrastructures to get their parameters
             for infra in infrastructures:
@@ -627,7 +693,7 @@ class fgapiserver_db:
                 infra['parameters'] = infra_parameters
             app_detail['infrastructures'] = infrastructures
             return app_detail
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -678,10 +744,9 @@ class fgapiserver_db:
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             for app_file in cursor:
-                app_files += [{
-                    "file": app_file[0], "path": app_file[1], "override": app_file[2]
-                }, ]
-        except MySQLdb.Error, e:
+                app_files += [{"file": app_file[0],
+                               "path": app_file[1], "override": app_file[2]}, ]
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -691,7 +756,14 @@ class fgapiserver_db:
       initTask initialize a task from a given application id
     """
 
-    def initTask(self, app_id, description, user, arguments, input_files, output_files):
+    def initTask(
+            self,
+            app_id,
+            description,
+            user,
+            arguments,
+            input_files,
+            output_files):
         # Get app defined files
         app_files = self.getAppFiles(app_id)
         # Start creating task
@@ -732,15 +804,15 @@ class fgapiserver_db:
             # Insert Task arguments
             if arguments != []:
                 for arg in arguments:
-                    sql = ('insert into task_arguments (task_id\n'
-                           '                           ,arg_id\n'
-                           '                           ,argument)\n'
-                           'select %s                                          -- task_id\n'
-                           '      ,if(max(arg_id) is NULL,1,max(arg_id)+1)     -- arg_id\n'
-                           '      ,%s                                          -- argument\n'
-                           'from task_arguments\n'
-                           'where task_id=%s'
-                           )
+                    sql = (
+                        'insert into task_arguments (task_id\n'
+                        '                           ,arg_id\n'
+                        '                           ,argument)\n'
+                        'select %s                                          -- task_id\n'
+                        '      ,if(max(arg_id) is NULL,1,max(arg_id)+1)     -- arg_id\n'
+                        '      ,%s                                          -- argument\n'
+                        'from task_arguments\n'
+                        'where task_id=%s')
                     sql_data = (task_id, arg, task_id)
                     cursor.execute(sql, sql_data)
             # Insert Task input_files
@@ -776,19 +848,21 @@ class fgapiserver_db:
                 # and path can be modifies with the iosandbox path
                 if inpfile['path'] is not None and len(inpfile['path']) > 0:
                     shutil.copy(
-                        '%s/%s' % (inpfile['path'], inpfile['file']), '%s/%s' % (iosandbox, inpfile['file']))
+                        '%s/%s' %
+                        (inpfile['path'], inpfile['file']), '%s/%s' %
+                        (iosandbox, inpfile['file']))
                     inpfile['path'] = iosandbox
-                sql = ('insert into task_input_file (task_id\n'
-                       '                            ,file_id\n'
-                       '                            ,path\n'
-                       '                            ,file)\n'
-                       'select %s                                          -- task_id\n'
-                       '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                       '      ,%s                                          -- path\n'
-                       '      ,%s                                          -- file\n'
-                       'from task_input_file\n'
-                       'where task_id=%s'
-                       )
+                sql = (
+                    'insert into task_input_file (task_id\n'
+                    '                            ,file_id\n'
+                    '                            ,path\n'
+                    '                            ,file)\n'
+                    'select %s                                          -- task_id\n'
+                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
+                    '      ,%s                                          -- path\n'
+                    '      ,%s                                          -- file\n'
+                    'from task_input_file\n'
+                    'where task_id=%s')
                 sql_data = (task_id, inpfile['path'], inpfile['file'], task_id)
                 cursor.execute(sql, sql_data)
             # Insert Task output_files specified by application settings
@@ -804,21 +878,22 @@ class fgapiserver_db:
                 output_files += [{"name": out_file[0]}, ]
             # Insert Task output_files specified by user
             for outfile in output_files:
-                sql = ('insert into task_output_file (task_id\n'
-                       '                             ,file_id\n'
-                       '                             ,file)\n'
-                       'select %s                                          -- task_id\n'
-                       '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                       '      ,%s                                          -- file\n'
-                       'from task_output_file\n'
-                       'where task_id=%s'
-                       )
+                sql = (
+                    'insert into task_output_file (task_id\n'
+                    '                             ,file_id\n'
+                    '                             ,file)\n'
+                    'select %s                                          -- task_id\n'
+                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
+                    '      ,%s                                          -- file\n'
+                    'from task_output_file\n'
+                    'where task_id=%s')
                 sql_data = (task_id, outfile['name'], task_id)
                 cursor.execute(sql, sql_data)
-        except IOError as (errno, strerror):
+        except IOError as xxx_todo_changeme:
+            (errno, strerror) = xxx_todo_changeme.args
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -854,7 +929,7 @@ class fgapiserver_db:
                 self.err_msg = "[ERROR] Unable to find task id: %s" % task_id
             else:
                 iosandbox = result[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -876,7 +951,7 @@ class fgapiserver_db:
                    '  and file=%s;')
             sql_data = (filepath, task_id, filename)
             cursor.execute(sql, sql_data)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -895,13 +970,14 @@ class fgapiserver_db:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
-                   'from task_input_file\n'
-                   'where task_id=%s;')
+            sql = (
+                'select sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
+                'from task_input_file\n'
+                'where task_id=%s;')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             sandbox_ready = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -970,33 +1046,34 @@ class fgapiserver_db:
                 # Insert task record in the APIServerDaemon' queue
                 db = self.connect()
                 cursor = db.cursor()
-                sql = ('insert into as_queue (\n'
-                       '   task_id       -- Taks reference for this task queue entry\n'
-                       '  ,target_id     -- UsersTracking\' ActiveGridInteraction id reference\n'
-                       '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
-                       '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                       '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
-                       '  ,target_status -- Specific target executor status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
-                       '  ,creation      -- When the action is enqueued\n'
-                       '  ,last_change   -- When the record has been modified by the target executor last time\n'
-                       '  ,check_ts      -- Checking timestamp used to perform a round-robin loop\n'
-                       '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                       ') values (%s,NULL,%s,\'SUBMIT\',\'QUEUED\',NULL,now(),now(),now(),%s);'
-                       )
+                sql = (
+                    'insert into as_queue (\n'
+                    '   task_id       -- Taks reference for this task queue entry\n'
+                    '  ,target_id     -- UsersTracking\' ActiveGridInteraction id reference\n'
+                    '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
+                    '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
+                    '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
+                    '  ,target_status -- Specific target executor status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
+                    '  ,creation      -- When the action is enqueued\n'
+                    '  ,last_change   -- When the record has been modified by the target executor last time\n'
+                    '  ,check_ts      -- Checking timestamp used to perform a round-robin loop\n'
+                    '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
+                    ') values (%s,NULL,%s,\'SUBMIT\',\'QUEUED\',NULL,now(),now(),now(),%s);')
                 sql_data = (task_info['id'],
                             target_executor, task_info['iosandbox'])
                 cursor.execute(sql, sql_data)
-                sql = ('update task set status=\'SUBMIT\', last_change=now() where id=%s;'
-                       )
+                sql = (
+                    'update task set status=\'SUBMIT\', last_change=now() where id=%s;')
                 sql_data = (str(task_info['id']),)
                 cursor.execute(sql, sql_data)
-            except MySQLdb.Error, e:
+            except MySQLdb.Error as e:
                 self.catchDBError(e, db, True)
             finally:
                 self.closeDB(db, cursor, True)
                 if as_file is not None:
                     as_file.close()
-        except IOError as (errno, strerror):
+        except IOError as xxx_todo_changeme1:
+            (errno, strerror) = xxx_todo_changeme1.args
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
         finally:
@@ -1053,7 +1130,7 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             for task_id in cursor:
                 task_ids += [task_id[0], ]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -1073,19 +1150,19 @@ class fgapiserver_db:
             # Insert task record in the GridEngine' queue
             db = self.connect()
             cursor = db.cursor()
-            sql = ('insert into as_queue (\n'
-                   '   task_id       -- Taks reference for this GridEngine queue entry\n'
-                   '  ,target_id     -- (GridEngine) UsersTracking\' ActiveGridInteraction id reference\n'
-                   '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
-                   '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                   '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
-                   '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
-                   '  ,creation      -- When the action is enqueued\n'
-                   '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
-                   '  ,check_ts      -- Check timestamp used to implement a round-robin strategy loop\n'
-                   '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                   ') values (%s,NULL,\'GridEngine\',\'CLEAN\',\'QUEUED\',NULL,now(),now(),now(),%s);'
-                   )
+            sql = (
+                'insert into as_queue (\n'
+                '   task_id       -- Taks reference for this GridEngine queue entry\n'
+                '  ,target_id     -- (GridEngine) UsersTracking\' ActiveGridInteraction id reference\n'
+                '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
+                '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
+                '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
+                '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
+                '  ,creation      -- When the action is enqueued\n'
+                '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
+                '  ,check_ts      -- Check timestamp used to implement a round-robin strategy loop\n'
+                '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
+                ') values (%s,NULL,\'GridEngine\',\'CLEAN\',\'QUEUED\',NULL,now(),now(),now(),%s);')
             sql_data = (task_info['id'], task_info['iosandbox'])
             cursor.execute(sql, sql_data)
             sql = (
@@ -1093,7 +1170,7 @@ class fgapiserver_db:
             sql_data = (str(task_info['id']),)
             cursor.execute(sql, sql_data)
             status = True
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -1129,22 +1206,23 @@ class fgapiserver_db:
                     data_count = result[0]
                 if data_count == 0:
                     # First data insertion
-                    sql = ('insert into runtime_data (task_id\n'
-                           '                         ,data_id\n'
-                           '                         ,data_name\n'
-                           '                         ,data_value\n'
-                           '                         ,data_desc\n'
-                           '                         ,creation\n'
-                           '                         ,last_change)\n'
-                           'select %s\n'
-                           '      ,(select if(max(data_id) is NULL,1,max(data_id)+1)\n'
-                           '        from runtime_data\n'
-                           '        where task_id=%s)\n'
-                           '      ,%s\n'
-                           '      ,%s\n'
-                           '      ,%s\n'
-                           '      ,now()\n'
-                           '      ,now();\n')
+                    sql = (
+                        'insert into runtime_data (task_id\n'
+                        '                         ,data_id\n'
+                        '                         ,data_name\n'
+                        '                         ,data_value\n'
+                        '                         ,data_desc\n'
+                        '                         ,creation\n'
+                        '                         ,last_change)\n'
+                        'select %s\n'
+                        '      ,(select if(max(data_id) is NULL,1,max(data_id)+1)\n'
+                        '        from runtime_data\n'
+                        '        where task_id=%s)\n'
+                        '      ,%s\n'
+                        '      ,%s\n'
+                        '      ,%s\n'
+                        '      ,now()\n'
+                        '      ,now();\n')
                     sql_data = (task_id, task_id, data_name,
                                 data_value, data_desc)
                     cursor.execute(sql, sql_data)
@@ -1158,7 +1236,7 @@ class fgapiserver_db:
                     sql_data = (data_value, data_name, task_id)
                     cursor.execute(sql, sql_data)
                     status = True
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -1176,13 +1254,14 @@ class fgapiserver_db:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select if(sum(override) is NULL,TRUE,count(*)=sum(override)) override\n'
-                   'from application_file\n'
-                   'where app_id=%s;')
+            sql = (
+                'select if(sum(override) is NULL,TRUE,count(*)=sum(override)) override\n'
+                'from application_file\n'
+                'where app_id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             no_override = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -1203,7 +1282,7 @@ class fgapiserver_db:
             sql_data = (file_name, file_path)
             cursor.execute(sql, sql_data)
             task_id = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -1228,7 +1307,7 @@ class fgapiserver_db:
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -1252,7 +1331,7 @@ class fgapiserver_db:
             cursor.execute(sql)
             for app_id in cursor:
                 app_ids += [app_id[0], ]
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, False)
         finally:
             self.closeDB(db, cursor, False)
@@ -1270,19 +1349,26 @@ class fgapiserver_db:
             db = self.connect()
             cursor = db.cursor()
             # Task record
-            sql = ('select name\n'
-                   '      ,description\n'
-                   '      ,outcome\n'
-                   '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                   '      ,enabled\n'
-                   'from application\n'
-                   'where id=%s;')
+            sql = (
+                'select name\n'
+                '      ,description\n'
+                '      ,outcome\n'
+                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,enabled\n'
+                'from application\n'
+                'where id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             app_dbrec = cursor.fetchone()
             if app_dbrec is not None:
-                app_dicrec = {"id": str(app_id), "name": app_dbrec[0], "description": app_dbrec[1], "outcome": app_dbrec[2], "creation": str(app_dbrec[3]), "enabled": app_dbrec[4]
-                              }
+                app_dicrec = {
+                    "id": str(app_id),
+                    "name": app_dbrec[0],
+                    "description": app_dbrec[1],
+                    "outcome": app_dbrec[2],
+                    "creation": str(
+                        app_dbrec[3]),
+                    "enabled": app_dbrec[4]}
             else:
                 return {}
             # Application parameters
@@ -1295,8 +1381,8 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             app_params = []
             for param in cursor:
-                app_params += [{"name": param[0], "value": param[1], "description": ""
-                                }, ]
+                app_params += [{"name": param[0],
+                                "value": param[1], "description": ""}, ]
             # Application input files
             sql = ('select file\n'
                    '      ,path\n'
@@ -1313,13 +1399,14 @@ class fgapiserver_db:
                 }
                 app_ifiles += [ifile_entry, ]
             # Application infrastructures
-            sql = ('select id\n'
-                   '      ,name\n'
-                   '      ,description\n'
-                   '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                   '      ,enabled\n'
-                   'from infrastructure\n'
-                   'where app_id=%s;')
+            sql = (
+                'select id\n'
+                '      ,name\n'
+                '      ,description\n'
+                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,enabled\n'
+                'from infrastructure\n'
+                'where app_id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             app_infras = []
@@ -1345,9 +1432,17 @@ class fgapiserver_db:
                 app_infra["parameters"] = infra_params
             # Prepare output
             app_record = {
-                "id": str(app_id), "name": app_dicrec['name'], "description": app_dicrec['description'], "outcome": app_dicrec['outcome'], "creation": str(app_dicrec['creation']), "enabled": app_dicrec['enabled'], "parameters": app_params, "input_files": app_ifiles, "infrastructures": app_infras
-            }
-        except MySQLdb.Error, e:
+                "id": str(app_id),
+                "name": app_dicrec['name'],
+                "description": app_dicrec['description'],
+                "outcome": app_dicrec['outcome'],
+                "creation": str(
+                    app_dicrec['creation']),
+                "enabled": app_dicrec['enabled'],
+                "parameters": app_params,
+                "input_files": app_ifiles,
+                "infrastructures": app_infras}
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -1363,7 +1458,15 @@ class fgapiserver_db:
                                 ,infrastructures
     """
 
-    def initApp(self, name, description, outcome, enabled, parameters, inp_files, infrastructures):
+    def initApp(
+            self,
+            name,
+            description,
+            outcome,
+            enabled,
+            parameters,
+            inp_files,
+            infrastructures):
         # Start creating app
         db = None
         cursor = None
@@ -1396,34 +1499,34 @@ class fgapiserver_db:
             # Insert Application parameters
             if parameters != []:
                 for param in parameters:
-                    sql = ('insert into application_parameter (app_id\n'
-                           '                                  ,param_id\n'
-                           '                                  ,pname\n'
-                           '                                  ,pvalue)\n'
-                           'select %s                                          -- app_id\n'
-                           '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
-                           '      ,%s                                          -- pname\n'
-                           '      ,%s                                          -- pvalue\n'
-                           'from application_parameter\n'
-                           'where app_id=%s'
-                           )
+                    sql = (
+                        'insert into application_parameter (app_id\n'
+                        '                                  ,param_id\n'
+                        '                                  ,pname\n'
+                        '                                  ,pvalue)\n'
+                        'select %s                                          -- app_id\n'
+                        '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
+                        '      ,%s                                          -- pname\n'
+                        '      ,%s                                          -- pvalue\n'
+                        'from application_parameter\n'
+                        'where app_id=%s')
                     sql_data = (app_id, param['name'], param['value'], app_id)
                     cursor.execute(sql, sql_data)
             # Insert Application input_files
             for ifile in inp_files:
-                sql = ('insert into application_file (app_id\n'
-                       '                            ,file_id\n'
-                       '                            ,file\n'
-                       '                            ,path\n'
-                       '                            ,override)\n'
-                       'select %s                                          -- app_id\n'
-                       '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                       '      ,%s                                          -- file\n'
-                       '      ,%s                                          -- path\n'
-                       '      ,%s                                          -- override\n'
-                       'from application_file\n'
-                       'where app_id=%s'
-                       )
+                sql = (
+                    'insert into application_file (app_id\n'
+                    '                            ,file_id\n'
+                    '                            ,file\n'
+                    '                            ,path\n'
+                    '                            ,override)\n'
+                    'select %s                                          -- app_id\n'
+                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
+                    '      ,%s                                          -- file\n'
+                    '      ,%s                                          -- path\n'
+                    '      ,%s                                          -- override\n'
+                    'from application_file\n'
+                    'where app_id=%s')
                 sql_data = (app_id, ifile['name'], ifile[
                             'path'], ifile['override'], app_id)
                 cursor.execute(sql, sql_data)
@@ -1457,24 +1560,25 @@ class fgapiserver_db:
                 infra_id = cursor.fetchone()[0]
                 # Insert Application infrastructure parameters
                 for param in infra['parameters']:
-                    sql = ('insert into infrastructure_parameter (infra_id\n'
-                           '                                     ,param_id\n'
-                           '                                     ,pname\n'
-                           '                                     ,pvalue)\n'
-                           'select %s                                          -- infra_id\n'
-                           '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
-                           '      ,%s                                          -- pname\n'
-                           '      ,%s                                          -- pvalue\n'
-                           'from infrastructure_parameter\n'
-                           'where infra_id = %s;'
-                           )
+                    sql = (
+                        'insert into infrastructure_parameter (infra_id\n'
+                        '                                     ,param_id\n'
+                        '                                     ,pname\n'
+                        '                                     ,pvalue)\n'
+                        'select %s                                          -- infra_id\n'
+                        '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
+                        '      ,%s                                          -- pname\n'
+                        '      ,%s                                          -- pvalue\n'
+                        'from infrastructure_parameter\n'
+                        'where infra_id = %s;')
                     sql_data = (infra_id, param['name'], param[
                                 'value'], infra_id)
                     cursor.execute(sql, sql_data)
-        except IOError as (errno, strerror):
+        except IOError as xxx_todo_changeme2:
+            (errno, strerror) = xxx_todo_changeme2.args
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)
@@ -1498,8 +1602,9 @@ class fgapiserver_db:
             #    id (infra_id in parameters); a check is
             #    necessary here ...
             #
-            sql = ('delete from infrastructure_parameter\n'
-                   'where infra_id in (select id from infrastructure where app_id=%s);')
+            sql = (
+                'delete from infrastructure_parameter\n'
+                'where infra_id in (select id from infrastructure where app_id=%s);')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             sql = ('delete from infrastructure where app_id=%s;')
@@ -1514,10 +1619,11 @@ class fgapiserver_db:
             sql = ('delete from application where id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
-        except IOError as (errno, strerror):
+        except IOError as xxx_todo_changeme3:
+            (errno, strerror) = xxx_todo_changeme3.args
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
-        except MySQLdb.Error, e:
+        except MySQLdb.Error as e:
             self.catchDBError(e, db, True)
         finally:
             self.closeDB(db, cursor, True)

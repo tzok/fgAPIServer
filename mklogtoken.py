@@ -35,7 +35,11 @@ password = "test"
 # Encode
 def tokenEncode(key, username, password):
     obj = ARC4.new(key)
-    return base64.b64encode(obj.encrypt("username=%s:password=%s:timestamp=%s" % (username, password, int(time.time()))))
+    return base64.b64encode(
+        obj.encrypt(
+            "username=%s:password=%s:timestamp=%s" %
+            (username, password, int(
+                time.time()))))
 
 # Decode
 
