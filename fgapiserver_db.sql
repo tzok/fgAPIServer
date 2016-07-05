@@ -23,7 +23,8 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.1-15-g1527c76-1527c76-22
+-- Version: v0.0.2-63-g13196a8-13196a8-77
+--
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
@@ -33,25 +34,27 @@ use fgapiserver;
 
 -- Application
 create table application (
-    id           int unsigned not null auto_increment
-   ,name         varchar(256)
-   ,description  varchar(256)
-   ,creation     datetime
-   ,enabled      boolean default false
+    id           int unsigned not null auto_increment -- Application id
+   ,name         varchar(64) not null                 -- Application name
+   ,description  varchar(256) not null                -- Application description
+   ,outcome      varchar(32)  not null                -- Application outcome (JOB,RESOURCE,...)
+   ,creation     datetime                             -- Application creation timestamp
+   ,enabled      boolean default false                -- Enabled application flag
    ,primary key(id)
 );
 
-insert into application (id,name,description,creation,enabled) 
-values (1,"hostname","hostname tester application",now(),true);
-insert into application (id,name,description,creation,enabled)
-values (2,"SayHello","A more complex app using I/O Sandboxing",now(),true);
+insert into application (id,name,description,outcome,creation,enabled)
+values (1,"hostname","hostname tester application","JOB",now(),true);
+insert into application (id,name,description,outcome,creation,enabled)
+values (2,"SayHello","A more complex app using I/O Sandboxing","JOB",now(),true);
 
 -- Application parameters
 create table application_parameter (
-    app_id        int unsigned not null
-   ,param_id      int unsigned not null
-   ,pname         varchar(64) not null
-   ,pvalue        varchar(256)
+    app_id        int unsigned not null  -- application id
+   ,param_id      int unsigned not null  -- parameter id
+   ,pname         varchar(64)  not null  -- parameter name
+   ,pvalue        varchar(256)           -- parameter value
+   ,pdesc         varchar(1024)          -- parameter description
    ,primary key(app_id,param_id)
    ,foreign key (app_id) references application(id)
 );
@@ -62,11 +65,13 @@ insert into application_parameter (app_id,param_id,pname,pvalue) values (1,1,'jo
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,2,'jobdesc_arguments','-f');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,3,'jobdesc_output','stdout.txt');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (1,4,'jobdesc_error','stderr.txt');
+insert into application_parameter (app_id,param_id,pname,pvalue) values (1,5,'target_executor','GridEngine');
 -- App 2
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,1,'jobdesc_executable','/bin/bash');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,2,'jobdesc_arguments','sayhello.sh');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,3,'jobdesc_output','sayhello.out');
 insert into application_parameter (app_id,param_id,pname,pvalue) values (2,4,'jobdesc_error','sayhello.err');
+insert into application_parameter (app_id,param_id,pname,pvalue) values (2,5,'target_executor','GridEngine');
 
 -- Application files
 create table application_file (
@@ -85,12 +90,13 @@ insert into application_file (app_id,file_id,file,path,override) values (2,2,'sa
 
 -- Infrastructure
 create table infrastructure (
-    id           int unsigned not null auto_increment
-   ,app_id       int unsigned not null
-   ,name         varchar(256) not null
-   ,description  varchar(256) not null
-   ,creation     datetime not null
-   ,enabled      boolean default false not null
+    id           int unsigned not null auto_increment    -- Infrastructure id
+   ,app_id       int unsigned not null                   -- Infrastructure app_id
+   ,name         varchar(256) not null                   -- Infrastructure name
+   ,description  varchar(256) not null                   -- Infrastructure description
+   ,creation     datetime not null                       -- Creation timestamp
+   ,enabled      boolean default false not null          -- Enabled infrastructure flag
+   ,virtual      boolean default false not null          -- True if a virtual infrastructure
    ,primary key(id,app_id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
@@ -98,10 +104,11 @@ create table infrastructure (
 
 -- Infrastructure parameter
 create table infrastructure_parameter (
-    infra_id     int unsigned not null
-   ,param_id     int unsigned not null 
-   ,pname        varchar(64) not null
-   ,pvalue       varchar(256) not null
+    infra_id     int unsigned not null -- Infrastructure Id (see infrastructure.id)
+   ,param_id     int unsigned not null -- Parameter id
+   ,pname        varchar(64)  not null -- Parameter name
+   ,pvalue       varchar(256) not null -- Parameter value
+   ,pdesc        varchar(1024)         -- App. parameter description as in specs.
    ,primary key(infra_id,param_id)
    ,foreign key(infra_id) references infrastructure(id)
 );
@@ -120,9 +127,9 @@ insert into infrastructure (id,app_id,name,description,creation,enabled)
 values (3,1,"hello@eumed","hostname application eumed (wms)",now(),false);
 
 -- Parameters for infrastructure helloworld@csgfsdk (SSH)
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice','ssh://90.147.74.95');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,2,'username','jobtest');
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,3,'password','Xvf56jZ751f');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,1,'jobservice'     ,'ssh://90.147.74.95');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,2,'username'       ,'jobtest');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (1,3,'password'       ,'Xvf56jZ751f');
 
 -- Parameters for infrastructure sayhello@nebula (rOCCI)
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2, 1,'jobservice'      ,'rocci://nebula-server-01.ct.infn.it:9000');
@@ -137,14 +144,14 @@ insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,
 insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (2,10,'rfc_proxy'       ,'true');
 
 -- Parameters for infrastructure sayhello@eumed (wms)
-insert into infrastructure_parameter values (3,1,'jobservice'  ,'wms://wms.ulakbim.gov.tr:7443/glite_wms_wmproxy_server');
-insert into infrastructure_parameter values (3,2,'bdii'        ,'ldap://bdii.eumedgrid.eu:2170');
-insert into infrastructure_parameter values (3,3,'eToken_host' ,'etokenserver2.ct.infn.it');
-insert into infrastructure_parameter values (3,4,'eToken_port' ,'8082');
-insert into infrastructure_parameter values (3,5,'eToken_id'   ,'bc681e2bd4c3ace2a4c54907ea0c379b');
-insert into infrastructure_parameter values (3,6,'voms'        ,'eumed');
-insert into infrastructure_parameter values (3,7,'voms_role'   ,'eumed');
-insert into infrastructure_parameter values (3,8,'rfc_proxy'   ,'false');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,1,'jobservice'     ,'wms://wms.ulakbim.gov.tr:7443/glite_wms_wmproxy_server');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,2,'bdii'           ,'ldap://bdii.eumedgrid.eu:2170');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,3,'eToken_host'    ,'etokenserver2.ct.infn.it');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,4,'eToken_port'    ,'8082');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,5,'eToken_id'      ,'bc681e2bd4c3ace2a4c54907ea0c379b');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,6,'voms'           ,'eumed');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,7,'voms_role'      ,'eumed');
+insert into infrastructure_parameter (infra_id,param_id,pname,pvalue) values (3,8,'rfc_proxy'      ,'false');
 
 -- Task table
 create table task (
@@ -202,6 +209,154 @@ create table runtime_data (
     ,foreign key (task_id) references task(id)
 );
 
+-- Inifrastructure task
+-- Virtual Infrastructure are depending form the task that created it
+create table infrastructure_task (
+   infra_id     int unsigned not null       -- Infrastructure Id (see infrastructure.id)
+  ,task_id      int unsigned not null       -- id of the task owning this infrastructure
+  ,app_id       int unsigned not null       -- id of the application responsible to create the infrastructure
+  ,creation     datetime not null           -- Virtual infrastructure creation timestamp
+  ,foreign key(infra_id) references infrastructure(id)
+  ,foreign key(app_id) references application(id)
+  ,foreign key(task_id) references task(id)
+);
+
+--
+-- Tables defining: Users, Groups and Roles
+--
+
+-- Users table, owns only user information
+create table fg_user (
+    id           int unsigned not null auto_increment  -- record id
+   ,name         varchar(128)  not null                -- name identifier
+   ,password     varchar(4096) not null                -- shadowed password
+   ,first_name   varchar(128)  not null                -- first name
+   ,last_name    varchar(128)  not null                -- last name
+   ,institute    varchar(256)  not null                -- institution
+   ,mail         varchar(1024) not null                -- email, more addresses as comma separated values
+   ,creation     datetime      not null                -- When user has been inserted
+   ,modified     datetime      not null                -- When user has been modified
+   ,primary key(id,name)
+);
+
+-- Users baseline values; users and passwords must be replaced with real values
+insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
+values (1,'futuregateway',password('futuregateway'),'FutureGateway','FutureGateway','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
+insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
+values (2,'test',password('test'),'Test','Test','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
+insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
+values (3,'brunor',password('brunor'),'Riccardo','Bruno','INFN','riccardo.bruno@ct.infn.it',now(),now());
+
+
+-- Groups table, users may belong to one or more groups defined below
+create table fg_group (
+    id           int unsigned not null auto_increment  -- record id
+   ,name         varchar(128)  not null                -- name identifier
+   ,creation     datetime      not null                -- When group has been inserted
+   ,modified     datetime      not null                -- When group has been modified
+   ,primary key(id)
+);
+
+-- Groups baseline values
+insert into fg_group (id,name,creation,modified) values (1,'administrator',now(),now()); -- Can do anything
+insert into fg_group (id,name,creation,modified) values (2,'test',now(),now());          -- Can do tests only
+insert into fg_group (id,name,creation,modified) values (3,'generic user',now(),now());  -- Restricted user (view only)
+
+--  Roles table, different actions can be done by users and groups
+create table fg_role (
+    id           int unsigned not null auto_increment  -- record id
+   ,name         varchar(128)  not null                -- name identifier
+   ,creation     datetime      not null                -- when group has been inserted
+   ,modified     datetime      not null                -- when group has been modified
+   ,primary key(id)
+);
+
+-- Roles baseline values
+insert into fg_role (id,name,creation,modified) values ( 1,'app_install',now(),now());       -- Install an application
+insert into fg_role (id,name,creation,modified) values ( 2,'app_change',now(),now());        -- Modify an application
+insert into fg_role (id,name,creation,modified) values ( 3,'app_delete',now(),now());        -- Delete an application
+insert into fg_role (id,name,creation,modified) values ( 4,'app_view',now(),now());          -- Run an application
+insert into fg_role (id,name,creation,modified) values ( 5,'app_run',now(),now());           -- Run an application
+insert into fg_role (id,name,creation,modified) values ( 6,'infra_add',now(),now());         -- Add an infrastructure
+insert into fg_role (id,name,creation,modified) values ( 7,'infra_change',now(),now());      -- Change infrastructure
+insert into fg_role (id,name,creation,modified) values ( 8,'infra_delete',now(),now());      -- Delete an infrastructure
+insert into fg_role (id,name,creation,modified) values ( 9,'infra_view',now(),now());        -- View an infrastructure
+insert into fg_role (id,name,creation,modified) values (10,'infra_attach',now(),now());      -- Attach an infrastructure to an application
+insert into fg_role (id,name,creation,modified) values (11,'infra_detach',now(),now());      -- Detach an infrastructure from an application
+insert into fg_role (id,name,creation,modified) values (12,'task_delete',now(),now());       -- Delete a task
+insert into fg_role (id,name,creation,modified) values (13,'task_view',now(),now());         -- View a task
+insert into fg_role (id,name,creation,modified) values (14,'task_userdata',now(),now());     -- Manage userdata on task
+insert into fg_role (id,name,creation,modified) values (15,'user_add',now(),now());          -- Can add users
+insert into fg_role (id,name,creation,modified) values (16,'user_del',now(),now());          -- Can remove users
+insert into fg_role (id,name,creation,modified) values (17,'user_change',now(),now());       -- Can change users
+insert into fg_role (id,name,creation,modified) values (18,'group_change',now(),now());      -- Can change groups
+insert into fg_role (id,name,creation,modified) values (19,'role_change',now(),now());       -- Can change roles
+insert into fg_role (id,name,creation,modified) values (20,'user_impersonate',now(),now());  -- Can impersonate any other users
+insert into fg_role (id,name,creation,modified) values (21,'group_impersonate',now(),now()); -- Can impersonate other users in the same group
+--
+-- CrossTables applying Roles to Groups and Users
+--
+
+-- UserGroups, associate the user membership in groups
+create table fg_user_group (
+    user_id     int unsigned not null -- user id
+   ,group_id    int unsigned not null -- user id
+   ,creation    datetime     not null -- when association has been done
+   ,foreign key (user_id) references fg_user(id)
+   ,foreign key (group_id) references fg_group(id)
+);
+
+-- UserGroups baseline values
+insert into fg_user_group (user_id,group_id,creation) values (1,1,now()); -- futuregateway user to Administrator group
+insert into fg_user_group (user_id,group_id,creation) values (2,2,now()); -- test user to Test group
+insert into fg_user_group (user_id,group_id,creation) values (3,3,now()); -- brunor to generic user group
+
+-- GroupRoles, associate roles to groups
+create table fg_group_role (
+    group_id    int unsigned not null -- user id
+   ,role_id     int unsigned not null -- user id
+   ,creation    datetime     not null -- when association has been done
+   ,foreign key (group_id) references fg_group(id)
+   ,foreign key (role_id) references fg_role(id)
+);
+
+-- Administrator roles (grant all privileges)
+insert into fg_group_role (group_id,role_id,creation)
+select 1,id,now() from fg_role;
+
+-- Test roles
+insert into fg_group_role (group_id,role_id,creation) values (2, 4, now()); -- Test can view applications
+insert into fg_group_role (group_id,role_id,creation) values (2, 5, now()); -- Test can run applications
+insert into fg_group_role (group_id,role_id,creation) values (2,12, now()); -- Test can delete tasks
+insert into fg_group_role (group_id,role_id,creation) values (2,13, now()); -- Test can view tasks
+insert into fg_group_role (group_id,role_id,creation) values (2,14, now()); -- Test can manage userdata on tasks
+
+-- Generic user roles
+insert into fg_group_role (group_id,role_id,creation) values (3, 4, now()); -- GenericUser can view applications
+
+-- Associate applications to Groups
+create table fg_group_apps (
+    group_id    int unsigned not null -- group id
+   ,app_id      int unsigned not null -- app id
+   ,creation    datetime     not null -- when association has been done
+   ,foreign key (group_id) references fg_group(id)
+   ,foreign key (app_id) references application(id)
+);
+
+insert into fg_group_apps (group_id, app_id, creation)
+select 1,id,now() from application;                                        -- Administrator access to all appications
+insert into fg_group_apps (group_id, app_id, creation) values (2,1,now()); -- Test access to hostname
+insert into fg_group_apps (group_id, app_id, creation) values (2,2,now()); -- Test access to helloworld
+
+-- AccessTokens
+-- Any API call needs an access token which uniquelly authorized and identifies the issuer
+create table fg_token (
+    token    varchar(64)  not null -- access token
+   ,user_id  int unsigned not null -- the associated user
+   ,creation datetime     not null -- when token has been created
+   ,expiry   integer               -- number of seconds of validity (default 24 hours)
+);
+
 --
 -- APIServer queue table
 --
@@ -222,9 +377,45 @@ create table as_queue (
     ,check_ts      datetime    not null            -- Check timestamp used to implement a round-robin checking loop
     ,action_info   varchar(128)                    -- Temporary directory path containing further info to accomplish the requested operation
     ,primary key(task_id,action)
+    ,foreign key (task_id) references task(id)
     ,index(task_id)
     ,index(action)
 --  ,index(target)	
     ,index(last_change)
 );
 
+--
+-- Interface (Executors) tables
+--
+
+-- simple_tosca table
+create table simple_tosca (
+    id           int unsigned  not null
+   ,task_id      int unsigned  not null
+   ,tosca_id     varchar(1024) not null
+   ,tosca_status varchar(32)   not null
+   ,creation     datetime      not null -- When the action is enqueued
+   ,last_change  datetime      not null -- When the record has been modified by the GridEngine last time
+   ,primary key(id)
+);
+
+
+--
+-- Patching mechanism
+--
+-- Futuregateway provides automated scripts exploiting GITHub to automatically
+-- provide the latest available code
+-- The same functionality should be ensured to keep database content consisent
+-- with the lates code version
+--
+create table db_patches (
+    id           int unsigned not null -- Patch Id
+   ,version      varchar(32)  not null -- Current database version
+   ,name         varchar(256) not null -- Name of the patch (it describes the involved feature)
+   ,file         varchar(256) not null -- file refers to fgAPIServer/db_patches directory
+   ,applied      datetime              -- Patch application timestamp
+   ,primary key(id)
+);
+
+-- Default value for baseline setup (this script)
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.5','baseline setup','../fgapiserver_db.sql',now())
