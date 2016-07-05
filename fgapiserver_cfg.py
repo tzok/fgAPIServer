@@ -17,17 +17,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import random
+import string
+import json
+import ConfigParser
+
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
 __license__ = "Apache"
 __version__ = "v0.0.2-63-g13196a8-13196a8-77"
 __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
-
-import random
-import string
-import json
-import ConfigParser
 
 # GridEngine API Server configuration
 

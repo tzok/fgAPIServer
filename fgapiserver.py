@@ -17,16 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
 
-"""
-  GridEngine API Server engine
-"""
 from flask import Flask
 from flask import request
 from flask import Response
@@ -46,6 +37,17 @@ import ConfigParser
 import base64
 import logging
 import logging.config
+
+"""
+  GridEngine API Server engine
+"""
+
+__author__ = "Riccardo Bruno"
+__copyright__ = "2015"
+__license__ = "Apache"
+__version__ = "v0.0.2-30-g37540b8-37540b8-37"
+__maintainer__ = "Riccardo Bruno"
+__email__ = "riccardo.bruno@ct.infn.it"
 
 # setup path
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -92,13 +94,13 @@ app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+
 ##
 # flask-login User Class
 ##
 
 
 class User(UserMixin):
-
     name = ''
 
     def __init__(self, id, name):
@@ -106,10 +108,10 @@ class User(UserMixin):
         self.name = name
         print "id: '%s' - name: '%s'" % (id, name)
 
-    def getId(self):
+    def user_id(self):
         return self.id
 
-    def getName(self):
+    def user_name(self):
         return self.name
 
 
@@ -136,11 +138,17 @@ def checkDbVer():
         sys.exit(1)
     else:
         # getDBVersion
-        dbVer = fgapisrv_db.getDbVer()
-        if fgapisrv_dbver is None or fgapisrv_dbver == '' or fgapisrv_dbver != dbVer:
-            print "Current database version '%s' is not compatible with this version of the API server front-end; version %s is required" % (dbVer, fgapisrv_dbver)
-            print "It is suggested to update your database applying new available patches"
+        db_ver = fgapisrv_db.getDbVer()
+        if fgapisrv_dbver is None \
+                or fgapisrv_dbver == '' \
+                or fgapisrv_dbver != db_ver:
+            print ("Current database version '%s' is not compatible "
+                   "with this version of the API server front-end; "
+                   "version %s is required") % (db_ver, fgapisrv_dbver)
+            print ("It is suggested to update your database applying "
+                   "new available patches")
             sys.exit(1)
+
 
 # paginate the incoming response json vector, accordinlgly to page and
 # per_page values
@@ -155,10 +163,11 @@ def paginate_response(response, page, per_page):
     else:
         return response
 
+
 # Return the application id associated to the given task_id
 
 
-def getTaskAppId(task_id):
+def get_task_app_id(task_id):
     fgapisrv_db = fgapiserver_db(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
@@ -174,10 +183,11 @@ def getTaskAppId(task_id):
         return fgapisrv_db.getTaskInfo(task_id)['application']['id']
     return None
 
+
 # Return the task id associated to the file name and output
 
 
-def getFileTaskId(file_name, file_path):
+def get_file_task_id(file_name, file_path):
     fgapisrv_db = fgapiserver_db(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
@@ -194,12 +204,12 @@ def getFileTaskId(file_name, file_path):
     return None
 
 
-# verifySessionToken verifies the given session token returning user id and its name
-#                    user id and name will be later used to retrieve user priviledges
+# verifySessionToken verifies the given session token returning user id and its
+# name user id and name will be later used to retrieve user priviledges
 #
 # (!) Override this method to manage more complex and secure algorithms;
 #
-def verifySessionToken(sestoken):
+def verify_session_token(sestoken):
     fgapisrv_db = fgapiserver_db(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
@@ -214,6 +224,7 @@ def verifySessionToken(sestoken):
         # session token
         return fgapisrv_db.verifySessionToken(sestoken)
     return None
+
 
 # processLogToken retrieve username and password from a given login token
 #
@@ -231,7 +242,9 @@ def verifySessionToken(sestoken):
 #    password = "<password>"
 #    # Encode
 #    obj=ARC4.new(secret)
-#    b64em = base64.b64encode(obj.encrypt("username=%s:password=%s:timestamp=%s" % (username,password,int(time.time()))))
+#    b64em = base64.b64encode(obj.encrypt(
+#            "username=%s:password=%s:timestamp=%s"
+#            % (username,password,int(time.time()))))
 #    print b64em
 #    # Decode
 #    obj=ARC4.new(secret)
@@ -240,7 +253,7 @@ def verifySessionToken(sestoken):
 #
 
 
-def processLogToken(logtoken):
+def process_log_token(logtoken):
     username = ""
     password = ""
     timestamp = 0
@@ -253,11 +266,12 @@ def processLogToken(logtoken):
         timestamp = credfields[2].split("=")[1]
     return username, password, timestamp
 
+
 # createSessionToken accepts login tokens or username/password credentials
 # returning an access token
 
 
-def createSessionToken(**kwargs):
+def create_session_token(**kwargs):
     timestamp = int(time.time())
     sestoken = ""
     logtoken = kwargs.get("logtoken", "")
@@ -265,7 +279,7 @@ def createSessionToken(**kwargs):
     password = kwargs.get("password", "")
     if len(logtoken) > 0:
         # Calculate credentials starting from a logtoken
-        username, password, timestamp = processLogToken(logtoken)
+        username, password, timestamp = process_log_token(logtoken)
     if len(username) > 0 and len(password) > 0:
         # Create a new access token starting from given username and password
         # (DBRequired)
@@ -283,8 +297,11 @@ def createSessionToken(**kwargs):
                 username, password, timestamp)
     return sestoken
 
-# authorizeUser This function returns true if the given user is authorized to process the requested action
-#               The request will be checked against user group roles stored in the database
+
+# authorizeUser
+# This function returns true if the given user is authorized to
+# process the requested action
+# The request will be checked against user group roles stored in the database
 #
 # Input: current_user - The user requesting the action
 #        app_id       - The application id (if appliable)
@@ -293,7 +310,7 @@ def createSessionToken(**kwargs):
 #
 
 
-def authorizeUser(current_user, app_id, user, reqrole):
+def authorize_user(current_user, app_id, user, reqrole):
     # Return True if token management is disabled
     if fgapisrv_notoken:
         return True, 'Authorization disabled'
@@ -312,13 +329,13 @@ def authorizeUser(current_user, app_id, user, reqrole):
         return False, db_state[1]
 
     message = ''
-    user_id = current_user.getId()
-    user_name = current_user.getName()
-    authZ = True
+    user_id = current_user.user_id()
+    user_name = current_user.user_name()
+    auth_z = True
 
     # Check if requested action is in the user group roles
-    authZ = authZ and fgapisrv_db.verifyUserRole(user_id, reqrole)
-    if not authZ:
+    auth_z = auth_z and fgapisrv_db.verifyUserRole(user_id, reqrole)
+    if not auth_z:
         message = "User '%s' does not have '%s' role\n" % (user_name, reqrole)
     # Check current_user and filter user are different
     if user_name != user:
@@ -331,8 +348,8 @@ def authorizeUser(current_user, app_id, user, reqrole):
         else:
             group_impersonate = fgapisrv_db.verifyUserRole(
                 user_id, 'group_impersonate')
-        authZ = authZ and (user_impersonate or group_impersonate)
-        if not authZ:
+        auth_z = auth_z and (user_impersonate or group_impersonate)
+        if not auth_z:
             if user == "*":
                 user_text = "any user"
             elif user == "@":
@@ -342,13 +359,13 @@ def authorizeUser(current_user, app_id, user, reqrole):
             message = "User '%s' cannot impersonate %s\n" % (
                 user_name, user_text)
     # Check if app belongs to Group apps
-    if(app_id is not None):
-        authZ = authZ and fgapisrv_db.verifyUserApp(user_id, app_id)
-        if not authZ:
-            message = "User '%s' cannot perform any activity on application having id: '%s'\n" % (
-                usern_name, app_id)
+    if (app_id is not None):
+        auth_z = auth_z and fgapisrv_db.verifyUserApp(user_id, app_id)
+        if not auth_z:
+            message = ("User '%s' cannot perform any activity on application"
+                       "having id: '%s'\n") % (user_name, app_id)
 
-    return authZ, message
+    return auth_z, message
 
 
 ##
@@ -378,12 +395,15 @@ def index():
     resp.headers['Content-type'] = 'application/json'
     return resp
 
+
 ##
 # flask-login
 ##
 
-# Retrieve the session token from Header Authorization field or from token in the argument list
-# This function verifies the session token and return the user object if the check is successful
+# Retrieve the session token from Header Authorization field or from token in
+# the argument list
+# This function verifies the session token and return the user object if the
+# check is successful
 # The User object holds database user id and the associated user name
 
 
@@ -407,7 +427,8 @@ def load_user(request):
             user_info = fgapisrv_db.getUserInfoByName(fgapisrv_notokenusr)
             user_id = user_info["id"]
             user_name = user_info["name"]
-        print "Session token disabled; behaving has user: '%s' (%s)" % (user_name, user_id)
+        print "Session token disabled; behaving has user: '%s' (%s)" % \
+              (user_name, user_id)
         return User(int(user_info["id"]), user_info["name"])
 
     token = request.headers.get('Authorization')
@@ -417,8 +438,9 @@ def load_user(request):
     print "login_manager - token: '%s'" % token
 
     if token is not None:
-        user_rec = verifySessionToken(token)
-        print "login_manager - user_rec(0): '%s',user_rec(1): '%s'" % (user_rec[0], user_rec[1])
+        user_rec = verify_session_token(token)
+        print "login_manager - user_rec(0): '%s',user_rec(1): '%s'" % \
+              (user_rec[0], user_rec[1])
         if user_rec is not None and user_rec[0] is not None:
             return User(user_rec[0], user_rec[1])
     return None
@@ -429,7 +451,8 @@ def load_user(request):
 ##
 
 #
-# /auth; used to provide a logtoken or username/password credentials and receive back an access token
+# /auth; used to provide a logtoken or username/password credentials and
+# receive back an access token
 #
 @app.route('/auth', methods=['GET', 'POST'])
 @app.route('/%s/auth' % fgapiver, methods=['GET', 'POST'])
@@ -442,11 +465,11 @@ def auth():
     if request.method == 'GET':
         if logtoken is not None or len(token) > 0:
             # Retrieve access token from an login token
-            token = createSessionToken(logtoken=logtoken)
-        elif    username is not None and len(username) > 0\
+            token = create_session_token(logtoken=logtoken)
+        elif username is not None and len(username) > 0 \
                 and password is not None and len(password) > 0:
             # Retrieve token from given username and password
-            token = createSessionToken(username=username, password=password)
+            token = create_session_token(username=username, password=password)
         else:
             message = "No credentials found!"
     elif request.method == 'POST':
@@ -458,16 +481,20 @@ def auth():
         auth_creds1 = auth.split(":")
         if len(auth_bearer) > 1 and auth_bearer[0] == "Bearer":
             # Retrieve access token from an login token
-            token = createSessionToken(logtoken=auth_bearer[1])
-        elif len(auth_creds0) > 1 and len(auth_creds0[0]) > 0 and len(auth_creds0[1]) > 0:
+            token = create_session_token(logtoken=auth_bearer[1])
+        elif len(auth_creds0) > 1 \
+                and len(auth_creds0[0]) > 0 \
+                and len(auth_creds0[1]) > 0:
             # Retrieve token from given username and password
-            token = createSessionToken(
+            token = create_session_token(
                 username=auth_creds0[0],
                 password=base64.b64decode(
                     auth_creds0[1]))
-        elif len(auth_creds1) > 1 and len(auth_creds0[1]) > 0 and len(auth_creds1[1]) > 0:
+        elif len(auth_creds1) > 1 \
+                and len(auth_creds0[1]) > 0 \
+                and len(auth_creds1[1]) > 0:
             # Retrieve token from given username and password
-            token = createSessionToken(
+            token = create_session_token(
                 username=auth_creds1[0],
                 password=base64.b64decode(
                     auth_creds1[1]))
@@ -493,6 +520,7 @@ def auth():
     resp.headers['Content-type'] = 'application/json'
     return resp
 
+
 ##
 # Task handlers
 ##
@@ -505,8 +533,8 @@ def auth():
 @app.route('/%s/tasks' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def tasks():
-    user_name = current_user.getName()
-    user_id = current_user.getId()
+    user_name = current_user.user_name()
+    user_id = current_user.user_id()
     page = request.values.get('page')
     per_page = request.values.get('per_page')
     status = request.values.get('status')
@@ -515,13 +543,13 @@ def tasks():
     task_state = 0
 
     if request.method == 'GET':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_view")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             # Show the whole task list
             # Connect database
@@ -549,7 +577,9 @@ def tasks():
                 group_impersonate = fgapisrv_db.sameGroup(
                     user_name, user) and fgapisrv_db.verifyUserRole(
                     user_id, 'group_impersonate')
-                if user == "*" and user_impersonate == False and group_impersonate == True:
+                if user == "*" \
+                        and user_impersonate is False \
+                        and group_impersonate is True:
                     user = "@"  # Restrict tasks only to group members
                 # Add the usernname info in case of * or @ filters
                 if user == "*" or user == "@":
@@ -580,25 +610,31 @@ def tasks():
                                 "message": db_state[1]
                             }
                         else:
-                            task_array += [{"id": task_record['id'],
-                                            "application": task_record['application'],
-                                            "description": task_record['description'],
-                                            "arguments": task_record['arguments'],
-                                            "input_files": task_record['input_files'],
-                                            "output_files": task_record['output_files'],
-                                            "status": task_record['status'],
-                                            "user": task_record['user'],
-                                            "date": str(task_record['creation']),
-                                            "last_change": str(task_record['last_change']),
-                                            "_links": [{"rel": "self",
-                                                        "href": "/%s/tasks/%s" % (fgapiver,
-                                                                                  task_id)},
-                                                       {"rel": "input",
-                                                        "href": "/%s/tasks/%s/input" % (fgapiver,
-                                                                                        task_id)}]},
-                                           ]
+                            task_array += [{
+                                "id": task_record['id'],
+                                "application": task_record['application'],
+                                "description": task_record['description'],
+                                "arguments": task_record['arguments'],
+                                "input_files": task_record['input_files'],
+                                "output_files": task_record['output_files'],
+                                "status": task_record['status'],
+                                "user": task_record['user'],
+                                "date": str(task_record['creation']),
+                                "last_change": str(task_record['last_change']),
+                                "_links": [
+                                    {"rel": "self",
+                                     "href": "/%s/tasks/%s" % (fgapiver,
+                                                               task_id)
+                                     },
+                                    {"rel": "input",
+                                     "href": "/%s/tasks/%s/input" %
+                                             (fgapiver, task_id)
+                                     }
+                                ]},
+                            ]
                     task_response = {"tasks": task_array}
-        # When page, per_page are not none (page=0..(len(task_response)/per_page)-1)
+        # When page, per_page are not none
+        # (page=0..(len(task_response)/per_page)-1)
         # if page is not None and per_page is not None:
         # task_response = task_response[page*per_page:(page+1)*per_page]
         js = json.dumps(paginate_response(
@@ -608,13 +644,13 @@ def tasks():
         return resp
     elif request.method == 'POST':
         print "username %s - %s" % (user_name, user)
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             # Getting values
             params = request.get_json()
@@ -672,31 +708,33 @@ def tasks():
                                 {
                                     "rel": "self",
                                     "href": "/%s/tasks/%s" %
-                                    (fgapiver,
-                                     task_id)},
+                                            (fgapiver,
+                                             task_id)},
                                 {
                                     "rel": "input",
                                     "href": "/%s/tasks/%s/input" %
-                                    (fgapiver,
-                                     task_id)}]}
+                                            (fgapiver,
+                                             task_id)}]}
             else:
                 task_state = 404
                 task_response = {
-                    "message": "Did not find any application description json input"}
+                    "message": ("Did not find any application description "
+                                "json input")}
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         if task_state == 200:
             resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
-            resp.headers.add(
-                'Link', '</v1.0/tasks/%s/input>; rel="input", </v1.0/tasks/%s>; rel="self"' %
-                (task_id, task_id))
+            resp.headers.add('Link',
+                             ('</v1.0/tasks/%s/input>; '
+                              'rel="input", </v1.0/tasks/%s>; rel="self"')
+                             % (task_id, task_id))
         return resp
+
 
 # This is an informative call
 # GET  - shows details
 # POST - could reshape the request (Delete/Recreate)
-
 
 @app.route(
     '/%s/tasks/<task_id>' %
@@ -708,18 +746,18 @@ def tasks():
         'PATCH'])
 @login_required
 def task_id(task_id=None):
-    user_name = current_user.getName()
-    user_id = current_user.getId()
-    app_id = getTaskAppId(task_id)
+    user_name = current_user.user_name()
+    user_id = current_user.user_id()
+    app_id = get_task_app_id(task_id)
     user = request.values.get('user', user_name)
     if request.method == 'GET':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_view")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             fgapisrv_db = fgapiserver_db(
                 db_host=fgapisrv_db_host,
@@ -761,13 +799,13 @@ def task_id(task_id=None):
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'DELETE':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_delete")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             fgapisrv_db = fgapiserver_db(
                 db_host=fgapisrv_db_host,
@@ -799,7 +837,7 @@ def task_id(task_id=None):
                 task_status = 200
                 task_response = {
                     "message": "Successfully removed task with id: %s" %
-                    task_id}
+                               task_id}
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
@@ -812,16 +850,17 @@ def task_id(task_id=None):
         #                       ,"data_desc": "description of the value"
         #                      }, ... ]
         # The insertion policy will be:
-        #  1) data_name does not exists, a new record will be created in runtime_data table
+        #  1) data_name does not exists, a new record will be created in
+        #     runtime_data table
         #  2) data_name exists the new value will be updated to the existing
         #
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_userdata")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             params = request.get_json()
             runtime_data = params.get('runtime_data', [])
@@ -855,7 +894,7 @@ def task_id(task_id=None):
                 task_status = 200
                 task_response = {
                     "message": "Successfully patched task with id: %s" %
-                    task_id}
+                               task_id}
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
@@ -869,6 +908,7 @@ def task_id(task_id=None):
         resp.headers['Content-type'] = 'application/json'
         return resp
 
+
 # This finalizes the task request allowing to submit the task
 # GET  - shows input files
 # POST - specify input files
@@ -877,18 +917,18 @@ def task_id(task_id=None):
 @app.route('/%s/tasks/<task_id>/input' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def task_id_input(task_id=None):
-    user_name = current_user.getName()
-    user_id = current_user.getId()
-    app_id = getTaskAppId(task_id)
+    user_name = current_user.user_name()
+    user_id = current_user.user_id()
+    app_id = get_task_app_id(task_id)
     user = request.values.get('user', user_name)
     if request.method == 'GET':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_view")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             # Display task_input_file details
             fgapisrv_db = fgapiserver_db(
@@ -921,13 +961,13 @@ def task_id_input(task_id=None):
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             # First determine IO Sandbox location for this task
             fgapisrv_db = fgapiserver_db(
@@ -956,8 +996,8 @@ def task_id_input(task_id=None):
                 if task_sandbox is None:
                     task_status = 404
                     task_response = {
-                        "message": 'Could not find IO Sandbox dir for task: %s' %
-                        task_id}
+                        "message": 'Could not find IO Sandbox dir for task: %s'
+                                   % task_id}
                 else:
                     # Now process files to upload
                     uploaded_files = request.files.getlist('file[]')
@@ -1001,21 +1041,21 @@ def task_id_input(task_id=None):
 @login_required
 def file():
     serve_file = None
-    user_name = current_user.getName()
-    user_id = current_user.getId()
+    user_name = current_user.user_name()
+    user_id = current_user.user_id()
     user = request.values.get('user', user_name)
     file_path = request.values.get('path', None)
     file_name = request.values.get('name', None)
-    task_id = getFileTaskId(file_name, file_path)
-    app_id = getTaskAppId(task_id)
+    task_id = get_file_task_id(file_name, file_path)
+    app_id = get_task_app_id(task_id)
     if request.method == 'GET':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")
         if not auth_state:
             task_state = 402
             file_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             try:
                 serve_file = open('%s/%s' % (file_path, file_name), 'rb')
@@ -1028,7 +1068,7 @@ def file():
             except:
                 file_response = {
                     "message": "Unable to get file: %s/%s" %
-                    (file_path, file_name)}
+                               (file_path, file_name)}
             finally:
                 if serve_file is not None:
                     serve_file.close()
@@ -1036,6 +1076,7 @@ def file():
         resp = Response(js, status=404)
         resp.headers['Content-type'] = 'application/json'
         return resp
+
 
 #
 # APPLICATION
@@ -1049,8 +1090,8 @@ def file():
 @app.route('/%s/applications' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def applications():
-    user_name = current_user.getName()
-    user_id = current_user.getId()
+    user_name = current_user.user_name()
+    user_id = current_user.user_id()
     app_id = None
     user = request.values.get('user', user_name)
     page = request.values.get('page')
@@ -1058,13 +1099,13 @@ def applications():
     user = request.values.get('user')
     state = 0
     if request.method == 'GET':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_view")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             # Show the whole task list
             # Connect database
@@ -1111,20 +1152,33 @@ def applications():
                                 "message": db_state[1]
                             }
                         else:
-                            applications += [{"id": app_record['id'],
-                                              "name": app_record['name'],
-                                              "description": app_record['description'],
-                                              "outcome": app_record['outcome'],
-                                              "enabled": app_record['enabled'],
-                                              "parameters": app_record['parameters'],
-                                              "input_files": app_record['input_files'],
-                                              "infrastructures": app_record['infrastructures'],
-                                              "_links": [{"rel": "self",
-                                                          "href": "/%s/application/%s" % (fgapiver,
-                                                                                          app_id)}]},
-                                             ]
+                            applications +=
+                            [
+                             {
+                              "id":
+                              app_record['id'],
+                              "name":
+                              app_record['name'],
+                              "description":
+                              app_record['description'],
+                              "outcome":
+                              app_record['outcome'],
+                              "enabled":
+                              app_record['enabled'],
+                              "parameters":
+                              app_record['parameters'],
+                              "input_files":
+                              app_record['input_files'],
+                              "infrastructures":
+                              app_record['infrastructures'],
+                              "_links": [{"rel": "self",
+                                          "href": "/%s/application/%s"
+                                                  % (fgapiver, app_id)}]
+                              },
+                             ]
                     response = {"applications": applications}
-        # When page, per_page are not none (page=0..(len(task_response)/per_page)-1)
+        # When page, per_page are not none
+        # (page=0..(len(task_response)/per_page)-1)
         # if page is not None and per_page is not None:
         # task_response = task_response[page*per_page:(page+1)*per_page]
         js = json.dumps(paginate_response(
@@ -1133,13 +1187,13 @@ def applications():
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_install")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             # Getting values
             params = request.get_json()
@@ -1178,7 +1232,7 @@ def applications():
                     inp_files,
                     infrastructures)
                 if app_id < 0:
-                    state = fgapisrv_db.getState()
+                    task_state = fgapisrv_db.getState()
                     # Error initializing task
                     # Prepare for 410 error
                     state = 410
@@ -1201,17 +1255,18 @@ def applications():
                             {
                                 "rel": "self",
                                 "href": "/%s/application/%s" %
-                                (fgapiver,
-                                 app_id)}]}
+                                        (fgapiver,
+                                         app_id)}]}
         js = json.dumps(response, indent=fgjson_indent)
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         if state == 200:
             resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
-            resp.headers.add(
-                'Link', '</v1.0/tasks/%s/input>; rel="input", </v1.0/tasks/%s>; rel="self"' %
-                (task_id, task_id))
+            resp.headers.add('Link', ('</v1.0/tasks/%s/input>; '
+                                      'rel="input", </v1.0/tasks/%s>; '
+                                      'rel="self"' % (task_id, task_id)))
         return resp
+
 
 # This is an informative call
 # GET  - shows details
@@ -1227,17 +1282,17 @@ def applications():
         'POST'])
 @login_required
 def app_id(app_id=None):
-    user_name = current_user.getName()
-    user_id = current_user.getId()
+    user_name = current_user.user_name()
+    user_id = current_user.user_id()
     user = request.values.get('user', user_name)
     if request.method == 'GET':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_view")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             fgapisrv_db = fgapiserver_db(
                 db_host=fgapisrv_db_host,
@@ -1258,8 +1313,9 @@ def app_id(app_id=None):
             elif not fgapisrv_db.appExists(app_id):
                 status = 404
                 response = {
-                    "message": "Unable to find application with id: %s" %
-                    app_id}
+                            "message":
+                            "Unable to find application with id: %s"
+                            % app_id}
             else:
                 # Get task details
                 response = fgapisrv_db.getAppRecord(app_id)
@@ -1279,13 +1335,13 @@ def app_id(app_id=None):
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'DELETE':
-        auth_state, auth_msg = authorizeUser(
+        auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_delete")
         if not auth_state:
             task_state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
-                auth_msg}
+                           auth_msg}
         else:
             fgapisrv_db = fgapiserver_db(
                 db_host=fgapisrv_db_host,
@@ -1307,17 +1363,17 @@ def app_id(app_id=None):
                 status = 404
                 response = {
                     "message": "Unable to find application with id: %s" %
-                    app_id}
+                               app_id}
             elif not fgapisrv_db.appDelete(app_id):
                 status = 410
                 response = {
                     "message": "Unable to delete application with id: %s" %
-                    app_id}
+                               app_id}
             else:
                 status = 200
                 response = {
                     "message": "Successfully removed application with id: %s" %
-                    app_id}
+                               app_id}
         js = json.dumps(response, indent=fgjson_indent)
         resp = Response(js, status=status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
@@ -1330,6 +1386,7 @@ def app_id(app_id=None):
         resp = Response(js, status=404, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
+
 
 # Common header section
 
@@ -1344,6 +1401,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     response.headers.add('Server', fgapiserver_name)
     return response
+
 
 #
 # The app starts here

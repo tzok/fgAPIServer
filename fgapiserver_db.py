@@ -17,16 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.1-15-g1527c76-1527c76-22"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
 
-"""
-  GridEngine API Server database
-"""
 import MySQLdb
 import uuid
 import os
@@ -35,6 +26,16 @@ import urllib
 import shutil
 import logging
 import json
+
+"""
+  GridEngine API Server database
+"""
+__author__ = "Riccardo Bruno"
+__copyright__ = "2015"
+__license__ = "Apache"
+__version__ = "v0.0.1-15-g1527c76-1527c76-22"
+__maintainer__ = "Riccardo Bruno"
+__email__ = "riccardo.bruno@ct.infn.it"
 
 """
  Database connection default settings
@@ -46,8 +47,8 @@ def_db_pass = 'fgapiserver_password'
 def_db_name = 'fgapiserver'
 
 """
- Task sandboxing will be placed here
- Sandbox directories will be generated as UUID names generated during task creation
+ Task sandboxing will be placed here Sandbox directories
+ will be generated as UUID names generated during task creation
 """
 def_iosandbbox_dir = '/tmp'
 def_geapiserverappid = '10000'  # GridEngine sees API server as an application
@@ -78,7 +79,8 @@ class fgapiserver_db:
     message = ''
 
     """
-      fgapiserver_db - Constructor may override default values defined at the top of the file
+      fgapiserver_db - Constructor may override default
+                       values defined at the top of the file
     """
 
     def __init__(self, *args, **kwargs):
@@ -108,7 +110,8 @@ class fgapiserver_db:
              self.geapiserverappid))
 
     """
-      catchDBError - common operations performed upon database query/transaction failure
+      catchDBError - common operations performed upon database
+                     query/transaction failure
     """
 
     def catchDBError(self, e, db, rollback):
@@ -194,7 +197,9 @@ class fgapiserver_db:
         return (self.err_flag, self.err_msg)
 
     """
-      createSessionToken - Starting from the given triple(username,password,timestamp) produce a valid access token
+      createSessionToken - Starting from the given triple
+                           (username,password,timestamp) produce a
+                           valid access token
     """
 
     def createSessionToken(self, username, password, logts):
@@ -227,7 +232,8 @@ class fgapiserver_db:
         return sestoken
 
     """
-      verifySessionToken - Check if the passed token is valid and return the user id and its name
+      verifySessionToken - Check if the passed token is valid and return
+                           the user id and its name
     """
 
     def verifySessionToken(self, sestoken):
@@ -427,16 +433,17 @@ class fgapiserver_db:
             cursor = db.cursor()
             # Task record
             sql = (
-                'select id\n'
-                '      ,status\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
-                '      ,app_id\n'
-                '      ,description\n'
-                '      ,status\n'
-                '      ,user\n'
-                '      ,iosandbox\n'
-                'from task where id=%s;')
+              'select '
+              ' id\n'
+              ',status\n'
+              ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+              ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+              ',app_id\n'
+              ',description\n'
+              ',status\n'
+              ',user\n'
+              ',iosandbox\n'
+              'from task where id=%s;')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             task_dbrec = cursor.fetchone()
@@ -469,7 +476,9 @@ class fgapiserver_db:
             # Task input files
             sql = (
                 'select file\n'
-                '      ,if(path is null or length(path)=0,\'NEEDED\',\'READY\') status\n'
+                '      ,if(path is null or length(path)=0,'
+                '          \'NEEDED\','
+                '          \'READY\') status\n'
                 'from task_input_file\n'
                 'where task_id=%s\n'
                 'order by file_id asc;')
@@ -491,16 +500,21 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             task_ofiles = []
             for ofile in cursor:
-                ofile_entry = {"name": ofile[0], "url": 'file?%s' % urllib.urlencode(
-                    {"path": ofile[1], "name": ofile[0]})}
+                ofile_entry = {"name": ofile[0],
+                               "url": 'file?%s'
+                               % urllib.urlencode({"path": ofile[1],
+                                                   "name": ofile[0]})}
                 task_ofiles += [ofile_entry, ]
             # runtime_data
             sql = (
-                'select data_name\n'
-                '      ,data_value\n'
-                '      ,data_desc\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                '      ,date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                'select '
+                '  data_name\n'
+                ' ,data_value\n'
+                ' ,data_desc\n'
+                ' ,date_format(creation,'
+                '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                ' ,date_format(last_change,'
+                '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                 'from runtime_data\n'
                 'where task_id=%s\n'
                 'order by data_id asc;')
@@ -808,9 +822,9 @@ class fgapiserver_db:
                         'insert into task_arguments (task_id\n'
                         '                           ,arg_id\n'
                         '                           ,argument)\n'
-                        'select %s                                          -- task_id\n'
-                        '      ,if(max(arg_id) is NULL,1,max(arg_id)+1)     -- arg_id\n'
-                        '      ,%s                                          -- argument\n'
+                        'select %s\n'
+                        '      ,if(max(arg_id) is NULL,1,max(arg_id)+1)\n'
+                        '      ,%s\n'
                         'from task_arguments\n'
                         'where task_id=%s')
                     sql_data = (task_id, arg, task_id)
@@ -821,12 +835,14 @@ class fgapiserver_db:
             # of app_files: [ { "name": <filname>
             #                  ,"path": <path to file> },...]
             # except for the 'override' key not necessary in this second array.
-            # For each file specified inside input_file, verify if it exists alredy
-            # in the app_file vector. If the file exists there are two possibilities:
-            # * app_file['override'] flag is true; then user inputs are ignored, thus
-            # the file will be skipped
-            # * app_file['override'] flag is false; user input couldn't ignored, thus
-            # the path to the file will be set to NULL waiting for user input
+            # For each file specified inside input_file, verify if it exists
+            # alredy in the app_file vector. If the file exists there are two
+            # possibilities:
+            # * app_file['override'] flag is true; then user inputs are
+            #   ignored, thus the file will be skipped
+            # * app_file['override'] flag is false; user input couldn't be
+            #   ignored, thus the path to the file will be set to NULL waiting
+            #   for user input
             inp_file = []
             for file in input_files:
                 skip_file = False
@@ -843,9 +859,10 @@ class fgapiserver_db:
                     inp_file += [{"path": None, "file": file['name']}, ]
             # Files can be registered in task_input_files
             for inpfile in app_files + inp_file:
-                # Not None paths having not empty content refers to an existing
-                # app_file that could be copied into the iosandbox task directory
-                # and path can be modifies with the iosandbox path
+                # Not None paths having not empty content refers to an
+                # existing app_file that could be copied into the iosandbox
+                # task directory and path can be modifies with the iosandbox
+                # path
                 if inpfile['path'] is not None and len(inpfile['path']) > 0:
                     shutil.copy(
                         '%s/%s' %
@@ -857,10 +874,10 @@ class fgapiserver_db:
                     '                            ,file_id\n'
                     '                            ,path\n'
                     '                            ,file)\n'
-                    'select %s                                          -- task_id\n'
-                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                    '      ,%s                                          -- path\n'
-                    '      ,%s                                          -- file\n'
+                    'select %s\n'
+                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)\n'
+                    '      ,%s\n'
+                    '      ,%s\n'
                     'from task_input_file\n'
                     'where task_id=%s')
                 sql_data = (task_id, inpfile['path'], inpfile['file'], task_id)
@@ -882,9 +899,9 @@ class fgapiserver_db:
                     'insert into task_output_file (task_id\n'
                     '                             ,file_id\n'
                     '                             ,file)\n'
-                    'select %s                                          -- task_id\n'
-                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                    '      ,%s                                          -- file\n'
+                    'select %s\n'
+                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)\n'
+                    '      ,%s\n'
                     'from task_output_file\n'
                     'where task_id=%s')
                 sql_data = (task_id, outfile['name'], task_id)
@@ -898,19 +915,22 @@ class fgapiserver_db:
         finally:
             self.closeDB(db, cursor, True)
 
-        # Accordingly to specs: input_files - If omitted the task is immediately ready to start
+        # Accordingly to specs: input_files -
+        # If omitted the task is immediately ready to start
         # If the inputsandbox is ready the job will be triggered for execution
         if self.isInputSandboxReady(task_id):
-            # The input_sandbox is completed; trigger the Executor for this task
-            # only if the completed sandbox consists of overridden files or no
-            # files are specified in the application_file table for this app_id
+            # The input_sandbox is completed; trigger the Executor for this
+            # task only if the completed sandbox consists of overridden files
+            # or no files are specified in the application_file table for this
+            # app_id
             if self.isOverriddenSandbox(app_id):
                 self.submitTask(task_id)
 
         return task_id
 
     """
-      getTaskIOSandbox - Get the assigned IO Sandbox folder of the given task_id
+      getTaskIOSandbox - Get the assigned IO Sandbox folder of the
+                         given task_id
     """
 
     def getTaskIOSandbox(self, task_id):
@@ -936,7 +956,8 @@ class fgapiserver_db:
         return iosandbox
 
     """
-      updateInputSandboxFile - Update input_sandbox_table with the fullpath of a given (task,filename)
+      updateInputSandboxFile - Update input_sandbox_table with the fullpath
+      of a given (task,filename)
     """
 
     def updateInputSandboxFile(self, task_id, filename, filepath):
@@ -958,9 +979,10 @@ class fgapiserver_db:
         return
 
     """
-      isInputSandboxReady - Return true if all input_sandbox files have been uploaded for a given (task_id)
-                            True if all files have a file path registered or the task does not contain any
-                            input file
+      isInputSandboxReady - Return true if all input_sandbox files have been
+                            uploaded for a given (task_id)
+                            True if all files have a file path registered
+                            or the task does not contain any input file
     """
 
     def isInputSandboxReady(self, task_id):
@@ -971,7 +993,8 @@ class fgapiserver_db:
             db = self.connect()
             cursor = db.cursor()
             sql = (
-                'select sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
+                'select '
+                '  sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
                 'from task_input_file\n'
                 'where task_id=%s;')
             sql_data = (task_id,)
@@ -985,7 +1008,8 @@ class fgapiserver_db:
 
     """
       submitTask - Trigger the GridEngine to submit the given task
-                   This function takes care of all APIServerDaemon needs to properly submit the applciation
+                   This function takes care of all APIServerDaemon needs to
+                   properly submit the applciation
     """
 
     def submitTask(self, task_id):
@@ -1000,19 +1024,22 @@ class fgapiserver_db:
                 app_infras += (infra,)
         if app_infras is None or len(app_infras) == 0:
             self.err_flag = True
-            self.err_msg = 'No suitable infrastructure found for task_id: %s' % task_id
+            self.err_msg = ('No suitable infrastructure found for task_id: %s'
+                            % task_id)
             return False
         # Proceed only if task comes form a WAITING state
         task_status = task_info.get('status', '')
         if task_status != 'WAITING':
             self.err_flag = True
-            self.err_msg = 'Wrong status (\'%s\') to ask submission for task_id: %s' % (
+            self.err_msg = ('Wrong status (\'%s\') '
+                            'to ask submission for task_id: %s') % (
                 task_status, task_id)
             return False
         # Application must be also enabled
         if not bool(app_info['enabled']):
             self.err_flag = True
-            self.err_msg = 'Unable submit task_id: %s, because application is disabled' % task_id
+            self.err_msg = ('Unable submit task_id: %s,'
+                            ' because application is disabled') % task_id
             return False
         # Infrastructures must exist for this application
         enabled_infras = []
@@ -1021,7 +1048,8 @@ class fgapiserver_db:
                 enabled_infras += [infra, ]
         if len(enabled_infras) == 0:
             self.err_flag = True
-            self.err_msg = 'No suitable infrastructures found for task_id: %s' % task_id
+            self.err_msg = ('No suitable infrastructures found for task_id: %s'
+                            % task_id)
             return False
         # All checks have been done, it is possible to enqueue the Task request
         return self.enqueueTaskRequest(task_info)
@@ -1048,22 +1076,32 @@ class fgapiserver_db:
                 cursor = db.cursor()
                 sql = (
                     'insert into as_queue (\n'
-                    '   task_id       -- Taks reference for this task queue entry\n'
-                    '  ,target_id     -- UsersTracking\' ActiveGridInteraction id reference\n'
-                    '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
-                    '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                    '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
-                    '  ,target_status -- Specific target executor status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
-                    '  ,creation      -- When the action is enqueued\n'
-                    '  ,last_change   -- When the record has been modified by the target executor last time\n'
-                    '  ,check_ts      -- Checking timestamp used to perform a round-robin loop\n'
-                    '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                    ') values (%s,NULL,%s,\'SUBMIT\',\'QUEUED\',NULL,now(),now(),now(),%s);')
+                    '   task_id       \n'
+                    '  ,target_id     \n'
+                    '  ,target        \n'
+                    '  ,action        \n'
+                    '  ,status        \n'
+                    '  ,target_status \n'
+                    '  ,creation      \n'
+                    '  ,last_change   \n'
+                    '  ,check_ts      \n'
+                    '  ,action_info   \n'
+                    ') values (%s,'
+                    '          NULL,'
+                    '          %s,'
+                    '          \'SUBMIT\','
+                    '          \'QUEUED\','
+                    '          NULL,'
+                    '          now(),'
+                    '          now(),'
+                    '          now(),'
+                    '          %s);')
                 sql_data = (task_info['id'],
                             target_executor, task_info['iosandbox'])
                 cursor.execute(sql, sql_data)
                 sql = (
-                    'update task set status=\'SUBMIT\', last_change=now() where id=%s;')
+                    'update task set status=\'SUBMIT\', '
+                    'last_change=now() where id=%s;')
                 sql_data = (str(task_info['id']),)
                 cursor.execute(sql, sql_data)
             except MySQLdb.Error as e:
@@ -1101,19 +1139,20 @@ class fgapiserver_db:
                 user_clause = ''
             elif user_filter == '@':
                 user_name = user[1:]
-                user_clause = '  and user in (select distinct(u.name)               \n' \
-                              '               from fg_user        u                 \n' \
-                              '                  , fg_group       g                 \n' \
-                              '                  , fg_user_group ug                 \n' \
-                              '               where u.id=ug.user_id                 \n' \
-                              '                 and g.id=ug.group_id                \n' \
-                              '                 and g.id in (select g.id            \n' \
-                              '                              from fg_user_group ug  \n' \
-                              '                                 , fg_user        u  \n' \
-                              '                                 , fg_group       g  \n' \
-                              '                              where ug.user_id=u.id  \n' \
-                              '                                and ug.group_id=g.id \n' \
-                              '                                and u.name=%s))'
+                user_clause = ('  and user in (select distinct(u.name)      \n'
+                               '               from fg_user        u        \n'
+                               '                  , fg_group       g        \n'
+                               '                  , fg_user_group ug        \n'
+                               '               where u.id=ug.user_id        \n'
+                               '                 and g.id=ug.group_id       \n'
+                               '                 and g.id in                \n'
+                               '                   (select g.id             \n'
+                               '                    from fg_user_group ug   \n'
+                               '                        ,fg_user        u   \n'
+                               '                        ,fg_group       g   \n'
+                               '                     where ug.user_id=u.id  \n'
+                               '                       and ug.group_id=g.id \n'
+                               '                       and u.name=%s))')
                 sql_data += (user_name,)
             else:
                 user_name = user
@@ -1152,21 +1191,31 @@ class fgapiserver_db:
             cursor = db.cursor()
             sql = (
                 'insert into as_queue (\n'
-                '   task_id       -- Taks reference for this GridEngine queue entry\n'
-                '  ,target_id     -- (GridEngine) UsersTracking\' ActiveGridInteraction id reference\n'
-                '  ,target        -- Targeted command executor interface for APIServer Daemon\n'
-                '  ,action        -- A string value that identifies the requested operation (SUBMIT,GETSTATUS,GETOUTPUT...\n'
-                '  ,status        -- Operation status: QUEUED,PROCESSING,PROCESSED,FAILED,DONE\n'
-                '  ,target_status -- GridEngine Job Status: WAITING,SCHEDULED,RUNNING,ABORT,DONE\n'
-                '  ,creation      -- When the action is enqueued\n'
-                '  ,last_change   -- When the record has been modified by the GridEngine last time\n'
-                '  ,check_ts      -- Check timestamp used to implement a round-robin strategy loop\n'
-                '  ,action_info   -- Temporary directory path containing further info to accomplish the requested operation\n'
-                ') values (%s,NULL,\'GridEngine\',\'CLEAN\',\'QUEUED\',NULL,now(),now(),now(),%s);')
+                '   task_id\n'
+                '  ,target_id\n'
+                '  ,target\n'
+                '  ,action\n'
+                '  ,status\n'
+                '  ,target_status\n'
+                '  ,creation\n'
+                '  ,last_change\n'
+                '  ,check_ts\n'
+                '  ,action_info\n'
+                ') values (%s,\n'
+                '          NULL,\n'
+                '         \'GridEngine\',\n'
+                '         \'CLEAN\',\n'
+                '         \'QUEUED\',\n'
+                '          NULL,\n'
+                '          now(),\n'
+                '          now(),\n'
+                '          now(),\n'
+                '          %s);')
             sql_data = (task_info['id'], task_info['iosandbox'])
             cursor.execute(sql, sql_data)
             sql = (
-                'update task set status=\'CANCELLED\', last_change=now() where id=%s;')
+                'update task set status=\'CANCELLED\', '
+                'last_change=now() where id=%s;')
             sql_data = (str(task_info['id']),)
             cursor.execute(sql, sql_data)
             status = True
@@ -1201,7 +1250,8 @@ class fgapiserver_db:
                 result = cursor.fetchone()
                 if result is None:
                     self.err_flag = True
-                    self.err_msg = "[ERROR] Unable to patch task id: %s" % task_id
+                    self.err_msg = ("[ERROR] Unable to patch task id: %s"
+                                    % task_id)
                 else:
                     data_count = result[0]
                 if data_count == 0:
@@ -1215,7 +1265,8 @@ class fgapiserver_db:
                         '                         ,creation\n'
                         '                         ,last_change)\n'
                         'select %s\n'
-                        '      ,(select if(max(data_id) is NULL,1,max(data_id)+1)\n'
+                        '      ,(select '
+                        '          if(max(data_id) is NULL,1,max(data_id)+1)\n'
                         '        from runtime_data\n'
                         '        where task_id=%s)\n'
                         '      ,%s\n'
@@ -1243,8 +1294,10 @@ class fgapiserver_db:
         return status
 
     """
-    isOverriddenSandbox - True if all files of the specified application have the override flag True
-                          If no files are specified in application_file the function returns True
+    isOverriddenSandbox - True if all files of the specified application have
+                          the override flag True
+                          If no files are specified in application_file the
+                          function returns True
     """
 
     def isOverriddenSandbox(self, app_id):
@@ -1255,7 +1308,10 @@ class fgapiserver_db:
             db = self.connect()
             cursor = db.cursor()
             sql = (
-                'select if(sum(override) is NULL,TRUE,count(*)=sum(override)) override\n'
+                'select '
+                '  if(sum(override) is NULL,'
+                '     TRUE,'
+                '     count(*)=sum(override)) override\n'
                 'from application_file\n'
                 'where app_id=%s;')
             sql_data = (app_id,)
@@ -1278,7 +1334,8 @@ class fgapiserver_db:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select task_id from task_output_file where file=%s and path=%s;')
+            sql = ('select task_id from task_output_file '
+                   'where file=%s and path=%s;')
             sql_data = (file_name, file_path)
             cursor.execute(sql, sql_data)
             task_id = cursor.fetchone()[0]
@@ -1412,9 +1469,14 @@ class fgapiserver_db:
             app_infras = []
             for app_infra in cursor:
                 app_infra_entry = {
-                    "id": str(app_infra[0]), "name": app_infra[1], "description": app_infra[2], "creation": str(app_infra[3]), "enabled": app_infra[4], "virtual": False
-                    #,"parameters"     : []
-                }
+                                   "id": str(app_infra[0]),
+                                   "name": app_infra[1],
+                                   "description": app_infra[2],
+                                   "creation": str(app_infra[3]),
+                                   "enabled": app_infra[4],
+                                   "virtual": False
+                                   # ,"parameters"     : []
+                                  }
                 app_infras += [app_infra_entry, ]
             for app_infra in app_infras:
                 sql = ('select pname\n'
@@ -1504,10 +1566,10 @@ class fgapiserver_db:
                         '                                  ,param_id\n'
                         '                                  ,pname\n'
                         '                                  ,pvalue)\n'
-                        'select %s                                          -- app_id\n'
-                        '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
-                        '      ,%s                                          -- pname\n'
-                        '      ,%s                                          -- pvalue\n'
+                        'select %s                                          \n'
+                        '      ,if(max(param_id) is NULL,1,max(param_id)+1) \n'
+                        '      ,%s                                          \n'
+                        '      ,%s                                          \n'
                         'from application_parameter\n'
                         'where app_id=%s')
                     sql_data = (app_id, param['name'], param['value'], app_id)
@@ -1520,11 +1582,11 @@ class fgapiserver_db:
                     '                            ,file\n'
                     '                            ,path\n'
                     '                            ,override)\n'
-                    'select %s                                          -- app_id\n'
-                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   -- file_id\n'
-                    '      ,%s                                          -- file\n'
-                    '      ,%s                                          -- path\n'
-                    '      ,%s                                          -- override\n'
+                    'select %s                                          \n'
+                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   \n'
+                    '      ,%s                                          \n'
+                    '      ,%s                                          \n'
+                    '      ,%s                                          \n'
                     'from application_file\n'
                     'where app_id=%s')
                 sql_data = (app_id, ifile['name'], ifile[
@@ -1538,19 +1600,21 @@ class fgapiserver_db:
                        '                           ,description\n'
                        '                           ,creation\n'
                        '                           ,enabled\n'
-                       #'                           ,virtual\n'
+                       # '                           ,virtual\n'
                        '                           )\n'
-                       'select if(max(id) is NULL,1,max(id)+1) -- id\n'
-                       '      ,%s                              -- app_id\n'
-                       '      ,%s                              -- name\n'
-                       '      ,%s                              -- description\n'
-                       '      ,now()                           -- creation\n'
-                       '      ,%s                              -- enabled\n'
-                       #'      ,%s                              -- virtual\n'
+                       'select if(max(id) is NULL,1,max(id)+1) \n'
+                       '      ,%s                              \n'
+                       '      ,%s                              \n'
+                       '      ,%s                              \n'
+                       '      ,now()                           \n'
+                       '      ,%s                              \n'
+                       # '      ,%s                             \n'
                        'from infrastructure;'
                        )
-                sql_data = (app_id, infra['name'], infra['description'], infra['enabled']
-                            #,infra['virtual']
+                sql_data = (app_id, infra['name'],
+                            infra['description'],
+                            infra['enabled']
+                            # ,infra['virtual']
                             )
                 cursor.execute(sql, sql_data)
                 # Get inserted infrastructure_id
@@ -1565,10 +1629,10 @@ class fgapiserver_db:
                         '                                     ,param_id\n'
                         '                                     ,pname\n'
                         '                                     ,pvalue)\n'
-                        'select %s                                          -- infra_id\n'
-                        '      ,if(max(param_id) is NULL,1,max(param_id)+1) -- param_id\n'
-                        '      ,%s                                          -- pname\n'
-                        '      ,%s                                          -- pvalue\n'
+                        'select %s                                          \n'
+                        '      ,if(max(param_id) is NULL,1,max(param_id)+1) \n'
+                        '      ,%s                                          \n'
+                        '      ,%s                                          \n'
                         'from infrastructure_parameter\n'
                         'where infra_id = %s;')
                     sql_data = (infra_id, param['name'], param[
@@ -1604,7 +1668,9 @@ class fgapiserver_db:
             #
             sql = (
                 'delete from infrastructure_parameter\n'
-                'where infra_id in (select id from infrastructure where app_id=%s);')
+                'where infra_id in (select id \n'
+                '                   from infrastructure \n'
+                '                   where app_id=%s);')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             sql = ('delete from infrastructure where app_id=%s;')
@@ -1628,88 +1694,3 @@ class fgapiserver_db:
         finally:
             self.closeDB(db, cursor, True)
         return app_id
-
-
-"""
---  SQL steps to add an application
-START TRANSACTION;
-BEGIN;
--- Application
-insert into application (id,name,description,creation,enabled)
-select max(id)+1, 'ophidia client', 'ophidia client demo application', now(), true from application;
-
--- Application parameters
-insert into application_parameter (app_id,param_id,pname,pvalue)
-   select max(id)
-  ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
-    from application_parameter
-    where app_id = (select max(id) from application)) param_id
-  ,'jobdesc_executable','/bin/bash'
-from application;
-insert into application_parameter (app_id,param_id,pname,pvalue)
-select max(id)
-  ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
-    from application_parameter
-    where app_id = (select max(id) from application)) param_id
-  ,'jobdesc_arguments','ophidia_client.sh'
-from application;
-insert into application_parameter (app_id,param_id,pname,pvalue)
-select max(id)
-     ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
-      from application_parameter
-      where app_id = (select max(id) from application)) param_id
-     ,'jobdesc_output','ophidia_client.out'
-from application;
-insert into application_parameter (app_id,param_id,pname,pvalue)
-select max(id)
-     ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
-      from application_parameter
-      where app_id = (select max(id) from application)) param_id
-     ,'jobdesc_error','ophidia_client.err'
-from application;
-
-
--- Application files
-insert into application_file (app_id,file_id,file,path,override)
-select max(id)
-     ,(select if(max(file_id)+1 is NULL, 1, max(file_id)+1)
-      from application_file
-      where app_id = (select max(id) from application)) file_id
-      ,'ophidia_client.sh','/var/applications/ophidia_client'
-      ,false
-from application;
-
--- Infrastructure
-insert into infrastructure (id,app_id,name,description,creation,enabled)
-select max(id)+1
-      ,(select max(id) from application)
-      ,'ophidia@infn.ct','ophidia client test application'
-      ,now()
-      ,true
-from infrastructure;
-
--- Infrastructure parameters
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue)
-select max(id)
-      ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
-        from infrastructure_parameter
-        where infra_id = (select max(id) from infrastructure)) param_id
-      ,'jobservice','ssh://90.147.16.55'
-from infrastructure;
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue)
-select max(id)
-      ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
-        from infrastructure_parameter
-        where infra_id = (select max(id) from infrastructure)) param_id
-      ,'username','ophidia'
-from infrastructure;
-insert into infrastructure_parameter (infra_id,param_id,pname,pvalue)
-select max(id)
-      ,(select if(max(param_id)+1 is NULL, 1, max(param_id)+1)
-        from infrastructure_parameter
-        where infra_id = (select max(id) from infrastructure)) param_id
-      ,'password','**********'
-from infrastructure;
-
-COMMIT;
-"""
