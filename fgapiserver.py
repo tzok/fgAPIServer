@@ -1152,30 +1152,29 @@ def applications():
                                 "message": db_state[1]
                             }
                         else:
-                            applications +=
-                            [
-                             {
-                              "id":
-                              app_record['id'],
-                              "name":
-                              app_record['name'],
-                              "description":
-                              app_record['description'],
-                              "outcome":
-                              app_record['outcome'],
-                              "enabled":
-                              app_record['enabled'],
-                              "parameters":
-                              app_record['parameters'],
-                              "input_files":
-                              app_record['input_files'],
-                              "infrastructures":
-                              app_record['infrastructures'],
-                              "_links": [{"rel": "self",
-                                          "href": "/%s/application/%s"
-                                                  % (fgapiver, app_id)}]
-                              },
-                             ]
+                            applications += [
+                                {
+                                    "id":
+                                        app_record['id'],
+                                    "name":
+                                        app_record['name'],
+                                    "description":
+                                        app_record['description'],
+                                    "outcome":
+                                        app_record['outcome'],
+                                    "enabled":
+                                        app_record['enabled'],
+                                    "parameters":
+                                        app_record['parameters'],
+                                    "input_files":
+                                        app_record['input_files'],
+                                    "infrastructures":
+                                        app_record['infrastructures'],
+                                    "_links": [{"rel": "self",
+                                                "href": "/%s/application/%s"
+                                                        % (fgapiver, app_id)}]
+                                },
+                            ]
                     response = {"applications": applications}
         # When page, per_page are not none
         # (page=0..(len(task_response)/per_page)-1)
@@ -1313,9 +1312,9 @@ def app_id(app_id=None):
             elif not fgapisrv_db.appExists(app_id):
                 status = 404
                 response = {
-                            "message":
-                            "Unable to find application with id: %s"
-                            % app_id}
+                    "message":
+                        "Unable to find application with id: %s"
+                        % app_id}
             else:
                 # Get task details
                 response = fgapisrv_db.getAppRecord(app_id)
