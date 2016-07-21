@@ -26,8 +26,10 @@ from flask_login import LoginManager, UserMixin, login_required, current_user
 from Crypto.Cipher import ARC4
 from OpenSSL import SSL
 from werkzeug import secure_filename
-from fgapiserver_db import fgapiserver_db
-from fgapiserver_cfg import fgapiserver_cfg
+from fgapiserverdb import FGAPIServerDB
+from fgapiserverconfig import FGApiServerConfig
+from fgapiserverptv import FGAPIServerPTV
+from fgapiserver_user import User
 import os
 import sys
 import uuid
@@ -39,7 +41,7 @@ import logging
 import logging.config
 
 """
-  GridEngine API Server engine
+  FutureGateway APIServer front-end
 """
 
 __author__ = "Riccardo Bruno"
@@ -57,72 +59,64 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
 
 # Load configuration
-fg_config = fgapiserver_cfg(fgapiserver_config_file)
+fg_config = FGApiServerConfig(fgapiserver_config_file)
 
 # fgapiserver settings
-fgapiver = fg_config.getConfValue('fgapiver')
-fgapiserver_name = fg_config.getConfValue('fgapiserver_name')
-fgapisrv_host = fg_config.getConfValue('fgapisrv_host')
-fgapisrv_port = int(fg_config.getConfValue('fgapisrv_port'))
-fgapisrv_debug = (fg_config.getConfValue('fgapisrv_debug').lower() == 'true')
-fgapisrv_iosandbox = fg_config.getConfValue('fgapisrv_iosandbox')
-fgapisrv_geappid = int(fg_config.getConfValue('fgapisrv_geappid'))
-fgjson_indent = int(fg_config.getConfValue('fgjson_indent'))
-fgapisrv_key = fg_config.getConfValue('fgapisrv_key')
-fgapisrv_crt = fg_config.getConfValue('fgapisrv_crt')
-fgapisrv_logcfg = fg_config.getConfValue('fgapisrv_logcfg')
-fgapisrv_dbver = fg_config.getConfValue('fgapisrv_dbver')
-fgapisrv_secret = fg_config.getConfValue('fgapisrv_secret')
-fgapisrv_notoken = (fg_config.getConfValue(
+fgapiver = fg_config.get_config_value('fgapiver')
+fgapiserver_name = fg_config.get_config_value('fgapiserver_name')
+fgapisrv_host = fg_config.get_config_value('fgapisrv_host')
+fgapisrv_port = int(fg_config.get_config_value('fgapisrv_port'))
+fgapisrv_debug = (fg_config.get_config_value(
+    'fgapisrv_debug').lower() == 'true')
+fgapisrv_iosandbox = fg_config.get_config_value('fgapisrv_iosandbox')
+fgapisrv_geappid = int(fg_config.get_config_value('fgapisrv_geappid'))
+fgjson_indent = int(fg_config.get_config_value('fgjson_indent'))
+fgapisrv_key = fg_config.get_config_value('fgapisrv_key')
+fgapisrv_crt = fg_config.get_config_value('fgapisrv_crt')
+fgapisrv_logcfg = fg_config.get_config_value('fgapisrv_logcfg')
+fgapisrv_dbver = fg_config.get_config_value('fgapisrv_dbver')
+fgapisrv_secret = fg_config.get_config_value('fgapisrv_secret')
+fgapisrv_notoken = (fg_config.get_config_value(
     'fgapisrv_notoken').lower() == 'true')
-fgapisrv_notokenusr = fg_config.getConfValue('fgapisrv_notokenusr')
+fgapisrv_notokenusr = fg_config.get_config_value('fgapisrv_notokenusr')
+fgapisrv_lnkptvflag = fg_config.get_config_value('fgapisrv_lnkptvflag')
+fgapisrv_ptvendpoint = fg_config.get_config_value('fgapisrv_ptvendpoint')
+fgapisrv_ptvuser = fg_config.get_config_value('fgapisrv_ptvuser')
+fgapisrv_ptvpass = fg_config.get_config_value('fgapisrv_ptvpass')
+fgapisrv_ptvdefusr = fg_config.get_config_value('fgapisrv_ptvdefusr')
+fgapisrv_ptvmapfile = fg_config.get_config_value('fgapisrv_ptvmapfile')
 
 # fgapiserver database settings
-fgapisrv_db_host = fg_config.getConfValue('fgapisrv_db_host')
-fgapisrv_db_port = int(fg_config.getConfValue('fgapisrv_db_port'))
-fgapisrv_db_user = fg_config.getConfValue('fgapisrv_db_user')
-fgapisrv_db_pass = fg_config.getConfValue('fgapisrv_db_pass')
-fgapisrv_db_name = fg_config.getConfValue('fgapisrv_db_name')
+fgapisrv_db_host = fg_config.get_config_value('fgapisrv_db_host')
+fgapisrv_db_port = int(fg_config.get_config_value('fgapisrv_db_port'))
+fgapisrv_db_user = fg_config.get_config_value('fgapisrv_db_user')
+fgapisrv_db_pass = fg_config.get_config_value('fgapisrv_db_pass')
+fgapisrv_db_name = fg_config.get_config_value('fgapisrv_db_name')
 
 # Logging
 logging.config.fileConfig(fgapisrv_logcfg)
 logger = logging.getLogger(__name__)
-logger.debug(fg_config.showConf())
+logger.debug(fg_config.show_conf())
 
 # setup Flask app
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-
-##
-# flask-login User Class
-##
-
-
-class User(UserMixin):
-    name = ''
-
-    def __init__(self, id, name):
-        self.id = id
-        self.name = name
-        print "id: '%s' - name: '%s'" % (id, name)
-
-    def user_id(self):
-        return self.id
-
-    def user_name(self):
-        return self.name
-
-
 ##
 # Helper functions
 ##
 
+
 # database versioning check
-def checkDbVer():
-    # Connect database
-    fgapisrv_db = fgapiserver_db(
+def check_db_ver():
+    """
+    Database versioning check
+
+    :return: This function will terminate if database schema version is not
+             aligned with the code; see fgapisrv_dbver in configuration file
+    """
+    fgapisrv_db = FGAPIServerDB(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
         db_user=fgapisrv_db_user,
@@ -131,14 +125,14 @@ def checkDbVer():
         iosandbbox_dir=fgapisrv_iosandbox,
         fgapiserverappid=fgapisrv_geappid)
     fgapisrv_db.test()
-    db_state = fgapisrv_db.getState()
+    db_state = fgapisrv_db.get_state()
     if db_state[0] != 0:
         # Couldn't contact database
         print "Unable to connect to the database!"
         sys.exit(1)
     else:
         # getDBVersion
-        db_ver = fgapisrv_db.getDbVer()
+        db_ver = fgapisrv_db.get_db_version()
         if fgapisrv_dbver is None \
                 or fgapisrv_dbver == '' \
                 or fgapisrv_dbver != db_ver:
@@ -148,14 +142,18 @@ def checkDbVer():
             print ("It is suggested to update your database applying "
                    "new available patches")
             sys.exit(1)
-
-
-# paginate the incoming response json vector, accordinlgly to page and
-# per_page values
+    return db_ver
 
 
 def paginate_response(response, page, per_page):
-    # page in range [0..(len(task_response)/per_page)-1)]
+    """
+    Paginate the incoming response json vector, accordinlgly to page and
+    per_page values
+    :param response: The whole response text
+    :param page: The selected page number
+    :param per_page: How many response record per page
+    :return: The number of specified response records of the selected page
+    """
     if page is not None and per_page is not None:
         pg = int(page)
         ppg = int(per_page)
@@ -164,11 +162,13 @@ def paginate_response(response, page, per_page):
         return response
 
 
-# Return the application id associated to the given task_id
-
-
 def get_task_app_id(task_id):
-    fgapisrv_db = fgapiserver_db(
+    """
+    Return the application id associated to the given task_id
+    :param task_id: Task id
+    :return: The associated application id associated to the given task id
+    """
+    fgapisrv_db = FGAPIServerDB(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
         db_user=fgapisrv_db_user,
@@ -176,19 +176,23 @@ def get_task_app_id(task_id):
         db_name=fgapisrv_db_name,
         iosandbbox_dir=fgapisrv_iosandbox,
         fgapiserverappid=fgapisrv_geappid)
-    db_state = fgapisrv_db.getState()
+    db_state = fgapisrv_db.get_state()
     if db_state[0] == 0:
-        # verifySessionToken returns user_id, usern_name associated to the
-        # session token
-        return fgapisrv_db.getTaskInfo(task_id)['application']['id']
+        task_info = fgapisrv_db.get_task_info(task_id)
+        app_record = task_info.get(['application'], None)
+        if app_record is not None:
+            return app_record['id']
     return None
-
-
-# Return the task id associated to the file name and output
 
 
 def get_file_task_id(file_name, file_path):
-    fgapisrv_db = fgapiserver_db(
+    """
+    Return the task id associated to the file name and output
+    :param file_name: The name of the file
+    :param file_path: The path of the file
+    :return: The task id associated to the <file_path>/<file_name>
+    """
+    fgapisrv_db = FGAPIServerDB(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
         db_user=fgapisrv_db_user,
@@ -196,21 +200,23 @@ def get_file_task_id(file_name, file_path):
         db_name=fgapisrv_db_name,
         iosandbbox_dir=fgapisrv_iosandbox,
         fgapiserverappid=fgapisrv_geappid)
-    db_state = fgapisrv_db.getState()
+    db_state = fgapisrv_db.get_state()
     if db_state[0] == 0:
-        # verifySessionToken returns user_id, usern_name associated to the
-        # session token
-        return fgapisrv_db.getFileTaskId(file_name, file_path)
+        return fgapisrv_db.get_file_task_id(file_name, file_path)
     return None
 
 
-# verifySessionToken verifies the given session token returning user id and its
-# name user id and name will be later used to retrieve user priviledges
-#
-# (!) Override this method to manage more complex and secure algorithms;
-#
 def verify_session_token(sestoken):
-    fgapisrv_db = fgapiserver_db(
+    """
+     verifySessionToken verifies the given session token returning user id and
+     its name user id and name will be later used to retrieve user privileges
+
+     (!) Override this method to manage more complex and secure algorithms;
+    :param sestoken: Session token
+    :return: A couple (user_id, user_name) corresponding to the given session
+             token
+    """
+    fgapisrv_db = FGAPIServerDB(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
         db_user=fgapisrv_db_user,
@@ -218,42 +224,47 @@ def verify_session_token(sestoken):
         db_name=fgapisrv_db_name,
         iosandbbox_dir=fgapisrv_iosandbox,
         fgapiserverappid=fgapisrv_geappid)
-    db_state = fgapisrv_db.getState()
+    db_state = fgapisrv_db.get_state()
     if db_state[0] == 0:
-        # verifySessionToken returns user_id, usern_name associated to the
-        # session token
-        return fgapisrv_db.verifySessionToken(sestoken)
+        return fgapisrv_db.verify_session_token(sestoken)
     return None
-
-
-# processLogToken retrieve username and password from a given login token
-#
-# (!)Override this method to manage more complex and secure algorithms;
-#    tester code uses the following encrypted string to store user credentials:
-#        username=<username>:password=<password>:timestamp=<timestamp>
-#
-#    To create such log tokens, please use the following python snippet:
-#
-#    from Crypto.Cipher import ARC4
-#    import time
-#    import base64
-#    secret = "0123456789ABCDEF" # (!) Please use fgapiserver_secret value
-#    username = "<username>"
-#    password = "<password>"
-#    # Encode
-#    obj=ARC4.new(secret)
-#    b64em = base64.b64encode(obj.encrypt(
-#            "username=%s:password=%s:timestamp=%s"
-#            % (username,password,int(time.time()))))
-#    print b64em
-#    # Decode
-#    obj=ARC4.new(secret)
-#    creds = obj.decrypt(base64.b64decode(b64em))
-#    print creds
-#
 
 
 def process_log_token(logtoken):
+    """
+    processLogToken retrieve username and password from a given login token
+
+    (!)Override this method to manage more complex and secure algorithms;
+       tester code uses the following encrypted string to store user
+       credentials:
+       username=<username>:password=<password>:timestamp=<timestamp>
+
+    To create such log tokens, please use the following python snippet:
+
+    from Crypto.Cipher import ARC4
+    import time
+    import base64
+    secret = "0123456789ABCDEF" # (!) Please use fgapiserver_secret value
+    username = "<username>"
+    password = "<password>"
+    # Encode
+    obj=ARC4.new(secret)
+    b64em = base64.b64encode(obj.encrypt("username=%s:password=%s:timestamp=%s"
+                             % (username,password,int(time.time()))))
+    print b64em
+    # Decode
+    obj=ARC4.new(secret)
+    creds = obj.decrypt(base64.b64decode(b64em))
+    print creds
+
+    :param logtoken: The encripted string containing the:
+                 username=<username>:password=<password>:timestamp=<timestamp>
+                 The key is encripted using a key, see fgapisrv_secret value
+                 in configuration file
+                 Username and Passord credentials are stored inside in the
+                 APIServer users table
+    :return: Unencripted triple: (username, password, timestamp)
+    """
     username = ""
     password = ""
     timestamp = 0
@@ -267,11 +278,16 @@ def process_log_token(logtoken):
     return username, password, timestamp
 
 
-# createSessionToken accepts login tokens or username/password credentials
-# returning an access token
-
-
 def create_session_token(**kwargs):
+    """
+    This function accepts login tokens or directly username/password
+    credentials returning an access token
+    :param kwargs: logtoken - A token containing encrypted credentials
+                  plus a timestamp
+                  username,password - Credentials of APIServer users
+    :return: An access token to be used by any further transaction with
+             the APIServer front-end
+    """
     timestamp = int(time.time())
     sestoken = ""
     logtoken = kwargs.get("logtoken", "")
@@ -283,7 +299,7 @@ def create_session_token(**kwargs):
     if len(username) > 0 and len(password) > 0:
         # Create a new access token starting from given username and password
         # (DBRequired)
-        fgapisrv_db = fgapiserver_db(
+        fgapisrv_db = FGAPIServerDB(
             db_host=fgapisrv_db_host,
             db_port=fgapisrv_db_port,
             db_user=fgapisrv_db_user,
@@ -291,32 +307,31 @@ def create_session_token(**kwargs):
             db_name=fgapisrv_db_name,
             iosandbbox_dir=fgapisrv_iosandbox,
             fgapiserverappid=fgapisrv_geappid)
-        db_state = fgapisrv_db.getState()
+        db_state = fgapisrv_db.get_state()
         if db_state[0] == 0:
-            sestoken = fgapisrv_db.createSessionToken(
+            sestoken = fgapisrv_db.create_session_token(
                 username, password, timestamp)
     return sestoken
 
 
-# authorizeUser
-# This function returns true if the given user is authorized to
-# process the requested action
-# The request will be checked against user group roles stored in the database
-#
-# Input: current_user - The user requesting the action
-#        app_id       - The application id (if appliable)
-#        user         - The user specified by the filter
-#        reqrole      - The requested role: task_view, app_run, ...
-#
-
-
 def authorize_user(current_user, app_id, user, reqrole):
+    """
+    This function returns true if the given user is authorized to process the
+    requested action
+    The request will be checked against user group roles stored in the database
+
+    :param current_user: The user requesting the action
+    :param app_id: The application id (if appliable)
+    :param user: The user specified by the filter
+    :param reqrole: The requested role: task_view, app_run, ...
+    :return:
+    """
     # Return True if token management is disabled
     if fgapisrv_notoken:
         return True, 'Authorization disabled'
 
     # Database connection is necessary to perform the authorization
-    fgapisrv_db = fgapiserver_db(
+    fgapisrv_db = FGAPIServerDB(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
         db_user=fgapisrv_db_user,
@@ -324,7 +339,7 @@ def authorize_user(current_user, app_id, user, reqrole):
         db_name=fgapisrv_db_name,
         iosandbbox_dir=fgapisrv_iosandbox,
         fgapiserverappid=fgapisrv_geappid)
-    db_state = fgapisrv_db.getState()
+    db_state = fgapisrv_db.get_state()
     if db_state[0] != 0:
         return False, db_state[1]
 
@@ -334,19 +349,19 @@ def authorize_user(current_user, app_id, user, reqrole):
     auth_z = True
 
     # Check if requested action is in the user group roles
-    auth_z = auth_z and fgapisrv_db.verifyUserRole(user_id, reqrole)
+    auth_z = auth_z and fgapisrv_db.verify_user_role(user_id, reqrole)
     if not auth_z:
         message = "User '%s' does not have '%s' role\n" % (user_name, reqrole)
     # Check current_user and filter user are different
     if user_name != user:
-        user_impersonate = fgapisrv_db.verifyUserRole(
+        user_impersonate = fgapisrv_db.verify_user_role(
             user_id, 'user_impersonate')
         if user != "@":
-            group_impersonate = fgapisrv_db.sameGroup(
-                user_name, user) and fgapisrv_db.verifyUserRole(
+            group_impersonate = fgapisrv_db.same_group(
+                user_name, user) and fgapisrv_db.verify_user_role(
                 user_id, 'group_impersonate')
         else:
-            group_impersonate = fgapisrv_db.verifyUserRole(
+            group_impersonate = fgapisrv_db.verify_user_role(
                 user_id, 'group_impersonate')
         auth_z = auth_z and (user_impersonate or group_impersonate)
         if not auth_z:
@@ -367,35 +382,6 @@ def authorize_user(current_user, app_id, user, reqrole):
 
     return auth_z, message
 
-
-##
-# Routes as specified for APIServer at http://docs.csgfapis.apiary.io
-##
-
-#
-# / path; used retrieve informative or service healty information
-#
-@app.route('/')
-@app.route('/%s/' % fgapiver)
-def index():
-    versions = ({"id": fgapiver,
-                 "_links": ({"rel": "self",
-                             "href": fgapiver},
-                            ),
-                 "media-types": ({"type": "application/json"}),
-                 "status": "prototype",
-                 'updated': "2016-04-20",
-                 "build:": __version__},
-                )
-    index_response = {
-        "versions": versions, "_links": ({"rel": "self", "href": "/"},)
-    }
-    js = json.dumps(index_response, indent=fgjson_indent)
-    resp = Response(js, status=200, mimetype='application/json')
-    resp.headers['Content-type'] = 'application/json'
-    return resp
-
-
 ##
 # flask-login
 ##
@@ -411,7 +397,7 @@ def index():
 def load_user(request):
     # Login manager could be disabled in conf file
     if fgapisrv_notoken:
-        fgapisrv_db = fgapiserver_db(
+        fgapisrv_db = FGAPIServerDB(
             db_host=fgapisrv_db_host,
             db_port=fgapisrv_db_port,
             db_user=fgapisrv_db_user,
@@ -419,12 +405,12 @@ def load_user(request):
             db_name=fgapisrv_db_name,
             iosandbbox_dir=fgapisrv_iosandbox,
             fgapiserverappid=fgapisrv_geappid)
-        db_state = fgapisrv_db.getState()
+        db_state = fgapisrv_db.get_state()
         if db_state[0] != 0:
             user_id = 0
             user_name = 'Unknown'
         else:
-            user_info = fgapisrv_db.getUserInfoByName(fgapisrv_notokenusr)
+            user_info = fgapisrv_db.get_user_info_by_name(fgapisrv_notokenusr)
             user_id = user_info["id"]
             user_name = user_info["name"]
         print "Session token disabled; behaving has user: '%s' (%s)" % \
@@ -438,11 +424,95 @@ def load_user(request):
     print "login_manager - token: '%s'" % token
 
     if token is not None:
-        user_rec = verify_session_token(token)
-        print "login_manager - user_rec(0): '%s',user_rec(1): '%s'" % \
-              (user_rec[0], user_rec[1])
-        if user_rec is not None and user_rec[0] is not None:
-            return User(user_rec[0], user_rec[1])
+        # Check for Portal Token verification  (PTV) method
+        if fgapisrv_lnkptvflag:
+            print "Verifying token with PTV"
+            ptv = FGAPIServerPTV(fgapisrv_ptvendpoint,
+                                 fgapisrv_ptvuser,
+                                 fgapisrv_ptvpass)
+            result = ptv.validate_token(token)
+            # result: valid/invalid and optionally portal username and/or
+            # its group from result map the corresponding APIServer username
+            # fgapisrv_ptvdefusr
+            if result['portal_validate'].lower() == 'true':
+                portal_user = result.get('portal_user', '')
+                portal_group = result.get('portal_group', '')
+                # Map the portal user with one of defined APIServer users
+                #  accordingly to
+                # rules defined in fgapiserver_ptvmap.json file
+                # fgapiserver_ptvmap.json: {
+                #   "futuregateway":
+                #        [ "group_a", ... "group_b", "user_a", "user_b", ... ]
+                #   "test":
+                #       [ "groupc", ... "group d", "user_c", ... "user d" .. ]
+                #   "<APIServer user>":
+                #      [ "<associated portal group>", "<associated portal
+                # user>" ... ]
+                # }
+                # If no mapping is available or portal_user and groups are
+                # not available a default user will be used,
+                # see fgapisrv_ptvdefusr in configuration file
+                mapped_userid = 0
+                mapped_username = ''
+                with open(fgapisrv_ptvmapfile) as ptvmap_file:
+                    ptvmap = json.load(ptvmap_file)
+                if portal_user != '' or portal_group != '':
+                    for user in ptvmap:
+                        for ptv_usrgrp in ptvmap[user]:
+                            if portal_user != '' \
+                                    and ptv_usrgrp == portal_user:
+                                mapped_username = ptv_usrgrp
+                                break
+                            if portal_group != '' \
+                                    and ptv_usrgrp == portal_group:
+                                mapped_username = ptv_usrgrp
+                                break
+                        if mapped_username != '':
+                            fgapisrv_db = FGAPIServerDB(
+                                db_host=fgapisrv_db_host,
+                                db_port=fgapisrv_db_port,
+                                db_user=fgapisrv_db_user,
+                                db_pass=fgapisrv_db_pass,
+                                db_name=fgapisrv_db_name,
+                                iosandbbox_dir=fgapisrv_iosandbox,
+                                fgapiserverappid=fgapisrv_geappid)
+                            user_info = fgapisrv_db.get_user_info_by_name(
+                                mapped_username)
+                            mapped_userid = user_info["id"]
+                            mapped_username = user_info["name"]
+                            break
+                    if mapped_userid != '0' and mapped_username != '':
+                        print ("login_manager PTV mapped user - "
+                               "user_rec(0): '%s',user_rec(1): '%s'"
+                               % (mapped_userid, mapped_username))
+                        return User(mapped_userid, mapped_username)
+                # No portal user and group are returned or no mapping
+                # is available returning default user
+                user_info = fgapisrv_db.\
+                    get_user_info_by_name(fgapisrv_ptvdefusr)
+                default_userid = user_info["id"]
+                default_username = user_info["name"]
+                print ("login_manager No map on portal user/group "
+                       "not availabe, using default user")
+                print ("login_manager PTV mapped user - "
+                       "user_rec(0): '%s',user_rec(1): '%s'"
+                       % (mapped_userid, mapped_username))
+                return User(default_userid, default_username)
+            else:
+                print "login_manager PTV token '%s' is not valid" % token
+                return None
+        else:
+            print "Verifying token with baseline token management"
+            user_rec = verify_session_token(token)
+            print "login_manager - user_rec(0): '%s',user_rec(1): '%s'" \
+                  % (user_rec[0], user_rec[1])
+            if user_rec is not None and user_rec[0] is not None:
+                return User(user_rec[0], user_rec[1])
+            else:
+                print "No user is associated to session token: '%s'" % token
+                return None
+    else:
+        print "Unable to find session token from request"
     return None
 
 
@@ -520,12 +590,41 @@ def auth():
     resp.headers['Content-type'] = 'application/json'
     return resp
 
+##
+# Routes as specified for APIServer at http://docs.csgfapis.apiary.io
+##
+
+#
+# / path; used retrieve informative or service healty information
+#
+
+
+@app.route('/')
+@app.route('/%s/' % fgapiver)
+def index():
+    versions = ({"id": fgapiver,
+                 "_links": ({"rel": "self",
+                            "href": fgapiver},),
+                 "media-types": ({"type": "application/json"}),
+                 "status": "prototype",
+                 "updated": "2016-06-22",
+                 "build:": __version__},)
+    index_response = {
+        "versions": versions,
+        "_links": ({"rel": "self",
+                    "href": "/"},)
+    }
+    js = json.dumps(index_response, indent=fgjson_indent)
+    resp = Response(js, status=200, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
 
 ##
 # Task handlers
 ##
 
 # tasks - used to view o create a new task
+#
 # GET  - View task info
 # POST - Create a new task; it only prepares the task for execution
 
@@ -553,7 +652,7 @@ def tasks():
         else:
             # Show the whole task list
             # Connect database
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -561,7 +660,7 @@ def tasks():
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -572,10 +671,10 @@ def tasks():
             else:
                 # Before call user list check if * means ALL users or group
                 # restricted users (@)
-                user_impersonate = fgapisrv_db.verifyUserRole(
+                user_impersonate = fgapisrv_db.verify_user_role(
                     user_id, 'user_impersonate')
-                group_impersonate = fgapisrv_db.sameGroup(
-                    user_name, user) and fgapisrv_db.verifyUserRole(
+                group_impersonate = fgapisrv_db.same_group(
+                    user_name, user) and fgapisrv_db.verify_user_role(
                     user_id, 'group_impersonate')
                 if user == "*" \
                         and user_impersonate is False \
@@ -585,8 +684,8 @@ def tasks():
                 if user == "*" or user == "@":
                     user = user + user_name
                 # call to get tasks list
-                task_list = fgapisrv_db.getTaskList(user, app_id)
-                db_state = fgapisrv_db.getState()
+                task_list = fgapisrv_db.get_task_list(user, app_id)
+                db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # DBError getting TaskList
                     # Prepare for 402
@@ -600,8 +699,8 @@ def tasks():
                     task_array = []
                     task_state = 200
                     for task_id in task_list:
-                        task_record = fgapisrv_db.getTaskRecord(task_id)
-                        db_state = fgapisrv_db.getState()
+                        task_record = fgapisrv_db.get_task_record(task_id)
+                        db_state = fgapisrv_db.get_state()
                         if db_state[0] != 0:
                             # DBError getting TaskRecord
                             # Prepare for 403
@@ -661,7 +760,7 @@ def tasks():
                 app_inpf = params.get('input_files', [])
                 app_outf = params.get('output_files', [])
                 # Connect database
-                fgapisrv_db = fgapiserver_db(
+                fgapisrv_db = FGAPIServerDB(
                     db_host=fgapisrv_db_host,
                     db_port=fgapisrv_db_port,
                     db_user=fgapisrv_db_user,
@@ -669,7 +768,7 @@ def tasks():
                     db_name=fgapisrv_db_name,
                     iosandbbox_dir=fgapisrv_iosandbox,
                     geapiserverappid=fgapisrv_geappid)
-                db_state = fgapisrv_db.getState()
+                db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't contact database
                     # Prepare for 404 not found
@@ -679,10 +778,10 @@ def tasks():
                     }
                 else:
                     # Create task
-                    task_id = fgapisrv_db.initTask(
+                    task_id = fgapisrv_db.init_task(
                         app_id, app_desc, user, app_args, app_inpf, app_outf)
                     if task_id < 0:
-                        task_state = fgapisrv_db.getState()
+                        task_state = fgapisrv_db.get_state()
                         # Error initializing task
                         # Prepare for 410 error
                         task_state = 410
@@ -692,7 +791,7 @@ def tasks():
                     else:
                         # Prepare response
                         task_state = 200
-                        task_record = fgapisrv_db.getTaskRecord(task_id)
+                        task_record = fgapisrv_db.get_task_record(task_id)
                         task_response = {
                             "id": task_record['id'],
                             "application": task_record['application'],
@@ -759,7 +858,7 @@ def task_id(task_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -767,7 +866,7 @@ def task_id(task_id=None):
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -775,15 +874,15 @@ def task_id(task_id=None):
                 task_response = {
                     "message": db_state[1]
                 }
-            elif not fgapisrv_db.taskExists(task_id):
+            elif not fgapisrv_db.task_exists(task_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
                 }
             else:
                 # Get task details
-                task_response = fgapisrv_db.getTaskRecord(task_id)
-                db_state = fgapisrv_db.getState()
+                task_response = fgapisrv_db.get_task_record(task_id)
+                db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
                     # Prepare for 404 not found
@@ -807,7 +906,7 @@ def task_id(task_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -815,7 +914,7 @@ def task_id(task_id=None):
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -823,7 +922,7 @@ def task_id(task_id=None):
                 task_response = {
                     "message": db_state[1]
                 }
-            elif not fgapisrv_db.taskExists(task_id):
+            elif not fgapisrv_db.task_exists(task_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -848,6 +947,8 @@ def task_id(task_id=None):
         # { "runtime_data" : [ { "data_name":  "name"
         #                       ,"data_value": "value"
         #                       ,"data_desc": "description of the value"
+        #                       ,"data_type": "how client receives the file"
+        #                       ,"data_proto": "protocol used to access data"
         #                      }, ... ]
         # The insertion policy will be:
         #  1) data_name does not exists, a new record will be created in
@@ -864,7 +965,7 @@ def task_id(task_id=None):
         else:
             params = request.get_json()
             runtime_data = params.get('runtime_data', [])
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -872,7 +973,7 @@ def task_id(task_id=None):
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -880,7 +981,7 @@ def task_id(task_id=None):
                 task_response = {
                     "message": db_state[1]
                 }
-            elif not fgapisrv_db.taskExists(task_id):
+            elif not fgapisrv_db.task_exists(task_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -888,7 +989,8 @@ def task_id(task_id=None):
             elif not fgapisrv_db.patch_task(task_id, runtime_data):
                 task_status = 410
                 task_response = {
-                    "message": "Unable to delete task with id: %s" % task_id
+                    "message": ("Unable store runtime data for task having "
+                                "id: %s" % task_id)
                 }
             else:
                 task_status = 200
@@ -931,7 +1033,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # Display task_input_file details
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -939,7 +1041,7 @@ def task_id_input(task_id=None):
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 geapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -947,14 +1049,14 @@ def task_id_input(task_id=None):
                 task_response = {
                     "message": db_state[1]
                 }
-            elif not fgapisrv_db.taskExists(task_id):
+            elif not fgapisrv_db.task_exists(task_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
                 }
             else:
                 task_status = 204
-                task_response = fgapisrv_db.getTaskRecord(task_id)[
+                task_response = fgapisrv_db.get_task_record(task_id)[
                     'input_files']
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=task_status, mimetype='application/json')
@@ -970,7 +1072,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # First determine IO Sandbox location for this task
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -978,7 +1080,7 @@ def task_id_input(task_id=None):
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -986,13 +1088,13 @@ def task_id_input(task_id=None):
                 task_response = {
                     "message": db_state[1]
                 }
-            elif not fgapisrv_db.taskExists(task_id):
+            elif not fgapisrv_db.task_exists(task_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
                 }
             else:
-                task_sandbox = fgapisrv_db.getTaskIOSandbox(task_id)
+                task_sandbox = fgapisrv_db.get_task_io_sandbox(task_id)
                 if task_sandbox is None:
                     task_status = 404
                     task_response = {
@@ -1005,14 +1107,14 @@ def task_id_input(task_id=None):
                     for f in uploaded_files:
                         filename = secure_filename(f.filename)
                         f.save(os.path.join(task_sandbox, filename))
-                        fgapisrv_db.updateInputSandboxFile(
+                        fgapisrv_db.update_iniput_sandbox_file(
                             task_id, filename, os.path.join(task_sandbox))
                         file_list += (filename,)
                     # Now get input_sandbox status
-                    if fgapisrv_db.isInputSandboxReady(task_id):
+                    if fgapisrv_db.is_input_sandbox_ready(task_id):
                         # The input_sandbox is completed; trigger the GE for
                         # this task
-                        if fgapisrv_db.submitTask(task_id):
+                        if fgapisrv_db.submit_task(task_id):
                             task_status = 200
                             task_response = {
                                 "task": task_id,
@@ -1022,7 +1124,7 @@ def task_id_input(task_id=None):
                         else:
                             task_status = 412
                             task_response = {
-                                "message": fgapisrv_db.getState()[1]
+                                "message": fgapisrv_db.get_state()[1]
                             }
                     else:
                         task_status = 200
@@ -1109,7 +1211,7 @@ def applications():
         else:
             # Show the whole task list
             # Connect database
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -1117,7 +1219,7 @@ def applications():
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -1127,8 +1229,8 @@ def applications():
                 }
             else:
                 # call to get tasks
-                app_list = fgapisrv_db.getAppList()
-                db_state = fgapisrv_db.getState()
+                app_list = fgapisrv_db.get_app_list()
+                db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # DBError getting TaskList
                     # Prepare for 402
@@ -1142,8 +1244,8 @@ def applications():
                     applications = []
                     state = 200
                     for app_id in app_list:
-                        app_record = fgapisrv_db.getAppRecord(app_id)
-                        db_state = fgapisrv_db.getState()
+                        app_record = fgapisrv_db.get_app_record(app_id)
+                        db_state = fgapisrv_db.get_state()
                         if db_state[0] != 0:
                             # DBError getting TaskRecord
                             # Prepare for 403
@@ -1204,7 +1306,7 @@ def applications():
             inp_files = params.get('input_files', [])
             infrastructures = params.get('infrastructures', [])
             # Connect database
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -1212,7 +1314,7 @@ def applications():
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 geapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -1222,7 +1324,7 @@ def applications():
                 }
             else:
                 # Create app
-                app_id = fgapisrv_db.initApp(
+                app_id = fgapisrv_db.init_app(
                     name,
                     description,
                     outcome,
@@ -1231,7 +1333,7 @@ def applications():
                     inp_files,
                     infrastructures)
                 if app_id < 0:
-                    task_state = fgapisrv_db.getState()
+                    task_state = fgapisrv_db.get_state()
                     # Error initializing task
                     # Prepare for 410 error
                     state = 410
@@ -1241,7 +1343,7 @@ def applications():
                 else:
                     # Prepare response
                     state = 200
-                    app_record = fgapisrv_db.getAppRecord(app_id)
+                    app_record = fgapisrv_db.get_app_record(app_id)
                     response = {
                         "id": app_record['id'],
                         "name": app_record['name'],
@@ -1293,7 +1395,7 @@ def app_id(app_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -1301,7 +1403,7 @@ def app_id(app_id=None):
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -1309,7 +1411,7 @@ def app_id(app_id=None):
                 response = {
                     "message": db_state[1]
                 }
-            elif not fgapisrv_db.appExists(app_id):
+            elif not fgapisrv_db.app_exists(app_id):
                 status = 404
                 response = {
                     "message":
@@ -1317,8 +1419,8 @@ def app_id(app_id=None):
                         % app_id}
             else:
                 # Get task details
-                response = fgapisrv_db.getAppRecord(app_id)
-                db_state = fgapisrv_db.getState()
+                response = fgapisrv_db.get_app_record(app_id)
+                db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
                     # Prepare for 404 not found
@@ -1342,7 +1444,7 @@ def app_id(app_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            fgapisrv_db = fgapiserver_db(
+            fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
                 db_port=fgapisrv_db_port,
                 db_user=fgapisrv_db_user,
@@ -1350,7 +1452,7 @@ def app_id(app_id=None):
                 db_name=fgapisrv_db_name,
                 iosandbbox_dir=fgapisrv_iosandbox,
                 fgapiserverappid=fgapisrv_geappid)
-            db_state = fgapisrv_db.getState()
+            db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
@@ -1358,16 +1460,17 @@ def app_id(app_id=None):
                 response = {
                     "message": db_state[1]
                 }
-            elif not fgapisrv_db.appExists(app_id):
+            elif not fgapisrv_db.app_exists(app_id):
                 status = 404
                 response = {
                     "message": "Unable to find application with id: %s" %
                                app_id}
-            elif not fgapisrv_db.appDelete(app_id):
+            elif not fgapisrv_db.app_delete(app_id):
                 status = 410
                 response = {
-                    "message": "Unable to delete application with id: %s" %
-                               app_id}
+                    "message": ("Unable to delete application with id: %s; "
+                                "reason: '%s'"
+                                % (app_id, fgapisrv_db.get_state()[1]))}
             else:
                 status = 200
                 response = {
@@ -1407,7 +1510,7 @@ def after_request(response):
 #
 
 # First check the db
-checkDbVer()
+check_db_ver()
 
 # Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":

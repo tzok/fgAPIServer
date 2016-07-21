@@ -58,7 +58,7 @@ def_geapiserverappid = '10000'  # GridEngine sees API server as an application
 """
 
 
-class fgapiserver_db:
+class FGAPIServerDB:
 
     """
      API Server Database connection settings
@@ -79,8 +79,8 @@ class fgapiserver_db:
     message = ''
 
     """
-      fgapiserver_db - Constructor may override default
-                       values defined at the top of the file
+      FGAPIServerDB - Constructor may override default
+                      values defined at the top of the file
     """
 
     def __init__(self, *args, **kwargs):
@@ -114,7 +114,7 @@ class fgapiserver_db:
                      query/transaction failure
     """
 
-    def catchDBError(self, e, db, rollback):
+    def catch_db_error(self, e, db, rollback):
         logging.debug("[ERROR] %d: %s" % (e.args[0], e.args[1]))
         # print "[ERROR] %d: %s" % (e.args[0], e.args[1])
         if rollback is True:
@@ -123,10 +123,10 @@ class fgapiserver_db:
         self.err_msg = "[ERROR] %d: %s" % (e.args[0], e.args[1])
 
     """
-      closeDB - common operatoins performed closing DB query/transaction
+      close_db - common operatoins performed closing DB query/transaction
     """
 
-    def closeDB(self, db, cursor, commit):
+    def close_db(self, db, cursor, commit):
         if cursor is not None:
             cursor.close()
         if db is not None:
@@ -164,15 +164,15 @@ class fgapiserver_db:
             self.err_flag = False
             self.err_msg = 'Database version : %s' % data[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
 
     """
-      getDbVer - Return the database version
+      get_db_version - Return the database version
     """
 
-    def getDbVer(self):
+    def get_db_version(self):
         db = None
         cursor = None
         dbver = ''
@@ -184,25 +184,25 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             dbver = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return dbver
 
     """
-      getState returns the status and message of the last action on the DB
+      get_state returns the status and message of the last action on the DB
     """
 
-    def getState(self):
+    def get_state(self):
         return (self.err_flag, self.err_msg)
 
     """
-      createSessionToken - Starting from the given triple
-                           (username,password,timestamp) produce a
-                           valid access token
+      create_session_token - Starting from the given triple
+                            (username,password,timestamp) produce a
+                            valid access token
     """
 
-    def createSessionToken(self, username, password, logts):
+    def create_session_token(self, username, password, logts):
         # logtimestamp is currently ignored; old timestamps should not be
         # considered
         db = None
@@ -226,17 +226,17 @@ class fgapiserver_db:
                 sql_data = (sestoken, username, password)
                 cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
         return sestoken
 
     """
-      verifySessionToken - Check if the passed token is valid and return
+      verify_session_token - Check if the passed token is valid and return
                            the user id and its name
     """
 
-    def verifySessionToken(self, sestoken):
+    def verify_session_token(self, sestoken):
         db = None
         cursor = None
         user_id = ''
@@ -245,9 +245,9 @@ class fgapiserver_db:
             db = self.connect()
             cursor = db.cursor()
             sql = (
-                'select if((creation+expiry)-now()>0,user_id,NULL) user_id  \n'
-                '      ,(select name from fg_user where id=user_id) name \n'
-                'from fg_token \n'
+                'select if((creation+expiry)-now()>0,user_id,NULL) user_id\n'
+                '      ,(select name from fg_user where id=user_id) name\n'
+                'from fg_token\n'
                 'where token=%s;')
             sql_data = (sestoken,)
             cursor.execute(sql, sql_data)
@@ -256,16 +256,16 @@ class fgapiserver_db:
                 user_id = user_rec[0]
                 user_name = user_rec[1]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return user_id, user_name
 
     """
-      verifyUserRole - Verify if the given user has the given role
+      verify_user_role - Verify if the given user has the given role
     """
 
-    def verifyUserRole(self, user_id, role_name):
+    def verify_user_role(self, user_id, role_name):
         db = None
         cursor = None
         try:
@@ -287,13 +287,13 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return result
 
     """
-      verifyUserApp - Verify if the given user has the given app in its roles
+      verify_user_app - Verify if the given user has the given app in its roles
     """
 
     def verifyUserApp(self, user_id, app_id):
@@ -318,16 +318,16 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return result
 
     """
-      sameGroup - Return True if given users belong to the same group
+      same_group - Return True if given users belong to the same group
     """
 
-    def sameGroup(self, user_1, user_2):
+    def same_group(self, user_1, user_2):
         db = None
         cursor = None
         result = ''
@@ -350,16 +350,16 @@ class fgapiserver_db:
             if record is not None:
                 result = record[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return result
 
     """
-      getUserInfoByName - Return full user info from the given username
+      get_user_info_by_name - Return full user info from the given username
     """
 
-    def getUserInfoByName(self, name):
+    def get_user_info_by_name(self, name):
         db = None
         cursor = None
         user_info = None
@@ -392,16 +392,16 @@ class fgapiserver_db:
                     "creation": record[7],
                     "modified": record[8]}
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return user_info
 
     """
-      taskExists - Return True if the given task_id exists False otherwise
+      task_exists - Return True if the given task_id exists False otherwise
     """
 
-    def taskExists(self, task_id):
+    def task_exists(self, task_id):
         db = None
         cursor = None
         count = 0
@@ -415,16 +415,16 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return count > 0
 
     """
-       getTaskRecord
+       get_task_record - Retrieve the whole task information
     """
 
-    def getTaskRecord(self, task_id):
+    def get_task_record(self, task_id):
         db = None
         cursor = None
         task_record = {}
@@ -511,6 +511,8 @@ class fgapiserver_db:
                 '  data_name\n'
                 ' ,data_value\n'
                 ' ,data_desc\n'
+                ' ,data_type\n'
+                ' ,data_proto\n'
                 ' ,date_format(creation,'
                 '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
                 ' ,date_format(last_change,'
@@ -526,10 +528,12 @@ class fgapiserver_db:
                     "name": rtdata[0],
                     "value": rtdata[1],
                     "description": rtdata[2],
+                    "type": rtdata[3],
+                    "proto": rtdata[4],
                     "creation": str(
-                        rtdata[3]),
+                        rtdata[5]),
                     "last_change": str(
-                        rtdata[4])}
+                        rtdata[6])}
                 runtime_data += [rtdata_entry, ]
             # Prepare output
             task_record = {
@@ -550,23 +554,23 @@ class fgapiserver_db:
                 "runtime_data": runtime_data,
                 "iosandbox": task_dicrec['iosandbox']}
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, False)
         return task_record
 
     """
-      getTaskState - Return the status of a given Task
+      get_task_status - Return the status of a given Task
     """
 
-    def getTaskStatus(self, task_id):
-        return self.getTaskRecord(task_id).get('status', None)
+    def get_task_status(self, task_id):
+        return self.get_task_record(task_id).get('status', None)
 
     """
-      getTaskInputFiles - Return information about InputFiles of a given Task
+      get_task_input_files - Return info about input files of a given Task
     """
 
-    def getTaskInputFiles(self, task_id):
+    def get_task_input_files(self, task_id):
         db = None
         cursor = None
         task_ifiles = ()
@@ -585,16 +589,16 @@ class fgapiserver_db:
                 }
                 task_ifiles += (file_info,)
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return task_ifiles
 
     """
-      getTaskOutputFiles - Return information about OutputFiles of a given Task
+      get_task_output_files - Return info about output files of a given Task
     """
 
-    def getTaskOutputFiles(self, task_id):
+    def get_task_output_files(self, task_id):
         db = None
         cursor = None
         task_ifiles = ()
@@ -613,16 +617,16 @@ class fgapiserver_db:
                 }
                 task_ifiles += (file_info,)
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return task_ifiles
 
     """
-      getAppDetail - Return details about a given app_id
+      get_app_detail - Return details about a given app_id
     """
 
-    def getAppDetail(self, app_id):
+    def get_app_detail(self, app_id):
         db = None
         cursor = None
         app_detail = {}
@@ -673,7 +677,7 @@ class fgapiserver_db:
                 '      ,description\n'
                 '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                 '      ,if(enabled,\'enabled\',\'disabled\') status\n'
-                '      ,if(virtual,\'virtual\',\'real\') status\n'
+                '      ,if(vinfra,\'virtual\',\'real\') status\n'
                 'from infrastructure\n'
                 'where app_id=%s;')
             sql_data = (app_id,)
@@ -708,41 +712,41 @@ class fgapiserver_db:
             app_detail['infrastructures'] = infrastructures
             return app_detail
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
 
     """
-      getTaskAppDetail - Return application details of a given Task
+      get_task_app_detail - Return application details of a given Task
     """
 
-    def getTaskAppDetail(self, task_id):
-        task_record = self.getTaskRecord(task_id)
-        return self.getAppDetail(str(task_record['application']))
+    def get_task_app_detail(self, task_id):
+        task_record = self.get_task_record(task_id)
+        return self.get_app_detail(str(task_record['application']))
 
     """
-      getTaskInfo - Retrieve full information about given task_id
+      get_task_info - Retrieve full information about given task_id
     """
 
-    def getTaskInfo(self, task_id):
-        task_record = self.getTaskRecord(task_id)
+    def get_task_info(self, task_id):
+        task_record = self.get_task_record(task_id)
         task_record.get('id', None)
         if task_record.get('id', None) is None:
             self.err_flag = True
             self.err_msg = "[ERROR] Did not find task id: %s" % task_id
             return {}
-        task_app_details = self.getTaskAppDetail(task_id)
+        task_app_details = self.get_task_app_detail(task_id)
         task_info = task_record
         del task_info['application']
         task_info['application'] = task_app_details
         return task_info
 
     """
-        Retrieve from application_files table the application specific files
-        associated to the given application
+        get_app_files - Retrieve from application_files table the application
+                        specific files associated to the given application
     """
 
-    def getAppFiles(self, app_id):
+    def get_app_files(self, app_id):
         db = None
         cursor = None
         app_files = []
@@ -761,16 +765,16 @@ class fgapiserver_db:
                 app_files += [{"file": app_file[0],
                                "path": app_file[1], "override": app_file[2]}, ]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return app_files
 
     """
-      initTask initialize a task from a given application id
+      init_task - initialize a task from a given application id
     """
 
-    def initTask(
+    def init_task(
             self,
             app_id,
             description,
@@ -779,7 +783,7 @@ class fgapiserver_db:
             input_files,
             output_files):
         # Get app defined files
-        app_files = self.getAppFiles(app_id)
+        app_files = self.get_app_files(app_id)
         # Start creating task
         db = None
         cursor = None
@@ -911,29 +915,29 @@ class fgapiserver_db:
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
 
         # Accordingly to specs: input_files -
         # If omitted the task is immediately ready to start
         # If the inputsandbox is ready the job will be triggered for execution
-        if self.isInputSandboxReady(task_id):
+        if self.is_input_sandbox_ready(task_id):
             # The input_sandbox is completed; trigger the Executor for this
             # task only if the completed sandbox consists of overridden files
             # or no files are specified in the application_file table for this
             # app_id
-            if self.isOverriddenSandbox(app_id):
-                self.submitTask(task_id)
+            if self.is_overridden_sandbox(app_id):
+                self.submit_task(task_id)
 
         return task_id
 
     """
-      getTaskIOSandbox - Get the assigned IO Sandbox folder of the
-                         given task_id
+      get_task_io_sandbox - Get the assigned IO Sandbox folder of the
+                            given task_id
     """
 
-    def getTaskIOSandbox(self, task_id):
+    def get_task_io_sandbox(self, task_id):
         db = None
         cursor = None
         iosandbox = None
@@ -950,17 +954,17 @@ class fgapiserver_db:
             else:
                 iosandbox = result[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return iosandbox
 
     """
-      updateInputSandboxFile - Update input_sandbox_table with the fullpath
+      update_iniput_sandbox_file - Update input_sandbox_table with the fullpath
       of a given (task,filename)
     """
 
-    def updateInputSandboxFile(self, task_id, filename, filepath):
+    def update_iniput_sandbox_file(self, task_id, filename, filepath):
         db = None
         cursor = None
         try:
@@ -973,19 +977,19 @@ class fgapiserver_db:
             sql_data = (filepath, task_id, filename)
             cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
         return
 
     """
-      isInputSandboxReady - Return true if all input_sandbox files have been
-                            uploaded for a given (task_id)
-                            True if all files have a file path registered
-                            or the task does not contain any input file
+      is_input_sandbox_ready - Return true if all input_sandbox files have been
+                               uploaded for a given (task_id)
+                               True if all files have a file path registered
+                               or the task does not contain any input file
     """
 
-    def isInputSandboxReady(self, task_id):
+    def is_input_sandbox_ready(self, task_id):
         db = None
         cursor = None
         sandbox_ready = False
@@ -1001,20 +1005,20 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             sandbox_ready = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return 1 == int(sandbox_ready)
 
     """
-      submitTask - Trigger the GridEngine to submit the given task
-                   This function takes care of all APIServerDaemon needs to
-                   properly submit the applciation
+      submit_task - Trigger the GridEngine to submit the given task
+                    This function takes care of all APIServerDaemon needs to
+                    properly submit the applciation
     """
 
-    def submitTask(self, task_id):
+    def submit_task(self, task_id):
         # Get task information
-        task_info = self.getTaskInfo(task_id)
+        task_info = self.get_task_info(task_id)
         app_info = task_info['application']
         app_params = app_info['parameters']
         # Retrieve only enabled infrastructures
@@ -1052,9 +1056,12 @@ class fgapiserver_db:
                             % task_id)
             return False
         # All checks have been done, it is possible to enqueue the Task request
-        return self.enqueueTaskRequest(task_info)
+        return self.enqueue_task_request(task_info)
 
-    def enqueueTaskRequest(self, task_info):
+    """
+      enqueue_task_request - Place a request into the queue
+    """
+    def enqueue_task_request(self, task_info):
         db = None
         cursor = None
         self.err_flag = False
@@ -1105,9 +1112,9 @@ class fgapiserver_db:
                 sql_data = (str(task_info['id']),)
                 cursor.execute(sql, sql_data)
             except MySQLdb.Error as e:
-                self.catchDBError(e, db, True)
+                self.catch_db_error(e, db, True)
             finally:
-                self.closeDB(db, cursor, True)
+                self.close_db(db, cursor, True)
                 if as_file is not None:
                     as_file.close()
         except IOError as xxx_todo_changeme1:
@@ -1119,10 +1126,10 @@ class fgapiserver_db:
         return not self.err_flag
 
     """
-      getTaskList - Get the list of tasks associated to a user and/or app_id
+      get_task_list - Get the list of tasks associated to a user and/or app_id
     """
 
-    def getTaskList(self, user, app_id):
+    def get_task_list(self, user, app_id):
         db = None
         cursor = None
         task_ids = []
@@ -1170,9 +1177,9 @@ class fgapiserver_db:
             for task_id in cursor:
                 task_ids += [task_id[0], ]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return task_ids
 
     """
@@ -1184,7 +1191,7 @@ class fgapiserver_db:
         cursor = None
         status = False
         # Get task information
-        task_info = self.getTaskInfo(task_id)
+        task_info = self.get_task_info(task_id)
         try:
             # Insert task record in the GridEngine' queue
             db = self.connect()
@@ -1220,9 +1227,9 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             status = True
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
         return status
 
     """
@@ -1240,6 +1247,8 @@ class fgapiserver_db:
                 data_name = rtdata['data_name']
                 data_value = rtdata['data_value']
                 data_desc = rtdata.get('data_desc', '')
+                data_type = rtdata.get('data_type', '')
+                data_proto = rtdata.get('data_proto', '')
                 # Determine if dataname exists for this task
                 sql = ('select count(*)\n'
                        'from runtime_data\n'
@@ -1262,6 +1271,8 @@ class fgapiserver_db:
                         '                         ,data_name\n'
                         '                         ,data_value\n'
                         '                         ,data_desc\n'
+                        '                         ,data_type\n'
+                        '                         ,data_proto\n'
                         '                         ,creation\n'
                         '                         ,last_change)\n'
                         'select %s\n'
@@ -1272,10 +1283,16 @@ class fgapiserver_db:
                         '      ,%s\n'
                         '      ,%s\n'
                         '      ,%s\n'
+                        '      ,%s\n'
+                        '      ,%s\n'
                         '      ,now()\n'
                         '      ,now();\n')
-                    sql_data = (task_id, task_id, data_name,
-                                data_value, data_desc)
+                    sql_data = (task_id, task_id,
+                                data_name,
+                                data_value,
+                                data_desc,
+                                data_type,
+                                data_proto)
                     cursor.execute(sql, sql_data)
                     status = True
                 else:
@@ -1288,19 +1305,19 @@ class fgapiserver_db:
                     cursor.execute(sql, sql_data)
                     status = True
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
         return status
 
     """
-    isOverriddenSandbox - True if all files of the specified application have
-                          the override flag True
-                          If no files are specified in application_file the
-                          function returns True
+    is_overridden_sandbox - True if all files of the specified application
+                            have the override flag True
+                            If no files are specified in application_file the
+                            function returns True
     """
 
-    def isOverriddenSandbox(self, app_id):
+    def is_overridden_sandbox(self, app_id):
         db = None
         cursor = None
         no_override = False
@@ -1318,16 +1335,16 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             no_override = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return 1 == int(no_override)
 
     """
-      getFileTaskId
+      get_file_task_id - Get the task id related to the fiven file and path
     """
 
-    def getFileTaskId(self, file_name, file_path):
+    def get_file_task_id(self, file_name, file_path):
         db = None
         cursor = None
         task_id = None
@@ -1340,18 +1357,18 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             task_id = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return task_id
 #
 # Application
 #
     """
-      appExists - Return True if the given app_id exists False otherwise
+      app_exists - Return True if the given app_id exists False otherwise
     """
 
-    def appExists(self, app_id):
+    def app_exists(self, app_id):
         db = None
         cursor = None
         count = 0
@@ -1365,16 +1382,16 @@ class fgapiserver_db:
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return count > 0
 
     """
-      getAppList - Get the list of applications
+      get_app_list - Get the list of applications
     """
 
-    def getAppList(self):
+    def get_app_list(self):
         db = None
         cursor = None
         app_ids = []
@@ -1389,16 +1406,16 @@ class fgapiserver_db:
             for app_id in cursor:
                 app_ids += [app_id[0], ]
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, False)
+            self.catch_db_error(e, db, False)
         finally:
-            self.closeDB(db, cursor, False)
+            self.close_db(db, cursor, False)
         return app_ids
 
     """
-       getAppRecord
+       get_app_record - Get application record
     """
 
-    def getAppRecord(self, app_id):
+    def get_app_record(self, app_id):
         db = None
         cursor = None
         app_record = {}
@@ -1474,7 +1491,7 @@ class fgapiserver_db:
                                    "description": app_infra[2],
                                    "creation": str(app_infra[3]),
                                    "enabled": app_infra[4],
-                                   "virtual": False
+                                   "vinfra": False
                                    # ,"parameters"     : []
                                   }
                 app_infras += [app_infra_entry, ]
@@ -1505,22 +1522,22 @@ class fgapiserver_db:
                 "input_files": app_ifiles,
                 "infrastructures": app_infras}
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
         return app_record
 
     """
-      initApp initialize an application
-      from the given parameters: name
-                                ,description
-                                ,enabled
-                                ,parameters
-                                ,inp_files
-                                ,infrastructures
+      init_app - initialize an application
+                 from the given parameters: name
+                                           ,description
+                                           ,enabled
+                                           ,parameters
+                                           ,inp_files
+                                           ,infrastructures
     """
 
-    def initApp(
+    def init_app(
             self,
             name,
             description,
@@ -1600,7 +1617,7 @@ class fgapiserver_db:
                        '                           ,description\n'
                        '                           ,creation\n'
                        '                           ,enabled\n'
-                       # '                           ,virtual\n'
+                       # '                           ,vinfra\n'
                        '                           )\n'
                        'select if(max(id) is NULL,1,max(id)+1) \n'
                        '      ,%s                              \n'
@@ -1614,7 +1631,7 @@ class fgapiserver_db:
                 sql_data = (app_id, infra['name'],
                             infra['description'],
                             infra['enabled']
-                            # ,infra['virtual']
+                            # ,infra['vinfra']
                             )
                 cursor.execute(sql, sql_data)
                 # Get inserted infrastructure_id
@@ -1638,21 +1655,18 @@ class fgapiserver_db:
                     sql_data = (infra_id, param['name'], param[
                                 'value'], infra_id)
                     cursor.execute(sql, sql_data)
-        except IOError as xxx_todo_changeme2:
-            (errno, strerror) = xxx_todo_changeme2.args
-            self.err_flag = True
-            self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
+            app_id = 0
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
         return app_id
 
     """
-      appDelete delete application with a given id
+      app_delete - delete application with a given id
     """
 
-    def appDelete(self, app_id):
+    def app_delete(self, app_id):
         # Start deleting app
         db = None
         cursor = None
@@ -1685,12 +1699,8 @@ class fgapiserver_db:
             sql = ('delete from application where id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
-        except IOError as xxx_todo_changeme3:
-            (errno, strerror) = xxx_todo_changeme3.args
-            self.err_flag = True
-            self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
         except MySQLdb.Error as e:
-            self.catchDBError(e, db, True)
+            self.catch_db_error(e, db, True)
         finally:
-            self.closeDB(db, cursor, True)
+            self.close_db(db, cursor, True)
         return app_id

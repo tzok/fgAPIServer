@@ -33,12 +33,14 @@ __email__ = "riccardo.bruno@ct.infn.it"
 # GridEngine API Server configuration
 
 
-class fgapiserver_cfg:
+class FGApiServerConfig:
     fgConfig = {}
 
-    def __init__(self, configFile):
+    def __init__(self, config_file):
+        # Parse configuration file
         config = ConfigParser.ConfigParser()
-        config.read(configFile)
+        config.read(config_file)
+
         # fgapiserver
         self.fgConfig['fgapiver'] = config.get('fgapiserver', 'fgapiver')
         self.fgConfig['fgapiserver_name'] = "%s %s" % (config.get(
@@ -53,6 +55,8 @@ class fgapiserver_cfg:
             'fgapiserver', 'fgapisrv_iosandbox')
         self.fgConfig['fgapisrv_geappid'] = config.get(
             'fgapiserver', 'fgapisrv_geappid')
+        self.fgConfig['fgjson_indent'] = config.get(
+            'fgapiserver', 'fgjson_indent')
         self.fgConfig['fgapisrv_key'] = config.get(
             'fgapiserver', 'fgapisrv_key')
         self.fgConfig['fgapisrv_crt'] = config.get(
@@ -67,6 +71,18 @@ class fgapiserver_cfg:
             'fgapiserver', 'fgapisrv_notoken')
         self.fgConfig['fgapisrv_notokenusr'] = config.get(
             'fgapiserver', 'fgapisrv_notokenusr')
+        self.fgConfig['fgapisrv_lnkptvflag'] = config.get(
+            'fgapiserver', 'fgapisrv_lnkptvflag')
+        self.fgConfig['fgapisrv_ptvendpoint'] = config.get(
+            'fgapiserver', 'fgapisrv_ptvendpoint')
+        self.fgConfig['fgapisrv_ptvuser'] = config.get(
+            'fgapiserver', 'fgapisrv_ptvuser')
+        self.fgConfig['fgapisrv_ptvpass'] = config.get(
+            'fgapiserver', 'fgapisrv_ptvpass')
+        self.fgConfig['fgapisrv_ptvdefusr'] = config.get(
+            'fgapiserver', 'fgapisrv_ptvdefusr')
+        self.fgConfig['fgapisrv_ptvmapfile'] = config.get(
+            'fgapiserver', 'fgapisrv_ptvmapfile')
 
         # fgapiserver_db
         self.fgConfig['fgapisrv_db_host'] = config.get(
@@ -79,19 +95,35 @@ class fgapiserver_cfg:
             'fgapiserver_db', 'fgapisrv_db_pass')
         self.fgConfig['fgapisrv_db_name'] = config.get(
             'fgapiserver_db', 'fgapisrv_db_name')
-        print self.showConf()
+        # Show configuration
+        if self.fgConfig['fgapisrv_debug'] == 'True':
+            print self.show_conf()
 
-    def showConf(self):
+    def show_conf(self):
+        """
+          Show the loaded APIServer fron-end configuration
+        :return:
+        """
         return ("FutureGateway API Server config\n"
                 "----------------------------------\n"
-                "%s\n" % json.dumps(self.fgConfig, indent=4))
+                "%s\n" % json.dumps(self.fgConfig,
+                                    indent=int(
+                                        self.fgConfig['fgjson_indent'])))
 
-    def getConfValue(self, key):
+    def get_config_value(self, key):
+        """
+          This function retrieves the given configuration parameter or its
+          corresponding default value in case the requested parameter is not
+          present in the configuration file.
+        :rtype: config value
+        :param key: The key name
+        :return: The configuration value identified by the kwy entry
+        """
         def_value = None
         if key == 'fgapiver':
             def_value = 'v.10'
         elif key == 'fgapiserver_name':
-            def_value = 'GridEngine API Server % s' % self.getConfValue(
+            def_value = 'GridEngine API Server % s' % self.get_config_value(
                 'fgapiver')
         elif key == 'fgapisrv_host':
             def_value = 'localhost'
@@ -130,6 +162,26 @@ class fgapiserver_cfg:
             def_value = 'False'
         elif key == 'fgapisrv_notokenusr':
             def_value = 'futuregateway'
+        elif key == 'fgapisrv_lnkptvflag':
+            def_value = 'False'
+        elif key == 'fgapisrv_ptvendpoint':
+            def_value = 'http://localhost/ptv'
+        elif key == 'fgapisrv_ptvuser':
+            def_value = 'ptvuser'
+        elif key == 'fgapisrv_ptvpass':
+            def_value = 'ptvpass'
+        elif key == 'fgapisrv_ptvdefusr':
+            def_value = 'futuregateway'
+        elif key == 'fgapisrv_ptvmapfile':
+            def_value = 'fgapiserver_ptvmap.json'
         else:
             print "[WARNING] Not found default value for key: '%s'" % key
         return self.fgConfig.get(key, def_value)
+
+    def get_config(self):
+        """
+         This function returns the object containing loaded configuration
+         settings
+        :return: the object containing configuration settings
+        """
+        return self.fgConfig
