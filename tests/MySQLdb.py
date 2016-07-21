@@ -82,6 +82,8 @@ queries = [
              '  data_name\n'
              ' ,data_value\n'
              ' ,data_desc\n'
+             ' ,data_type\n'
+             ' ,data_proto\n'
              ' ,date_format(creation,'
              '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
              ' ,date_format(last_change,'
@@ -92,11 +94,15 @@ queries = [
    'result': [['userdata_name_1',
                'userdata_value_1',
                'userdata_desc_1',
+               'NULL',
+               'NULL',
                '1970-01-01T00:00:00',
                '1970-01-01T00:00:00'],
               ['userdata_name_2',
                'userdata_value_2',
                'userdata_desc_2',
+               'NULL',
+               'NULL',
                '1970-01-01T00:00:00',
                '1970-01-01T00:00:00'],
               ]},
@@ -127,7 +133,7 @@ queries = [
              '      ,description\n'
              '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
              '      ,if(enabled,\'enabled\',\'disabled\') status\n'
-             '      ,if(virtual,\'virtual\',\'real\') status\n'
+             '      ,if(vinfra,\'virtual\',\'real\') status\n'
              'from infrastructure\n'
              'where app_id=%s;'),
    'result': [['1',

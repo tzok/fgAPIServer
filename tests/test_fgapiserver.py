@@ -45,8 +45,8 @@ class Test_fgAPIServer(unittest.TestCase):
     def test_User(self):
         self.banner("User class")
         user = fgapiserver.User(2, 'test')
-        self.assertEqual(2, user.user_id())
-        self.assertEqual('test', user.user_name())
+        self.assertEqual(2, user.get_id())
+        self.assertEqual('test', user.get_name())
 
     def test_paginate_reposnse(self):
         self.banner("paginate_response(txt,'2','3')")
@@ -70,7 +70,7 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_checkDbVer(self):
         self.banner("checkDbVer()")
-        self.assertEqual('0.0.5', fgapiserver.check_db_ver())
+        self.assertEqual('0.0.6', fgapiserver.check_db_ver())
 
     def test_fgapiserver(self):
         self.banner("get_task_app_id(1)")

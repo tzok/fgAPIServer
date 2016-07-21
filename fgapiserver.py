@@ -179,7 +179,7 @@ def get_task_app_id(task_id):
     db_state = fgapisrv_db.get_state()
     if db_state[0] == 0:
         task_info = fgapisrv_db.get_task_info(task_id)
-        app_record = task_info.get(['application'], None)
+        app_record = task_info.get('application', None)
         if app_record is not None:
             return app_record['id']
     return None
