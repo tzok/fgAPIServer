@@ -23,7 +23,7 @@
 -- Script that creates the GridEngine based apiserver
 --
 -- Author: riccardo.bruno@ct.infn.it
--- Version: v0.0.2-63-g13196a8-13196a8-77
+-- Version: %VERSION%
 --
 --
 drop database if exists fgapiserver;
@@ -96,7 +96,7 @@ create table infrastructure (
    ,description  varchar(256) not null                   -- Infrastructure description
    ,creation     datetime not null                       -- Creation timestamp
    ,enabled      boolean default false not null          -- Enabled infrastructure flag
-   ,virtual      boolean default false not null          -- True if a virtual infrastructure
+   ,vinfra       boolean default false not null          -- True if it is a virtual infrastructure
    ,primary key(id,app_id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
@@ -158,7 +158,7 @@ create table task (
      id           int unsigned not null auto_increment
     ,creation     datetime not null
     ,last_change  datetime not null
-    ,app_id       int unsigned not null 
+    ,app_id       int unsigned not null
     ,description  varchar(256) not null -- Human readable hob identifier
     ,status       varchar(32)  not null -- The current status of the task
     ,iosandbox    varchar(256)          -- Path to the task IO Sandbox
@@ -202,7 +202,9 @@ create table runtime_data (
     ,data_id      int unsigned  not null      -- data identifier (a progressive number)
     ,data_name    varchar(128)  not null      -- name of data field
     ,data_value   varchar(1024) not null      -- value of data field
-    ,data_desc    varchar(2048)               -- value of data description
+    ,data_desc    varchar(2048)               -- data description
+    ,data_proto   varchar(128)                -- data protocol (manages complex data)
+    ,data_type    varchar(128)                -- data type (works with data_proto)
     ,creation     datetime      not null      -- When data has been written the first time
     ,last_change  datetime      not null      -- When data has been updated
     ,primary key(task_id,data_id)
@@ -380,7 +382,7 @@ create table as_queue (
     ,foreign key (task_id) references task(id)
     ,index(task_id)
     ,index(action)
---  ,index(target)	
+--  ,index(target)
     ,index(last_change)
 );
 
@@ -418,4 +420,5 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.5','baseline setup','../fgapiserver_db.sql',now())
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.6','baseline setup','../fgapiserver_db.sql',now())
+Macbook@RicMac:~/Documents/fgapiserver$

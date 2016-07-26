@@ -36,7 +36,7 @@ password = "test"
 
 
 # Encode
-def tokenEncode(key, username, password):
+def token_encode(key, username, password):
     obj = ARC4.new(key)
     return base64.b64encode(
         obj.encrypt(
@@ -47,25 +47,28 @@ def tokenEncode(key, username, password):
 # Decode
 
 
-def tokenDecode(key, token):
+def token_decode(key, token):
     obj = ARC4.new(key)
     return obj.decrypt(base64.b64decode(token))
 
 
-def tokenInfo(token):
-    tinfo = tokenDecode(key, token)
+def token_info(token):
+    tinfo = token_decode(key, token)
     tinfo_fields = tinfo.split(':')
-    return tinfo_fields[0], tinfo_fields[1], tinfo_fields[2]
+    return \
+        tinfo_fields[0].split("=")[1], \
+        tinfo_fields[1].split("=")[1], \
+        tinfo_fields[2].split("=")[1]
 
 if __name__ == "__main__":
-    token = tokenEncode(key, username, password)
-    tinfo = tokenDecode(key, token)
+    token = token_encode(key, username, password)
+    tinfo = token_decode(key, token)
     print ("Token with key: '%s'; "
            "encoding: 'username:=%s:"
            "password=%s:"
            "timestamp=<issue_time>' is '%s'"
            % (key, username, password, token))
     print "Decoded token: '%s' -> '%s'" % (token, tinfo)
-    username, password, timestamp = tokenInfo(token)
+    username, password, timestamp = token_info(token)
     print ("Token info: 'username=%s:password=%s:timestamp=%s'"
            % (username, password, timestamp))
