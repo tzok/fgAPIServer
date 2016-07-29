@@ -421,4 +421,3 @@ create table db_patches (
 
 -- Default value for baseline setup (this script)
 insert into db_patches (id,version,name,file,applied) values (1,'0.0.6','baseline setup','../fgapiserver_db.sql',now())
-Macbook@RicMac:~/Documents/fgapiserver$
