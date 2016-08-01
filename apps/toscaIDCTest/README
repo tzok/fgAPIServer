@@ -4,6 +4,8 @@
 # Author: Riccardo Bruno (riccardo.bruno@ct.infn.it)
 #
 Demo application executing TOSCA IDC  
+TOSCA IDC interface test, bypasses the JSAGA adaptor contating directyl the TOSCA endpoint
+TOSCA template file tosca_template.yaml, has been taken from official templates repository from: https://raw.githubusercontent.com/indigo-dc/tosca-templates/master/amber/ambertools.yaml
 
 To execute the demo, please follow the steps below(*):
 

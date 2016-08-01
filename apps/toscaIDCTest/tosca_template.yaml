@@ -1,50 +1,51 @@
 tosca_definitions_version: tosca_simple_yaml_1_0
 
-repositories:
-  indigo_repository:
-    description: INDIGO Custom types repository
-    url: https://raw.githubusercontent.com/indigo-dc/tosca-types/master/
-
 imports:
-  - indigo_custom_types:
-      file: custom_types.yaml
-      repository: indigo_repository
+  - indigo_custom_types: https://raw.githubusercontent.com/indigo-dc/tosca-types/master/custom_types.yaml
 
-description: >
-  TOSCA test for launching compute node with a specified image and getting
-  as an output the IP and SSH credentials to access
+description: TOSCA template for deploying an instance of AmberTools v15
 
 topology_template:
+  inputs:
+    number_cpus:
+      type: integer
+      description: number of cpus required for the instance
+      default: 1
+    memory_size:
+      type: string
+      description: ram memory required for the instance
+      default: 1 GB
 
   node_templates:
 
-    simple_node:
+    ambertools:
+      type: tosca.nodes.indigo.Ambertools
+      requirements:
+        - host: ambertools_server
+
+    ambertools_server:
       type: tosca.nodes.indigo.Compute
-      properties:
-        public_ip: yes
       capabilities:
-        scalable:
+        endpoint:
           properties:
-            count: 1
+            network_name: PUBLIC
+            ports:
+              ssh_port:
+                protocol: tcp
+                source: 22
         host:
-          properties:
-            num_cpus: 1
-            mem_size: 1 GB
+         properties:
+           num_cpus: { get_input: number_cpus }
+           mem_size: { get_input: memory_size }
         os:
           properties:
             type: linux
-            # The format of the image must be defined
-            # Currently this example uses the IM URI convention
-            # used in disk.0.image.url
-            # see: http://imdocs.readthedocs.org/en/latest/radl.html?highlight=uri#system-features
-            image: https://onedock.i3m.upv.es:11443/uuid_ubuntu_ambertools_5
-            credential:
-              user: root
-              token: c@r0nt3
-              token_type: password
+            distribution: ubuntu
+            version: 14.04
+            image: indigodatacloudapps/ambertools
 
   outputs:
-    node_ip:
-      value: { get_attribute: [ simple_node, public_address, 0 ] }
-    node_creds:
-      value: { get_attribute: [ simple_node, credential, 0 ] }
+    instance_ip:
+      value: { get_attribute: [ ambertools_server, public_address, 0 ] }
+    instance_creds:
+      value: { get_attribute: [ ambertools_server, endpoint, credential, 0 ] }

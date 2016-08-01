@@ -27,7 +27,7 @@ cat >$CURLDATA <<EOF
       "parameters": [
         {
           "name": "tosca_endpoint",
-          "value": "90.147.170.152:8080/orchestrator/deployments"
+          "value": "${TOSCA_ENDPOINT}"
         },
         {
           "name": "tosca_template",
@@ -35,7 +35,7 @@ cat >$CURLDATA <<EOF
         },
         {
           "name": "tosca_parameters",
-          "value": "wait_ms=30000&max_waits=30"
+          "value": "params=parameters.json"
         }
       ],
       "enabled": true,
@@ -76,6 +76,11 @@ cat >$CURLDATA <<EOF
       "override": false,
       "path": "${PWD}",
       "name": "tosca_test.sh"
+    },
+    {
+      "override": false,
+      "path": "${PWD}",
+      "name": "parameters.json"
     }
   ],
   "name": "${APPNAME}",
