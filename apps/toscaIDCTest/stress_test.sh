@@ -1,5 +1,5 @@
 #!/bin/bash
-APP_ID=7 # Place here the appId
+APP_ID=<app_id> # Place here the appId
 USER=brunor
 SUBMIT_COUNT=1
 SUBMIT_DELAY=10 

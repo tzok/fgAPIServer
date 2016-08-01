@@ -353,10 +353,10 @@ insert into fg_group_apps (group_id, app_id, creation) values (2,2,now()); -- Te
 -- AccessTokens
 -- Any API call needs an access token which uniquelly authorized and identifies the issuer
 create table fg_token (
-    token    varchar(64)  not null -- access token
-   ,user_id  int unsigned not null -- the associated user
-   ,creation datetime     not null -- when token has been created
-   ,expiry   integer               -- number of seconds of validity (default 24 hours)
+    token    varchar(1024) not null -- access token
+   ,user_id  int unsigned  not null -- the associated user
+   ,creation datetime      not null -- when token has been created
+   ,expiry   integer                -- number of seconds of validity (default 24 hours)
 );
 
 --
@@ -420,4 +420,5 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.6','baseline setup','../fgapiserver_db.sql',now())
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.7','baseline setup','../fgapiserver_db.sql',now());
+

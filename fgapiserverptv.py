@@ -19,6 +19,7 @@
 # limitations under the License.
 import urllib2
 import base64
+import requests
 import json
 import logging
 import logging.config
@@ -101,11 +102,22 @@ class FGAPIServerPTV:
         }
         The return of user and group field is not mandatory for the portal.
         """
-        request = urllib2.Request(self.portal_endpoint)
-        request.add_header("Authorization", "Basic %s" % self.portal_realm)
-        result = urllib2.urlopen(request)
-        token_info = json.load(result)
-        result.close()
+        print "connection: '%s'" % self.portal_endpoint
+        # request = urllib2.Request(self.portal_endpoint)
+        # #request.add_header("Authorization", "Basic %s" % self.portal_realm)
+        # result = urllib2.urlopen(request)
+        # token_info = json.load(result)
+        # result.close()
+
+        post_data = {"token": token}
+        response = requests.post(self.portal_endpoint,
+                                 data=post_data,
+                                 auth=requests.auth.HTTPBasicAuth(
+                                     self.portal_tv_user,
+                                     self.portal_tv_pass))
+        token_info = response.json()
+        response.close()
+
         # Now fill class values
         self.portal_validate = \
             token_info.get('token_status', 'invalid') == 'valid'

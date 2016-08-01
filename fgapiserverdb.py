@@ -262,6 +262,33 @@ class FGAPIServerDB:
         return user_id, user_name
 
     """
+      register_token - Register the incoming and valid token into the token table
+                       This is used by PTV which bypass APIServer session tokens.
+                       The record will be written only once
+    """
+    def register_token(self, userid, token):
+        db = None
+        cursor = None
+        sestoken = ''
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            if token is not None:
+                sql = ('insert into \n'
+                       'fg_token (token, user_id, creation, expiry)\n'
+                       'select %s, %s, now(), NULL\n'
+                       'where (select count(*)\n'
+                       '       from fg_token\n'
+                       '       where token=%s) = 0;')
+                sql_data = (token, userid, token)
+                cursor.execute(sql, sql_data)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return
+
+    """
       verify_user_role - Verify if the given user has the given role
     """
 
@@ -1704,3 +1731,29 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, True)
         return app_id
+
+    """
+      enable_app_by_userid - enable all groups owned by the given userid to
+                             execute the specified application id
+    """
+
+    def enable_app_by_userid(self, user_id, app_id):
+        db = None
+        cursor = None
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            # Task record
+            sql = ("select group_id from fg_user_group where user_id = %s")
+            sql_data = (user_id,)
+            cursor.execute(sql, sql_data)
+            for group_id in cursor:
+                sql = ("insert into fg_group_apps (group_id,app_id, creation)"
+                       " values (%s,%s,now())")
+                sql_data = (group_id, app_id)
+                cursor.execute(sql, sql_data)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return None
