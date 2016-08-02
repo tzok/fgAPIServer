@@ -344,8 +344,8 @@ def authorize_user(current_user, app_id, user, reqrole):
         return False, db_state[1]
 
     message = ''
-    user_id = current_user.user_id()
-    user_name = current_user.user_name()
+    user_id = current_user.get_id()
+    user_name = current_user.get_name()
     auth_z = True
 
     # Check if requested action is in the user group roles
@@ -377,7 +377,7 @@ def authorize_user(current_user, app_id, user, reqrole):
     if (app_id is not None):
         auth_z = auth_z and fgapisrv_db.verifyUserApp(user_id, app_id)
         if not auth_z:
-            message = ("User '%s' cannot perform any activity on application"
+            message = ("User '%s' cannot perform any activity on application "
                        "having id: '%s'\n") % (user_name, app_id)
 
     return auth_z, message
@@ -427,45 +427,65 @@ def load_user(request):
         # Check for Portal Token verification  (PTV) method
         if fgapisrv_lnkptvflag:
             print "Verifying token with PTV"
-            ptv = FGAPIServerPTV(fgapisrv_ptvendpoint,
-                                 fgapisrv_ptvuser,
-                                 fgapisrv_ptvpass)
+            ptv = FGAPIServerPTV(endpoint=fgapisrv_ptvendpoint,
+                                 tv_user=fgapisrv_ptvuser,
+                                 tv_password=fgapisrv_ptvpass)
             result = ptv.validate_token(token)
             # result: valid/invalid and optionally portal username and/or
             # its group from result map the corresponding APIServer username
             # fgapisrv_ptvdefusr
-            if result['portal_validate'].lower() == 'true':
+            if result['portal_validate']:
                 portal_user = result.get('portal_user', '')
                 portal_group = result.get('portal_group', '')
                 # Map the portal user with one of defined APIServer users
-                #  accordingly to
-                # rules defined in fgapiserver_ptvmap.json file
+                # accordingly to the rules defined in fgapiserver_ptvmap.json
+                # file. The json contains the list of possible APIServer
+                # users with an associated list of possible portal users and
+                # groups names that verify the mapping; below an example:
+                #
                 # fgapiserver_ptvmap.json: {
                 #   "futuregateway":
                 #        [ "group_a", ... "group_b", "user_a", "user_b", ... ]
                 #   "test":
                 #       [ "groupc", ... "group d", "user_c", ... "user d" .. ]
                 #   "<APIServer user>":
-                #      [ "<associated portal group>", "<associated portal
-                # user>" ... ]
+                #      [ "<associated portal group>",
+                #        "<associated portal_user>", ... ]
                 # }
-                # If no mapping is available or portal_user and groups are
-                # not available a default user will be used,
+                #
+                # If the PTV returns "user_a", "futuregateway" user will be
+                # mapped, while if no mapping is available or portal_user and
+                # groups are  not available a default user will be used,
                 # see fgapisrv_ptvdefusr in configuration file
                 mapped_userid = 0
                 mapped_username = ''
                 with open(fgapisrv_ptvmapfile) as ptvmap_file:
                     ptvmap = json.load(ptvmap_file)
+                # portal_user or group must be not null
                 if portal_user != '' or portal_group != '':
+                    # Scan all futuregateway users in json file
                     for user in ptvmap:
+                        print "Trying mapping for FG user: '%s'" % user
+                        # Scan the list of users and groups associated to FG
+                        # users specified in the json file
                         for ptv_usrgrp in ptvmap[user]:
-                            if portal_user != '' \
-                                    and ptv_usrgrp == portal_user:
-                                mapped_username = ptv_usrgrp
+                            # The portal_user maps a user in the list
+                            print ("  Verifying portal_user='%s' "
+                                   "matches user '%s'") \
+                                  % (portal_user, ptv_usrgrp)
+                            if ptv_usrgrp == portal_user:
+                                print "mapped user %s <- %s" \
+                                      % (user, portal_user)
+                                mapped_username = user
                                 break
-                            if portal_group != '' \
-                                    and ptv_usrgrp == portal_group:
-                                mapped_username = ptv_usrgrp
+                            # The portal_group maps a group in the list
+                            print ("  Verifying portal_group='%s' "
+                                   "matches group '%s'") %\
+                                  (ptv_usrgrp, portal_group)
+                            if ptv_usrgrp == portal_group:
+                                print "mapped group %s <- %s" \
+                                      % (user, portal_group)
+                                mapped_username = user
                                 break
                         if mapped_username != '':
                             fgapisrv_db = FGAPIServerDB(
@@ -485,9 +505,22 @@ def load_user(request):
                         print ("login_manager PTV mapped user - "
                                "user_rec(0): '%s',user_rec(1): '%s'"
                                % (mapped_userid, mapped_username))
+                        fgapisrv_db.register_token(mapped_userid, token)
                         return User(mapped_userid, mapped_username)
                 # No portal user and group are returned or no mapping
                 # is available returning default user
+                fgapisrv_db = FGAPIServerDB(
+                    db_host=fgapisrv_db_host,
+                    db_port=fgapisrv_db_port,
+                    db_user=fgapisrv_db_user,
+                    db_pass=fgapisrv_db_pass,
+                    db_name=fgapisrv_db_name,
+                    iosandbbox_dir=fgapisrv_iosandbox,
+                    fgapiserverappid=fgapisrv_geappid)
+                db_state = fgapisrv_db.get_state()
+                if db_state[0] != 0:
+                    print "login_manager PTV failed to connect DB"
+                    return None
                 user_info = fgapisrv_db.\
                     get_user_info_by_name(fgapisrv_ptvdefusr)
                 default_userid = user_info["id"]
@@ -495,8 +528,9 @@ def load_user(request):
                 print ("login_manager No map on portal user/group "
                        "not availabe, using default user")
                 print ("login_manager PTV mapped user - "
-                       "user_rec(0): '%s',user_rec(1): '%s'"
+                       "user_id: '%s',user_name: '%s'"
                        % (mapped_userid, mapped_username))
+                fgapisrv_db.register_token(mapped_userid, token)
                 return User(default_userid, default_username)
             else:
                 print "login_manager PTV token '%s' is not valid" % token
@@ -504,9 +538,22 @@ def load_user(request):
         else:
             print "Verifying token with baseline token management"
             user_rec = verify_session_token(token)
-            print "login_manager - user_rec(0): '%s',user_rec(1): '%s'" \
+            print "login_manager - user_id: '%s',user_name: '%s'" \
                   % (user_rec[0], user_rec[1])
             if user_rec is not None and user_rec[0] is not None:
+                fgapisrv_db = FGAPIServerDB(
+                    db_host=fgapisrv_db_host,
+                    db_port=fgapisrv_db_port,
+                    db_user=fgapisrv_db_user,
+                    db_pass=fgapisrv_db_pass,
+                    db_name=fgapisrv_db_name,
+                    iosandbbox_dir=fgapisrv_iosandbox,
+                    fgapiserverappid=fgapisrv_geappid)
+                db_state = fgapisrv_db.get_state()
+                if db_state[0] != 0:
+                    print "Baseline token management failed to connect DB"
+                    return None
+                fgapisrv_db.register_token(user_rec[0], token)
                 return User(user_rec[0], user_rec[1])
             else:
                 print "No user is associated to session token: '%s'" % token
@@ -515,10 +562,10 @@ def load_user(request):
         print "Unable to find session token from request"
     return None
 
-
 ##
 # Auth handlers
 ##
+
 
 #
 # /auth; used to provide a logtoken or username/password credentials and
@@ -632,8 +679,8 @@ def index():
 @app.route('/%s/tasks' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def tasks():
-    user_name = current_user.user_name()
-    user_id = current_user.user_id()
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
     page = request.values.get('page')
     per_page = request.values.get('per_page')
     status = request.values.get('status')
@@ -845,8 +892,8 @@ def tasks():
         'PATCH'])
 @login_required
 def task_id(task_id=None):
-    user_name = current_user.user_name()
-    user_id = current_user.user_id()
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
     app_id = get_task_app_id(task_id)
     user = request.values.get('user', user_name)
     if request.method == 'GET':
@@ -1019,10 +1066,11 @@ def task_id(task_id=None):
 @app.route('/%s/tasks/<task_id>/input' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def task_id_input(task_id=None):
-    user_name = current_user.user_name()
-    user_id = current_user.user_id()
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
     app_id = get_task_app_id(task_id)
     user = request.values.get('user', user_name)
+    task_status = 404
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_view")
@@ -1143,8 +1191,8 @@ def task_id_input(task_id=None):
 @login_required
 def file():
     serve_file = None
-    user_name = current_user.user_name()
-    user_id = current_user.user_id()
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
     user = request.values.get('user', user_name)
     file_path = request.values.get('path', None)
     file_name = request.values.get('name', None)
@@ -1192,8 +1240,8 @@ def file():
 @app.route('/%s/applications' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def applications():
-    user_name = current_user.user_name()
-    user_id = current_user.user_id()
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
     app_id = None
     user = request.values.get('user', user_name)
     page = request.values.get('page')
@@ -1341,6 +1389,11 @@ def applications():
                         "message": task_state[1]
                     }
                 else:
+                    # Enable the groups owned by the installing user to
+                    # execute the app
+                    fgapisrv_db.enable_app_by_userid(
+                        user_id,
+                        app_id)
                     # Prepare response
                     state = 200
                     app_record = fgapisrv_db.get_app_record(app_id)
