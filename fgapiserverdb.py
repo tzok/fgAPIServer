@@ -262,9 +262,9 @@ class FGAPIServerDB:
         return user_id, user_name
 
     """
-      register_token - Register the incoming and valid token into the token table
-                       This is used by PTV which bypass APIServer session tokens.
-                       The record will be written only once
+      register_token - Register the incoming and valid token into the token
+                       table. This is used by PTV which bypass APIServer
+                       session tokens. The record will be written only once
     """
     def register_token(self, userid, token):
         db = None

@@ -470,15 +470,21 @@ def load_user(request):
                         # users specified in the json file
                         for ptv_usrgrp in ptvmap[user]:
                             # The portal_user maps a user in the list
-                            print "  Verifying portal_user='%s' matches user '%s'" % (portal_user, ptv_usrgrp)
+                            print ("  Verifying portal_user='%s' "
+                                   "matches user '%s'") \
+                                  % (portal_user, ptv_usrgrp)
                             if ptv_usrgrp == portal_user:
-                                print "mapped user %s <- %s" % (user, portal_user)
+                                print "mapped user %s <- %s" \
+                                      % (user, portal_user)
                                 mapped_username = user
                                 break
                             # The portal_group maps a group in the list
-                            print "  Verifying portal_group='%s' matches group '%s'" % (ptv_usrgrp, portal_group)
+                            print ("  Verifying portal_group='%s' "
+                                   "matches group '%s'") %\
+                                  (ptv_usrgrp, portal_group)
                             if ptv_usrgrp == portal_group:
-                                print "mapped group %s <- %s" % (user, portal_group)
+                                print "mapped group %s <- %s" \
+                                      % (user, portal_group)
                                 mapped_username = user
                                 break
                         if mapped_username != '':
@@ -547,7 +553,7 @@ def load_user(request):
                 if db_state[0] != 0:
                     print "Baseline token management failed to connect DB"
                     return None
-                fgapisrv_db.register_token(user_rec[0],token)
+                fgapisrv_db.register_token(user_rec[0], token)
                 return User(user_rec[0], user_rec[1])
             else:
                 print "No user is associated to session token: '%s'" % token
@@ -559,6 +565,7 @@ def load_user(request):
 ##
 # Auth handlers
 ##
+
 
 #
 # /auth; used to provide a logtoken or username/password credentials and
