@@ -332,9 +332,9 @@ def orchestrator_deployments():
         dep_status = 404
         response = {"error": "Method not supported"}
     elif request.method == 'POST':
-        print "endpoint: /orchestrator/deployments/%s (POST)"
+        print "endpoint: /orchestrator/deployments (POST)"
         print "token: %s" % token
-        dep_status = 200
+        dep_status = 201
         response = create_inprogress()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=dep_status, mimetype='application/json')
