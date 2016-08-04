@@ -401,6 +401,17 @@ create table simple_tosca (
    ,primary key(id)
 );
 
+-- tosca_idc table
+create table tosca_idc (
+    id             int unsigned  not null
+   ,task_id        int unsigned  not null
+   ,tosca_id       varchar(1024) not null
+   ,tosca_status   varchar(32)   not null
+   ,tosca_endpoint varchar(1024) not null
+   ,creation       datetime      not null -- When the action is enqueued
+   ,last_change    datetime      not null -- When the record has been modified by the GridEngine last time
+   ,primary key(id)
+);
 
 --
 -- Patching mechanism
@@ -420,5 +431,5 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.7','baseline setup','../fgapiserver_db.sql',now());
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.8','baseline setup','../fgapiserver_db.sql',now());
 

@@ -15,7 +15,7 @@ PATCH_DESC="Increasing the field length for token field in fg_token table"
 check_patch $PATCH
 
 # Create a temporary SQL file
-SQLTMP=$(mktemp)
+SQLTMP=$(mktemp /tmp/patch_${PATCH}_XXXXXX)
 
 #
 # Missing columns/tables
