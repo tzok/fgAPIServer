@@ -111,15 +111,20 @@ class FGAPIServerPTV:
         # token_info = json.load(result)
         # result.close()
 
-        post_data = {"token": token}
-        response = requests.post(self.portal_endpoint,
-                                 data=post_data,
+        # post_data = {"token": token}
+        post_data = "token=%s" % token
+        # response = requests.post(self.portal_endpoint
+        #                         data=post_data,
+        #                         auth=requests.auth.HTTPBasicAuth(
+        #                             self.portal_tv_user,
+        #                             self.portal_tv_pass))
+        response = requests.post(self.portal_endpoint+"?"+post_data,
                                  auth=requests.auth.HTTPBasicAuth(
                                      self.portal_tv_user,
                                      self.portal_tv_pass))
         token_info = response.json()
         response.close()
-
+        print response
         # Now fill class values
         self.portal_validate = \
             token_info.get('token_status', 'invalid') == 'valid'\
