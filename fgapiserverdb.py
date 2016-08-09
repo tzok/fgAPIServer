@@ -277,10 +277,12 @@ class FGAPIServerDB:
                 sql = ('insert into \n'
                        'fg_token (token, user_id, creation, expiry)\n'
                        'select %s, %s, now(), NULL\n'
+                       'from dual\n'
                        'where (select count(*)\n'
                        '       from fg_token\n'
                        '       where token=%s) = 0;')
                 sql_data = (token, userid, token)
+                print sql % sql_data
                 cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)

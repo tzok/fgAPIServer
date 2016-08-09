@@ -66,6 +66,7 @@ class FGAPIServerPTV:
     portal_validate = False
     portal_user = ''
     portal_group = ''
+    portal_groups = []
 
     fgapiserver_db = None
 
@@ -99,6 +100,7 @@ class FGAPIServerPTV:
                                           by the portal (group level mapping)
          ,"portal_user"    : username   - the username recognized from token
                                           by the portal (user level mapping)
+         ,"portal_groups"  : groups     - A list of associated portal groups
         }
         The return of user and group field is not mandatory for the portal.
         """
@@ -120,14 +122,17 @@ class FGAPIServerPTV:
 
         # Now fill class values
         self.portal_validate = \
-            token_info.get('token_status', 'invalid') == 'valid'
+            token_info.get('token_status', 'invalid') == 'valid'\
+            or token_info.get('error','') is None
         self.portal_user = token_info.get('portal_user', '')
         self.portal_group = token_info.get('portal_group', '')
+        self.portal_groups = token_info.get('groups',[])
         token_info.get('token_status', 'invalid')
         return {
              "portal_validate": self.portal_validate,
              "portal_user": self.portal_user,
-             "portal_group": self.portal_group
+             "portal_group": self.portal_group,
+             "portal_groups": self.portal_groups
         }
 
     # def mapUser(self):

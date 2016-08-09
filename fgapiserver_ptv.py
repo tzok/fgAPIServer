@@ -136,7 +136,9 @@ def requires_auth(f):
 # user/group with a FutureGateway user/group
 # This self PTV handler totally ignores basic authentication credentials
 # (username/password) contained in the request form
-#
+# 
+@app.route('/get-token-info', methods=['GET', 'POST'])
+@app.route('/%s/get-token-info' % fgapiver, methods=['GET', 'POST'])
 @app.route('/checktoken', methods=['GET', 'POST'])
 @app.route('/%s/checktoken' % fgapiver, methods=['GET', 'POST'])
 @requires_auth
@@ -148,15 +150,23 @@ def checktoken():
         response["error"] = message
         ctk_status = 400
     elif request.method == 'POST':
+        # response = {
+        #    "token_status": "valid",
+        #    # you may specify:
+        #    #  portal_user - A portal user that can be mapped by
+        #    #                fgapiserver_ptvmap.json map file
+        #    #  portal_group - A portal group that can be mapped by
+        #    #                 fgapiserver_ptvmap.json map file
+        #    # "portal_user": fgapisrv_ptvdefusr
+        #    "portal_group": "admin"
+        # }
         response = {
-            "token_status": "valid",
-            # you may specify:
-            #  portal_user - A portal user that can be mapped by
-            #                fgapiserver_ptvmap.json map file
-            #  portal_group - A portal group that can be mapped by
-            #                 fgapiserver_ptvmap.json map file
-            # "portal_user": fgapisrv_ptvdefusr
-            "portal_group": "admin"
+            "error": None,
+            "groups": [
+                "Users",
+                "Developers"
+            ],
+            "subject": "a9f37548-4024-4330-88bf-4f43067e6bdb"
         }
         ctk_status = 200
     else:
