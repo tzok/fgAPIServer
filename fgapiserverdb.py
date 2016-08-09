@@ -282,7 +282,6 @@ class FGAPIServerDB:
                        '       from fg_token\n'
                        '       where token=%s) = 0;')
                 sql_data = (token, userid, token)
-                print sql % sql_data
                 cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)

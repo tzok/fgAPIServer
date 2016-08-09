@@ -427,10 +427,15 @@ def load_user(request):
         # Check for Portal Token verification  (PTV) method
         if fgapisrv_lnkptvflag:
             print "Verifying token with PTV"
+            token_fields=token.split()
+            if token_fields[0] == "Bearer":
+                token = token_fields[1]
+            print "token: '%s'" % token
             ptv = FGAPIServerPTV(endpoint=fgapisrv_ptvendpoint,
                                  tv_user=fgapisrv_ptvuser,
                                  tv_password=fgapisrv_ptvpass)
             result = ptv.validate_token(token)
+            print "validate_token: %s" % result
             # result: valid/invalid and optionally portal username and/or
             # its group from result map the corresponding APIServer username
             # fgapisrv_ptvdefusr
