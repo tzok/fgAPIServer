@@ -121,7 +121,8 @@ class FGAPIServerPTV:
         response = requests.post(self.portal_endpoint+"?"+post_data,
                                  auth=requests.auth.HTTPBasicAuth(
                                      self.portal_tv_user,
-                                     self.portal_tv_pass))
+                                     self.portal_tv_pass),
+                                 verify=False)
         token_info = response.json()
         print token_info
         response.close()
