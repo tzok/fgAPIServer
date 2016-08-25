@@ -123,21 +123,21 @@ class FGAPIServerPTV:
                                      self.portal_tv_user,
                                      self.portal_tv_pass))
         token_info = response.json()
-        print token_info 
+        print token_info
         response.close()
         # Now fill class values
         self.portal_validate = \
             token_info.get('token_status', 'invalid') == 'valid'\
-            or token_info.get('error','') is None
+            or token_info.get('error', '') is None
         self.portal_user = token_info.get('portal_user', '')
         self.portal_group = token_info.get('portal_group', '')
-        self.portal_groups = token_info.get('groups',[])
+        self.portal_groups = token_info.get('groups', [])
         token_info.get('token_status', 'invalid')
         return {
-             "portal_validate": self.portal_validate,
-             "portal_user": self.portal_user,
-             "portal_group": self.portal_group,
-             "portal_groups": self.portal_groups
+            "portal_validate": self.portal_validate,
+            "portal_user": self.portal_user,
+            "portal_group": self.portal_group,
+            "portal_groups": self.portal_groups
         }
 
     # def mapUser(self):

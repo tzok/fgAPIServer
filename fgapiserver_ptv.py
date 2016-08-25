@@ -136,7 +136,7 @@ def requires_auth(f):
 # user/group with a FutureGateway user/group
 # This self PTV handler totally ignores basic authentication credentials
 # (username/password) contained in the request form
-# 
+#
 @app.route('/get-token-info', methods=['GET', 'POST'])
 @app.route('/%s/get-token-info' % fgapiver, methods=['GET', 'POST'])
 @app.route('/checktoken', methods=['GET', 'POST'])
@@ -187,135 +187,139 @@ def checktoken():
 
 def create_inprogress():
     return {
-      "uuid": "756ed6b2-ed63-4992-a8f8-8d5d8045ae02",
-      "creationTime": "2016-08-01T12:47+0000",
-      "status": "CREATE_IN_PROGRESS",
-      "outputs": {},
-      "task": "NONE",
-      "links": [
-        {
-          "rel": "self",
-          "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
-                   "756ed6b2-ed63-4992-a8f8-8d5d8045ae02")
-        },
-        {
-          "rel": "resources",
-          "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
-                   "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/resources")
-        },
-        {
-          "rel": "template",
-          "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
-                   "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/template")
-        }
-      ]
+        "uuid": "756ed6b2-ed63-4992-a8f8-8d5d8045ae02",
+        "creationTime": "2016-08-01T12:47+0000",
+        "status": "CREATE_IN_PROGRESS",
+        "outputs": {},
+        "task": "NONE",
+        "links": [
+            {
+                "rel": "self",
+                "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
+                         "756ed6b2-ed63-4992-a8f8-8d5d8045ae02")
+            },
+            {
+                "rel": "resources",
+                "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
+                         "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/resources")
+            },
+            {
+                "rel": "template",
+                "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
+                         "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/template")
+            }
+        ]
     }
     return response
 
 
 def create_failed():
     return {
-      "uuid": "756ed6b2-ed63-4992-a8f8-8d5d8045ae02",
-      "creationTime": "2016-08-01T12:47+0000",
-      "updateTime": "2016-08-01T12:47+0000",
-      "status": "CREATE_FAILED",
-      "statusReason": ("Error 400: Error Creating Inf.: "
-                       "Some deploys did not proceed successfully: "
-                       "All machines could not be launched: \nAttempt 1: "
-                       "Error launching the VMs of type ambertools_server "
-                       "to cloud ID one of type OpenNebula. Cloud Provider "
-                       "Error: No ONE network found for network: public_net\n"
-                       "Attempt 2: Error launching the VMs of type "
-                       "ambertools_server to cloud ID one of type OpenNebula. "
-                       "Cloud Provider Error: No ONE network found for "
-                       "network:  public_net\nAttempt 3: Error launching the "
-                       "VMs of type ambertools_server to cloud ID one of type "
-                       "OpenNebula.  Cloud Provider Error: No ONE network "
-                       "found for network: public_net\n\n"),
-      "outputs": {},
-      "task": "NONE",
-      "cloudProviderName": "provider-UPV-GRyCAP",
-      "links": [
-        {
-          "rel": "self",
-          "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
-                   "756ed6b2-ed63-4992-a8f8-8d5d8045ae02")
-        },
-        {
-          "rel": "resources",
-          "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
-                   "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/resources")
-        },
-        {
-          "rel": "template",
-          "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
-                   "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/template")
-        }
-      ]
+        "uuid": "756ed6b2-ed63-4992-a8f8-8d5d8045ae02",
+        "creationTime": "2016-08-01T12:47+0000",
+        "updateTime": "2016-08-01T12:47+0000",
+        "status": "CREATE_FAILED",
+        "statusReason": ("Error 400: Error Creating Inf.: "
+                         "Some deploys did not proceed "
+                         "successfully: All machines could not be "
+                         "launched: \nAttempt 1: Error launching the VMs of "
+                         "type ambertools_server to cloud ID one of type "
+                         "OpenNebula. Cloud Provider "
+                         "Error: No ONE network found for network: "
+                         "public_net\n"
+                         "Attempt 2: Error launching the VMs of type "
+                         "ambertools_server to cloud ID one of type "
+                         "OpenNebula. "
+                         "Cloud Provider Error: No ONE network found for "
+                         "network:  public_net\nAttempt 3: Error "
+                         "launching the "
+                         "VMs of type ambertools_server to cloud ID one of "
+                         " type OpenNebula.  Cloud Provider Error: No ONE "
+                         "network found for network: public_net\n\n"),
+        "outputs": {},
+        "task": "NONE",
+        "cloudProviderName": "provider-UPV-GRyCAP",
+        "links": [
+            {
+                "rel": "self",
+                "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
+                         "756ed6b2-ed63-4992-a8f8-8d5d8045ae02")
+            },
+            {
+                "rel": "resources",
+                "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
+                         "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/resources")
+            },
+            {
+                "rel": "template",
+                "href": ("http://90.147.170.152:8080/orchestrator/deployments/"
+                         "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/template")
+            }
+        ]
     }
 
 
 def create_complete():
     return {
-      "uuid": "1bff4c04-e8b7-43be-8846-a39df1664433",
-      "creationTime": "2016-04-12T19:34+0000",
-      "updateTime": "2016-04-12T19:38+0000",
-      "status": "CREATE_COMPLETE",
-      "outputs": {
-        "node_creds": "{password=7Uxz4RJR, user=jobtest}",
-        "node_ip": "localhost"
-      },
-      "task": "NONE",
-      "links": [
-        {
-          "rel": "self",
-          "href": ("http://90.147.170.152/orchestrator/deployments/"
-                   "1bff4c04-e8b7-43be-8846-a39df1664433")
+        "uuid": "1bff4c04-e8b7-43be-8846-a39df1664433",
+        "creationTime": "2016-04-12T19:34+0000",
+        "updateTime": "2016-04-12T19:38+0000",
+        "status": "CREATE_COMPLETE",
+        "outputs": {
+            "node_creds": "{password=7Uxz4RJR, user=jobtest}",
+            "node_ip": "localhost"
         },
-        {
-          "rel": "resources",
-          "href": ("http://90.147.170.152/orchestrator/deployments/"
-                   "1bff4c04-e8b7-43be-8846-a39df1664433/resources")
-        },
-        {
-          "rel": "template",
-          "href": ("http://90.147.170.152/orchestrator/deployments/"
-                   "1bff4c04-e8b7-43be-8846-a39df1664433/template")
-        }
-      ]
+        "task": "NONE",
+        "links": [
+            {
+                "rel": "self",
+                "href": ("http://90.147.170.152/orchestrator/deployments/"
+                         "1bff4c04-e8b7-43be-8846-a39df1664433")
+            },
+            {
+                "rel": "resources",
+                "href": ("http://90.147.170.152/orchestrator/deployments/"
+                         "1bff4c04-e8b7-43be-8846-a39df1664433/resources")
+            },
+            {
+                "rel": "template",
+                "href": ("http://90.147.170.152/orchestrator/deployments/"
+                         "1bff4c04-e8b7-43be-8846-a39df1664433/template")
+            }
+        ]
     }
 
 
 def check_input():
     return {
-      "parameters": {
-        "number_cpus": 1,
-        "memory_size": "1 GB"
-      },
-      "template": (
-          "tosca_definitions_version: tosca_simple_yaml_1_0\n\n"
-          "imports:\n - indigo_custom_types: "
-          "https://raw.githubusercontent.com/indigo-dc/tosca-types"
-          "/master/custom_types.yaml\n\ndescription: TOSCA template "
-          "for deploying an instance of AmberTools v15\n"
-          "\ntopology_template:\n"
-          " inputs:\n number_cpus:\n type: integer\n "
-          "description: number of cpus required for the instance\n "
-          "default: 1\n memory_size:\n type: string\n description: "
-          "ram memory required for the instance\n default: 1 GB\n\n "
-          "node_templates:\n\n ambertools:\n type: tosca.nodes.indigo."
-          "Ambertools\n requirements:\n - host: ambertools_server\n\n "
-          "ambertools_server:\n type: tosca.nodes.indigo.Compute\n "
-          "capabilities:\n endpoint:\n properties:\n network_name: "
-          "PUBLIC\n ports:\n ssh_port:\n protocol: tcp\n source: 22\n "
-          "host:\n properties:\n num_cpus: { get_input: number_cpus }\n "
-          "mem_size: { get_input: memory_size }\n os:\n properties:\n "
-          "type: linux\n distribution: ubuntu\n version: 14.04\n "
-          "image: indigodatacloudapps/ambertools\n\n outputs:\n "
-          "instance_ip:\n value: { get_attribute: [ ambertools_server, "
-          "public_address, 0 ] }\n instance_creds:\n value: { "
-          "get_attribute: [ ambertools_server, endpoint, credential,"
-          " 0 ] }")
+        "parameters": {
+            "number_cpus": 1,
+            "memory_size": "1 GB"
+        },
+        "template": (
+            "tosca_definitions_version: tosca_simple_yaml_1_0\n\n"
+            "imports:\n - indigo_custom_types: "
+            "https://raw.githubusercontent.com/indigo-dc/tosca-types"
+            "/master/custom_types.yaml\n\ndescription: TOSCA template "
+            "for deploying an instance of AmberTools v15\n"
+            "\ntopology_template:\n"
+            " inputs:\n number_cpus:\n type: integer\n "
+            "description: number of cpus required for the instance\n "
+            "default: 1\n memory_size:\n type: string\n description: "
+            "ram memory required for the instance\n default: 1 GB\n\n "
+            "node_templates:\n\n ambertools:\n type: tosca.nodes.indigo."
+            "Ambertools\n requirements:\n - host: ambertools_server\n\n "
+            "ambertools_server:\n type: tosca.nodes.indigo.Compute\n "
+            "capabilities:\n endpoint:\n properties:\n network_name: "
+            "PUBLIC\n ports:\n ssh_port:\n protocol: tcp\n source: 22\n "
+            "host:\n properties:\n num_cpus: { get_input: number_cpus }\n "
+            "mem_size: { get_input: memory_size }\n os:\n properties:\n "
+            "type: linux\n distribution: ubuntu\n version: 14.04\n "
+            "image: indigodatacloudapps/ambertools\n\n outputs:\n "
+            "instance_ip:\n value: { get_attribute: [ ambertools_server, "
+            "public_address, 0 ] }\n instance_creds:\n value: { "
+            "get_attribute: [ ambertools_server, endpoint, credential,"
+            " 0 ] }")
     }
 
 

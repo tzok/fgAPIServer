@@ -427,7 +427,7 @@ def load_user(request):
         # Check for Portal Token verification  (PTV) method
         if fgapisrv_lnkptvflag:
             print "Verifying token with PTV"
-            token_fields=token.split()
+            token_fields = token.split()
             if token_fields[0] == "Bearer":
                 token = token_fields[1]
             print "token: '%s'" % token
@@ -442,11 +442,11 @@ def load_user(request):
             if result['portal_validate']:
                 portal_user = result.get('portal_user', '')
                 portal_group = result.get('portal_group', '')
-                portal_groups = result.get('portal_groups',[])
+                portal_groups = result.get('portal_groups', [])
                 print ("portal_user: %s\n"
                        "portal_group: %s\n"
                        "portal_groups: %s") %\
-                       (portal_user,portal_group,portal_groups)
+                      (portal_user, portal_group, portal_groups)
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
                 # file. The json contains the list of possible APIServer
@@ -483,8 +483,8 @@ def load_user(request):
                         for ptv_usrgrp in ptvmap[user]:
                             # The portal_user maps a user in the list
                             print ("  Verifying portal_user='%s' "
-                                   "matches user '%s'") \
-                                  % (portal_user, ptv_usrgrp)
+                                   "matches user '%s'") %\
+                                  (portal_user, ptv_usrgrp)
                             if ptv_usrgrp == portal_user:
                                 print "mapped user %s <- %s" \
                                       % (user, portal_user)
@@ -501,11 +501,12 @@ def load_user(request):
                                 break
                             # The portal_groups maps a group in the list
                             print ("Verifying if portal_groups='%s' matches "
-                                   "group '%s'") \
-                                  % (portal_groups, ptv_usrgrp)
+                                   "group '%s'") %\
+                                  (portal_groups, ptv_usrgrp)
                             group_found = ''
                             for group in portal_groups:
-                                print "  group '%s' ? '%s'" % (group, ptv_usrgrp)
+                                print "  group '%s' ? '%s'" %\
+                                      (group, ptv_usrgrp)
                                 if group == ptv_usrgrp:
                                     group_found = group
                                     break
@@ -1334,21 +1335,21 @@ def applications():
                             applications += [
                                 {
                                     "id":
-                                        app_record['id'],
+                                    app_record['id'],
                                     "name":
-                                        app_record['name'],
+                                    app_record['name'],
                                     "description":
-                                        app_record['description'],
+                                    app_record['description'],
                                     "outcome":
-                                        app_record['outcome'],
+                                    app_record['outcome'],
                                     "enabled":
-                                        app_record['enabled'],
+                                    app_record['enabled'],
                                     "parameters":
-                                        app_record['parameters'],
+                                    app_record['parameters'],
                                     "input_files":
-                                        app_record['input_files'],
+                                    app_record['input_files'],
                                     "infrastructures":
-                                        app_record['infrastructures'],
+                                    app_record['infrastructures'],
                                     "_links": [{"rel": "self",
                                                 "href": "/%s/application/%s"
                                                         % (fgapiver, app_id)}]
@@ -1497,8 +1498,8 @@ def app_id(app_id=None):
                 status = 404
                 response = {
                     "message":
-                        "Unable to find application with id: %s"
-                        % app_id}
+                    "Unable to find application with id: %s"
+                    % app_id}
             else:
                 # Get task details
                 response = fgapisrv_db.get_app_record(app_id)
