@@ -123,8 +123,8 @@ class FGAPIServerPTV:
                                      self.portal_tv_user,
                                      self.portal_tv_pass))
         token_info = response.json()
+        print token_info 
         response.close()
-        print response
         # Now fill class values
         self.portal_validate = \
             token_info.get('token_status', 'invalid') == 'valid'\
