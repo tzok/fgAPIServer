@@ -1170,6 +1170,12 @@ def task_id_input(task_id=None):
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
                 }
+            elif fgapisrv_db.get_task_record(task_id)['status'] != 'WAITING':
+                task_status = 404
+                task_response = {
+                    "message": ("Task with id: %s, "
+                                "is no more waiting for inputs") % task_id
+                }
             else:
                 task_sandbox = fgapisrv_db.get_task_io_sandbox(task_id)
                 if task_sandbox is None:
