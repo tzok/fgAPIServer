@@ -1135,7 +1135,7 @@ class FGAPIServerDB:
                             target_executor, task_info['iosandbox'])
                 cursor.execute(sql, sql_data)
                 sql = (
-                    'update task set status=\'SUBMIT\', '
+                    'update task set status=\'SUBMIT\', \n'
                     'last_change=now() where id=%s;')
                 sql_data = (str(task_info['id']),)
                 cursor.execute(sql, sql_data)
