@@ -1519,7 +1519,7 @@ class FGAPIServerDB:
                                    "creation": str(app_infra[3]),
                                    "enabled": app_infra[4],
                                    "vinfra": False}
-                                   # ,"parameters"     : []}
+                #                 ,"parameters"     : []}
                 app_infras += [app_infra_entry, ]
             for app_infra in app_infras:
                 sql = ('select pname\n'
