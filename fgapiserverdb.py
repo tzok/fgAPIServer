@@ -277,6 +277,7 @@ class FGAPIServerDB:
                 sql = ('insert into \n'
                        'fg_token (token, user_id, creation, expiry)\n'
                        'select %s, %s, now(), NULL\n'
+                       'from dual\n'
                        'where (select count(*)\n'
                        '       from fg_token\n'
                        '       where token=%s) = 0;')
@@ -460,17 +461,17 @@ class FGAPIServerDB:
             cursor = db.cursor()
             # Task record
             sql = (
-              'select '
-              ' id\n'
-              ',status\n'
-              ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-              ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
-              ',app_id\n'
-              ',description\n'
-              ',status\n'
-              ',user\n'
-              ',iosandbox\n'
-              'from task where id=%s;')
+                'select '
+                ' id\n'
+                ',status\n'
+                ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                ',app_id\n'
+                ',description\n'
+                ',status\n'
+                ',user\n'
+                ',iosandbox\n'
+                'from task where id=%s;')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             task_dbrec = cursor.fetchone()
@@ -1134,7 +1135,7 @@ class FGAPIServerDB:
                             target_executor, task_info['iosandbox'])
                 cursor.execute(sql, sql_data)
                 sql = (
-                    'update task set status=\'SUBMIT\', '
+                    'update task set status=\'SUBMIT\', \n'
                     'last_change=now() where id=%s;')
                 sql_data = (str(task_info['id']),)
                 cursor.execute(sql, sql_data)
@@ -1512,15 +1513,13 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             app_infras = []
             for app_infra in cursor:
-                app_infra_entry = {
-                                   "id": str(app_infra[0]),
+                app_infra_entry = {"id": str(app_infra[0]),
                                    "name": app_infra[1],
                                    "description": app_infra[2],
                                    "creation": str(app_infra[3]),
                                    "enabled": app_infra[4],
-                                   "vinfra": False
-                                   # ,"parameters"     : []
-                                  }
+                                   "vinfra": False}
+                #                 ,"parameters"     : []}
                 app_infras += [app_infra_entry, ]
             for app_infra in app_infras:
                 sql = ('select pname\n'

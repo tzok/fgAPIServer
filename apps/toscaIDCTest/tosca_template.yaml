@@ -39,10 +39,7 @@ topology_template:
            mem_size: { get_input: memory_size }
         os:
           properties:
-            type: linux
-            distribution: ubuntu
-            version: 14.04
-            image: indigodatacloudapps/ambertools
+            image: linux-ubuntu-14.04-vmi
 
   outputs:
     instance_ip:

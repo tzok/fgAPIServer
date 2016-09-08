@@ -427,16 +427,26 @@ def load_user(request):
         # Check for Portal Token verification  (PTV) method
         if fgapisrv_lnkptvflag:
             print "Verifying token with PTV"
+            token_fields = token.split()
+            if token_fields[0] == "Bearer":
+                token = token_fields[1]
+            print "token: '%s'" % token
             ptv = FGAPIServerPTV(endpoint=fgapisrv_ptvendpoint,
                                  tv_user=fgapisrv_ptvuser,
                                  tv_password=fgapisrv_ptvpass)
             result = ptv.validate_token(token)
+            print "validate_token: %s" % result
             # result: valid/invalid and optionally portal username and/or
             # its group from result map the corresponding APIServer username
             # fgapisrv_ptvdefusr
             if result['portal_validate']:
                 portal_user = result.get('portal_user', '')
                 portal_group = result.get('portal_group', '')
+                portal_groups = result.get('portal_groups', [])
+                print ("portal_user: %s\n"
+                       "portal_group: %s\n"
+                       "portal_groups: %s") %\
+                      (portal_user, portal_group, portal_groups)
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
                 # file. The json contains the list of possible APIServer
@@ -462,7 +472,9 @@ def load_user(request):
                 with open(fgapisrv_ptvmapfile) as ptvmap_file:
                     ptvmap = json.load(ptvmap_file)
                 # portal_user or group must be not null
-                if portal_user != '' or portal_group != '':
+                if portal_user != ''\
+                   or portal_group != ''\
+                   or portal_groups != []:
                     # Scan all futuregateway users in json file
                     for user in ptvmap:
                         print "Trying mapping for FG user: '%s'" % user
@@ -471,8 +483,8 @@ def load_user(request):
                         for ptv_usrgrp in ptvmap[user]:
                             # The portal_user maps a user in the list
                             print ("  Verifying portal_user='%s' "
-                                   "matches user '%s'") \
-                                  % (portal_user, ptv_usrgrp)
+                                   "matches user '%s'") %\
+                                  (portal_user, ptv_usrgrp)
                             if ptv_usrgrp == portal_user:
                                 print "mapped user %s <- %s" \
                                       % (user, portal_user)
@@ -485,6 +497,24 @@ def load_user(request):
                             if ptv_usrgrp == portal_group:
                                 print "mapped group %s <- %s" \
                                       % (user, portal_group)
+                                mapped_username = user
+                                break
+                            # The portal_groups maps a group in the list
+                            print ("Verifying if portal_groups='%s' matches "
+                                   "group '%s'") %\
+                                  (portal_groups, ptv_usrgrp)
+                            group_found = ''
+                            for group in portal_groups:
+                                print "  group '%s' ? '%s'" %\
+                                      (group, ptv_usrgrp)
+                                if group == ptv_usrgrp:
+                                    group_found = group
+                                    break
+                                else:
+                                    print "  nomatch"
+                            if group_found != '':
+                                print "mapped group %s <- %s" \
+                                      % (user, group_found)
                                 mapped_username = user
                                 break
                         if mapped_username != '':
@@ -501,7 +531,6 @@ def load_user(request):
                             mapped_userid = user_info["id"]
                             mapped_username = user_info["name"]
                             break
-                    if mapped_userid != '0' and mapped_username != '':
                         print ("login_manager PTV mapped user - "
                                "user_rec(0): '%s',user_rec(1): '%s'"
                                % (mapped_userid, mapped_username))
@@ -529,8 +558,8 @@ def load_user(request):
                        "not availabe, using default user")
                 print ("login_manager PTV mapped user - "
                        "user_id: '%s',user_name: '%s'"
-                       % (mapped_userid, mapped_username))
-                fgapisrv_db.register_token(mapped_userid, token)
+                       % (default_userid, default_username))
+                fgapisrv_db.register_token(default_userid, token)
                 return User(default_userid, default_username)
             else:
                 print "login_manager PTV token '%s' is not valid" % token
@@ -1141,6 +1170,12 @@ def task_id_input(task_id=None):
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
                 }
+            elif fgapisrv_db.get_task_record(task_id)['status'] != 'WAITING':
+                task_status = 404
+                task_response = {
+                    "message": ("Task with id: %s, "
+                                "is no more waiting for inputs") % task_id
+                }
             else:
                 task_sandbox = fgapisrv_db.get_task_io_sandbox(task_id)
                 if task_sandbox is None:
@@ -1305,21 +1340,21 @@ def applications():
                             applications += [
                                 {
                                     "id":
-                                        app_record['id'],
+                                    app_record['id'],
                                     "name":
-                                        app_record['name'],
+                                    app_record['name'],
                                     "description":
-                                        app_record['description'],
+                                    app_record['description'],
                                     "outcome":
-                                        app_record['outcome'],
+                                    app_record['outcome'],
                                     "enabled":
-                                        app_record['enabled'],
+                                    app_record['enabled'],
                                     "parameters":
-                                        app_record['parameters'],
+                                    app_record['parameters'],
                                     "input_files":
-                                        app_record['input_files'],
+                                    app_record['input_files'],
                                     "infrastructures":
-                                        app_record['infrastructures'],
+                                    app_record['infrastructures'],
                                     "_links": [{"rel": "self",
                                                 "href": "/%s/application/%s"
                                                         % (fgapiver, app_id)}]
@@ -1436,8 +1471,8 @@ def applications():
         'POST'])
 @login_required
 def app_id(app_id=None):
-    user_name = current_user.user_name()
-    user_id = current_user.user_id()
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
     user = request.values.get('user', user_name)
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
@@ -1468,8 +1503,8 @@ def app_id(app_id=None):
                 status = 404
                 response = {
                     "message":
-                        "Unable to find application with id: %s"
-                        % app_id}
+                    "Unable to find application with id: %s"
+                    % app_id}
             else:
                 # Get task details
                 response = fgapisrv_db.get_app_record(app_id)

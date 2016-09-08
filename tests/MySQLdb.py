@@ -36,127 +36,127 @@ __email__ = "riccardo.bruno@ct.infn.it"
 # $PYTHONPATH:/Users/Macbook/Documents/fgAPIServer_codestyle_changes/tests/..
 # from fgapiserver import fgapiserver
 queries = [
-  {'query': 'SELECT VERSION()',
-   'result': [['test', ], ]},
-  {'query': 'select max(version) from db_patches;',
-   'result': [['0.0.6'], ]},
-  {'query': ('select  id\n'
-             ',status\n'
-             ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-             ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
-             ',app_id\n'
-             ',description\n'
-             ',status\n'
-             ',user\n'
-             ',iosandbox\n'
-             'from task where id=%s;'),
-   'result': [['1',
-               'DONE',
-               '1970-01-01T00:00:00',
-               '1970-01-01T00:00:00',
-               '1',
-               'test task',
-               'DONE',
-               'test user',
-               '/tmp/test']], },
-  {'query': ('select argument\n'
-             'from task_arguments\n'
-             'where task_id=%s\n'
-             'order by arg_id asc;'),
-   'result': [['argument'], ]},
-  {'query': ('select file\n'
-             '      ,if(path is null or length(path)=0,'
-             '          \'NEEDED\','
-             '          \'READY\') status\n'
-             'from task_input_file\n'
-             'where task_id=%s\n'
-             'order by file_id asc;'),
-   'result': [['input_file_1', 'NEEDED'], ['input_file_2', 'READY'], ]},
-  {'query': ('select file\n'
-             '      ,if(path is NULL,\'\',path)\n'
-             'from task_output_file\n'
-             'where task_id=%s\n'
-             'order by file_id asc;'),
-   'result': [['output_file_1', '/tmp'], ['output_file_2', '/tmp'], ]},
-  {'query': ('select '
-             '  data_name\n'
-             ' ,data_value\n'
-             ' ,data_desc\n'
-             ' ,data_type\n'
-             ' ,data_proto\n'
-             ' ,date_format(creation,'
-             '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
-             ' ,date_format(last_change,'
-             '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
-             'from runtime_data\n'
-             'where task_id=%s\n'
-             'order by data_id asc;'),
-   'result': [['userdata_name_1',
-               'userdata_value_1',
-               'userdata_desc_1',
-               'NULL',
-               'NULL',
-               '1970-01-01T00:00:00',
-               '1970-01-01T00:00:00'],
-              ['userdata_name_2',
-               'userdata_value_2',
-               'userdata_desc_2',
-               'NULL',
-               'NULL',
-               '1970-01-01T00:00:00',
-               '1970-01-01T00:00:00'],
-              ]},
-  {'query': ('select id\n'
-             '      ,name\n'
-             '      ,description\n'
-             '      ,outcome\n'
-             '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-             '      ,enabled\n'
-             'from application\n'
-             'where id=%s;'),
-   'result': [['1',
-               'test application',
-               'test application description',
-               'JOB',
-               '1970-01-01T00:00:00',
-               '1'],
-              ]},
-  {'query': ('select pname\n'
-             '      ,pvalue\n'
-             'from application_parameter\n'
-             'where app_id=%s\n'
-             'order by param_id asc;'),
-   'result': [['test_param_1', 'test_param_value_1'],
-              ['test_param_2', 'test_param_value_2'], ]},
-  {'query': ('select id\n'
-             '      ,name\n'
-             '      ,description\n'
-             '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-             '      ,if(enabled,\'enabled\',\'disabled\') status\n'
-             '      ,if(vinfra,\'virtual\',\'real\') status\n'
-             'from infrastructure\n'
-             'where app_id=%s;'),
-   'result': [['1',
-               'test infra',
-               'test infrastructure for test application',
-               '1970-01-01T00:00:00',
-               'enabled',
-               'real'], ]},
-  {'query': ('select pname, pvalue\n'
-             'from infrastructure_parameter\n'
-             'where infra_id=%s\n'
-             'order by param_id asc;'),
-   'result': [['test_infra_param_name_1', 'test_infra_param_value_1'],
-              ['test_infra_param_name_2', 'test_infra_param_value_2'], ]},
-  {'query': ('select task_id '
-             'from task_output_file '
-             'where file=%s and path=%s;'),
-   'result': ['1']},
-  {'query': ('select if((creation+expiry)-now()>0,user_id,NULL) user_id\n'
-             '      ,(select name from fg_user where id=user_id) name\n'
-             'from fg_token\n'
-             'where token=%s;'),
-   'result': [['1', 'test_user'], ]},
+    {'query': 'SELECT VERSION()',
+     'result': [['test', ], ]},
+    {'query': 'select max(version) from db_patches;',
+     'result': [['0.0.6'], ]},
+    {'query': ('select  id\n'
+               ',status\n'
+               ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+               ',app_id\n'
+               ',description\n'
+               ',status\n'
+               ',user\n'
+               ',iosandbox\n'
+               'from task where id=%s;'),
+     'result': [['1',
+                 'DONE',
+                 '1970-01-01T00:00:00',
+                 '1970-01-01T00:00:00',
+                 '1',
+                 'test task',
+                 'DONE',
+                 'test user',
+                 '/tmp/test']], },
+    {'query': ('select argument\n'
+               'from task_arguments\n'
+               'where task_id=%s\n'
+               'order by arg_id asc;'),
+     'result': [['argument'], ]},
+    {'query': ('select file\n'
+               '      ,if(path is null or length(path)=0,'
+               '          \'NEEDED\','
+               '          \'READY\') status\n'
+               'from task_input_file\n'
+               'where task_id=%s\n'
+               'order by file_id asc;'),
+     'result': [['input_file_1', 'NEEDED'], ['input_file_2', 'READY'], ]},
+    {'query': ('select file\n'
+               '      ,if(path is NULL,\'\',path)\n'
+               'from task_output_file\n'
+               'where task_id=%s\n'
+               'order by file_id asc;'),
+     'result': [['output_file_1', '/tmp'], ['output_file_2', '/tmp'], ]},
+    {'query': ('select '
+               '  data_name\n'
+               ' ,data_value\n'
+               ' ,data_desc\n'
+               ' ,data_type\n'
+               ' ,data_proto\n'
+               ' ,date_format(creation,'
+               '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               ' ,date_format(last_change,'
+               '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+               'from runtime_data\n'
+               'where task_id=%s\n'
+               'order by data_id asc;'),
+     'result': [['userdata_name_1',
+                 'userdata_value_1',
+                 'userdata_desc_1',
+                 'NULL',
+                 'NULL',
+                 '1970-01-01T00:00:00',
+                 '1970-01-01T00:00:00'],
+                ['userdata_name_2',
+                 'userdata_value_2',
+                 'userdata_desc_2',
+                 'NULL',
+                 'NULL',
+                 '1970-01-01T00:00:00',
+                 '1970-01-01T00:00:00'],
+                ]},
+    {'query': ('select id\n'
+               '      ,name\n'
+               '      ,description\n'
+               '      ,outcome\n'
+               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,enabled\n'
+               'from application\n'
+               'where id=%s;'),
+     'result': [['1',
+                 'test application',
+                 'test application description',
+                 'JOB',
+                 '1970-01-01T00:00:00',
+                 '1'],
+                ]},
+    {'query': ('select pname\n'
+               '      ,pvalue\n'
+               'from application_parameter\n'
+               'where app_id=%s\n'
+               'order by param_id asc;'),
+     'result': [['test_param_1', 'test_param_value_1'],
+                ['test_param_2', 'test_param_value_2'], ]},
+    {'query': ('select id\n'
+               '      ,name\n'
+               '      ,description\n'
+               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,if(enabled,\'enabled\',\'disabled\') status\n'
+               '      ,if(vinfra,\'virtual\',\'real\') status\n'
+               'from infrastructure\n'
+               'where app_id=%s;'),
+     'result': [['1',
+                 'test infra',
+                 'test infrastructure for test application',
+                 '1970-01-01T00:00:00',
+                 'enabled',
+                 'real'], ]},
+    {'query': ('select pname, pvalue\n'
+               'from infrastructure_parameter\n'
+               'where infra_id=%s\n'
+               'order by param_id asc;'),
+     'result': [['test_infra_param_name_1', 'test_infra_param_value_1'],
+                ['test_infra_param_name_2', 'test_infra_param_value_2'], ]},
+    {'query': ('select task_id '
+               'from task_output_file '
+               'where file=%s and path=%s;'),
+     'result': ['1']},
+    {'query': ('select if((creation+expiry)-now()>0,user_id,NULL) user_id\n'
+               '      ,(select name from fg_user where id=user_id) name\n'
+               'from fg_token\n'
+               'where token=%s;'),
+     'result': [['1', 'test_user'], ]},
 ]
 
 

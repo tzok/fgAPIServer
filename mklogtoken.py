@@ -31,8 +31,8 @@ __email__ = "riccardo.bruno@ct.infn.it"
 
 
 key = "0123456789ABCDEF"  # (!) Please use fgapiserver_secret value
-username = "test"
-password = "test"
+username = "futuregateway"
+password = "futuregateway"
 
 
 # Encode
