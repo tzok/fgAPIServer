@@ -507,6 +507,7 @@ class FGAPIServerDB:
                 '      ,if(path is null or length(path)=0,'
                 '          \'NEEDED\','
                 '          \'READY\') status\n'
+                '      ,if(path is NULL,\'\',path)\n'
                 'from task_input_file\n'
                 'where task_id=%s\n'
                 'order by file_id asc;')
@@ -514,10 +515,20 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             task_ifiles = []
             for ifile in cursor:
-                ifile_entry = {
-                    "name": ifile[0], "status": ifile[1]
-                }
-                task_ifiles += [ifile_entry, ]
+                if ifile[1] == 'NEEDED':
+                    ifile_entry = {
+                        "name": ifile[0],
+                        "status": ifile[1],
+                    }
+                else:
+                    ifile_entry = {
+                        "name": ifile[0],
+                        "status": ifile[1],
+                        "url": 'file?%s'
+                        % urllib.urlencode({"path": ifile[2],
+                                            "name": ifile[0]}),
+                    }
+            task_ifiles += [ifile_entry, ]
             # Task output files
             sql = ('select file\n'
                    '      ,if(path is NULL,\'\',path)\n'
