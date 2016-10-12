@@ -67,6 +67,7 @@ class FGAPIServerPTV:
     portal_user = ''
     portal_group = ''
     portal_groups = []
+    portal_subject = ''
 
     fgapiserver_db = None
 
@@ -137,7 +138,8 @@ class FGAPIServerPTV:
             "portal_validate": self.portal_validate,
             "portal_user": self.portal_user,
             "portal_group": self.portal_group,
-            "portal_groups": self.portal_groups
+            "portal_groups": self.portal_groups,
+            "portal_subject": self.portal_subject
         }
 
     # def mapUser(self):

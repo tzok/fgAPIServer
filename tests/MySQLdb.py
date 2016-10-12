@@ -65,14 +65,15 @@ queries = [
                'order by arg_id asc;'),
      'result': [['argument'], ]},
     {'query': ('select file\n'
-                '      ,if(path is null or length(path)=0,'
-                '          \'NEEDED\','
-                '          \'READY\') status\n'
-                '      ,if(path is NULL,\'\',path)\n'
-                'from task_input_file\n'
-                'where task_id=%s\n'
-                'order by file_id asc;'),
-     'result': [['input_file_1', 'NEEDED', ''], ['input_file_2', 'READY', '/tmp/test'], ]},
+               '      ,if(path is null or length(path)=0,'
+               '          \'NEEDED\','
+               '          \'READY\') status\n'
+               '      ,if(path is NULL,\'\',path)\n'
+               'from task_input_file\n'
+               'where task_id=%s\n'
+               'order by file_id asc;'),
+     'result': [['input_file_1', 'NEEDED', ''],
+                ['input_file_2', 'READY', '/tmp/test'], ]},
     {'query': ('select file\n'
                '      ,if(path is NULL,\'\',path)\n'
                'from task_output_file\n'

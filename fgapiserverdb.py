@@ -266,7 +266,7 @@ class FGAPIServerDB:
                        table. This is used by PTV which bypass APIServer
                        session tokens. The record will be written only once
     """
-    def register_token(self, userid, token):
+    def register_token(self, userid, token, subject):
         db = None
         cursor = None
         sestoken = ''
@@ -275,13 +275,13 @@ class FGAPIServerDB:
             cursor = db.cursor()
             if token is not None:
                 sql = ('insert into \n'
-                       'fg_token (token, user_id, creation, expiry)\n'
+                       'fg_token (token, subject, user_id, creation, expiry)\n'
                        'select %s, %s, now(), NULL\n'
                        'from dual\n'
                        'where (select count(*)\n'
                        '       from fg_token\n'
                        '       where token=%s) = 0;')
-                sql_data = (token, userid, token)
+                sql_data = (token, subject, userid, token)
                 cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)

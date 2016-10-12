@@ -443,10 +443,15 @@ def load_user(request):
                 portal_user = result.get('portal_user', '')
                 portal_group = result.get('portal_group', '')
                 portal_groups = result.get('portal_groups', [])
+                portal_subject = result.get('portal_subject', '')
                 print ("portal_user: %s\n"
                        "portal_group: %s\n"
-                       "portal_groups: %s") %\
-                      (portal_user, portal_group, portal_groups)
+                       "portal_groups: %s\n"
+                       "portal_subject: %s") %\
+                      (portal_user,
+                       portal_group,
+                       portal_groups,
+                       portal_subject)
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
                 # file. The json contains the list of possible APIServer
@@ -534,7 +539,9 @@ def load_user(request):
                         print ("login_manager PTV mapped user - "
                                "user_rec(0): '%s',user_rec(1): '%s'"
                                % (mapped_userid, mapped_username))
-                        fgapisrv_db.register_token(mapped_userid, token)
+                        fgapisrv_db.register_token(mapped_userid,
+                                                   token,
+                                                   portal_subject)
                         return User(mapped_userid, mapped_username)
                 # No portal user and group are returned or no mapping
                 # is available returning default user
