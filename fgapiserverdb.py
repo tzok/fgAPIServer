@@ -1400,6 +1400,44 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, False)
         return task_id
+
+    """
+      status_change - Add a task status change command in as_queue
+                      this causes the EIs to handle the change properly
+    """
+
+    def status_change(self, task_id, new_status):
+        db = None
+        cursor = None
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('insert into as_queue (task_id,'
+                   '                      action,'
+                   '                      status,'
+                   '                      target,'
+                   '                      target_status,'
+                   '                      creation,'
+                   '                      last_change,'
+                   '                      check_ts)'
+                   'values (%s,'
+                   '        "STATUSCH",'
+                   '        "QUEUED",'
+                   '        (select target '
+                   '         from as_queue '
+                   '         where task_id=%s '
+                   '         and action="SUBMIT"),'
+                   '         %s,'
+                   '         now(),'
+                   '         now(),'
+                   '         now());')
+            sql_data = (task_id, task_id, new_status)
+            cursor.execute(sql, sql_data)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return
 #
 # Application
 #
