@@ -1209,7 +1209,7 @@ class FGAPIServerDB:
                 sql_data += (app_id,)
             sql = ('select id\n'
                    'from task\n'
-                   'where true\n'
+                   'where status != "PURGED"\n'
                    '%s%s;'
                    ) % (user_clause, app_clause)
             cursor.execute(sql, sql_data)
