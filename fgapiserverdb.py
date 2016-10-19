@@ -276,7 +276,7 @@ class FGAPIServerDB:
             if token is not None:
                 sql = ('insert into \n'
                        'fg_token (token, subject, user_id, creation, expiry)\n'
-                       'select %s, %s, now(), NULL\n'
+                       'select %s, %s, %s, now(), NULL\n'
                        'from dual\n'
                        'where (select count(*)\n'
                        '       from fg_token\n'

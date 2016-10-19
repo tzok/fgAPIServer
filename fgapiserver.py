@@ -566,7 +566,7 @@ def load_user(request):
                 print ("login_manager PTV mapped user - "
                        "user_id: '%s',user_name: '%s'"
                        % (default_userid, default_username))
-                fgapisrv_db.register_token(default_userid, token)
+                fgapisrv_db.register_token(default_userid, token, None)
                 return User(default_userid, default_username)
             else:
                 print "login_manager PTV token '%s' is not valid" % token
@@ -589,7 +589,7 @@ def load_user(request):
                 if db_state[0] != 0:
                     print "Baseline token management failed to connect DB"
                     return None
-                fgapisrv_db.register_token(user_rec[0], token)
+                fgapisrv_db.register_token(user_rec[0], token, None)
                 return User(user_rec[0], user_rec[1])
             else:
                 print "No user is associated to session token: '%s'" % token
