@@ -67,7 +67,7 @@ class FGAPIServerPTV:
     portal_user = ''
     portal_group = ''
     portal_groups = []
-    portal_subject = ''
+    portal_subject = None
 
     fgapiserver_db = None
 
@@ -130,9 +130,10 @@ class FGAPIServerPTV:
         # Now fill class values
         self.portal_validate = \
             len(token_info.get('subject', '')) > 0
-        self.portal_user = token_info.get('portal_user', '')
-        self.portal_group = token_info.get('portal_group', '')
+        self.portal_user = token_info.get('user', '')
+        self.portal_group = token_info.get('group', '')
         self.portal_groups = token_info.get('groups', [])
+        self.portal_subject = token_info.get('subject', None)
 
         return {
             "portal_validate": self.portal_validate,

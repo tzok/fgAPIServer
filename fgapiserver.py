@@ -566,7 +566,9 @@ def load_user(request):
                 print ("login_manager PTV mapped user - "
                        "user_id: '%s',user_name: '%s'"
                        % (default_userid, default_username))
-                fgapisrv_db.register_token(default_userid, token, None)
+                fgapisrv_db.register_token(default_userid,
+                                           token,
+                                           portal_subject)
                 return User(default_userid, default_username)
             else:
                 print "login_manager PTV token '%s' is not valid" % token
