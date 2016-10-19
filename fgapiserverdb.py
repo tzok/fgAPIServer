@@ -471,7 +471,9 @@ class FGAPIServerDB:
                 ',status\n'
                 ',user\n'
                 ',iosandbox\n'
-                'from task where id=%s;')
+                'from task\n'
+                'where id=%s\n'
+                '  and status != "PURGED";')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             task_dbrec = cursor.fetchone()
@@ -1395,7 +1397,7 @@ class FGAPIServerDB:
                    'union all\n'
                    'select task_id from task_input_file\n'
                    'where file=%s and path=%s;')
-            sql_data = (file_name, file_path,file_name, file_path)
+            sql_data = (file_name, file_path, file_name, file_path)
             cursor.execute(sql, sql_data)
             task_id = cursor.fetchone()[0]
         except MySQLdb.Error as e:
