@@ -1380,7 +1380,7 @@ class FGAPIServerDB:
         return 1 == int(no_override)
 
     """
-      get_file_task_id - Get the task id related to the fiven file and path
+      get_file_task_id - Get the task id related to the given file and path
     """
 
     def get_file_task_id(self, file_name, file_path):
@@ -1390,9 +1390,12 @@ class FGAPIServerDB:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select task_id from task_output_file '
+            sql = ('select task_id from task_output_file\n'
+                   'where file=%s and path=%s\n'
+                   'union all\n'
+                   'select task_id from task_input_file\n'
                    'where file=%s and path=%s;')
-            sql_data = (file_name, file_path)
+            sql_data = (file_name, file_path,file_name, file_path)
             cursor.execute(sql, sql_data)
             task_id = cursor.fetchone()[0]
         except MySQLdb.Error as e:
