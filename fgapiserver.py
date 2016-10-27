@@ -1075,17 +1075,21 @@ def task_id(task_id=None):
                     }
         else:
             # runtime_data:
+            #
             # The input consists in a json having the form
-            # { "runtime_data" : [ { "data_name":  "name"
-            #                       ,"data_value": "value"
-            #                       ,"data_desc": "description of the value"
-            #                       ,"data_type": "how client receives the file"
-            #                       ,"data_proto": "protocol used to access data"
-            #                      }, ... ]
+            # { "runtime_data" : [
+            #   { "data_name":  "name"
+            #    ,"data_value": "value"
+            #    ,"data_desc": "description of the value"
+            #    ,"data_type": "how client receives the file"
+            #    ,"data_proto": "protocol used to access data"
+            #   }, ... ] }
+            #
             # The insertion policy will be:
             #  1) data_name does not exists, a new record will be created in
             #     runtime_data table
-            #  2) data_name exists the new value will be updated to the existing
+            #  2) data_name exists the new value will be updated to the
+            #     existing name
             #
             auth_state, auth_msg = authorize_user(
                 current_user, app_id, user, "task_userdata")
@@ -1121,8 +1125,8 @@ def task_id(task_id=None):
                 elif not fgapisrv_db.patch_task(task_id, runtime_data):
                     task_status = 410
                     task_response = {
-                        "message": ("Unable store runtime data for task having "
-                                    "id: %s" % task_id)
+                        "message": ("Unable store runtime data for task "
+                                    "having id: %s" % task_id)
                     }
                 else:
                     task_status = 200
