@@ -1483,7 +1483,8 @@ class FGAPIServerDB:
             cursor = db.cursor()
             sql_data = ()
             sql = ('select id\n'
-                   'from application;')
+                   'from application\n'
+                   'order by id asc;')
             cursor.execute(sql)
             for app_id in cursor:
                 app_ids += [app_id[0], ]
@@ -1555,40 +1556,43 @@ class FGAPIServerDB:
                 }
                 app_ifiles += [ifile_entry, ]
             # Application infrastructures
-            sql = (
-                'select id\n'
-                '      ,name\n'
-                '      ,description\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                '      ,enabled\n'
-                'from infrastructure\n'
-                'where app_id=%s;')
-            sql_data = (app_id,)
-            cursor.execute(sql, sql_data)
-            app_infras = []
-            for app_infra in cursor:
-                app_infra_entry = {"id": str(app_infra[0]),
-                                   "name": app_infra[1],
-                                   "description": app_infra[2],
-                                   "creation": str(app_infra[3]),
-                                   "enabled": app_infra[4],
-                                   "vinfra": False}
-                #                 ,"parameters"     : []}
-                app_infras += [app_infra_entry, ]
-            for app_infra in app_infras:
-                sql = ('select pname\n'
-                       '      ,pvalue\n'
-                       'from infrastructure_parameter\n'
-                       'where infra_id=%s\n'
-                       'order by param_id asc;')
-                sql_data = (app_infra['id'],)
-                cursor.execute(sql, sql_data)
-                infra_params = []
-                for infra_param in cursor:
-                    infra_params += [{
-                        "name": infra_param[0], "value": infra_param[1]
-                    }, ]
-                app_infra["parameters"] = infra_params
+            app_infras = self.get_infra_list(app_id)
+            print app_infras
+            #sql = (
+            #    'select id\n'
+            #    '      ,name\n'
+            #    '      ,description\n'
+            #    '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+            #    '      ,enabled\n'
+            #    'from infrastructure\n'
+            #    'where app_id=%s;')
+            #sql_data = (app_id,)
+            #cursor.execute(sql, sql_data)
+            #app_infras = []
+            #for app_infra in cursor:
+            #    app_infra_entry = {"id": str(app_infra[0]),
+            ##                       "name": app_infra[1],
+            #                       "description": app_infra[2],
+            #                       "creation": str(app_infra[3]),
+            #                       "enabled": app_infra[4],
+            #                       "virtual": False}
+            #    #                 ,"parameters"     : []}
+            #    app_infras += [app_infra_entry, ]
+            #for app_infra in app_infras:
+            #    sql = ('select pname\n'
+            #           '      ,pvalue\n'
+            #           'from infrastructure_parameter\n'
+            #           'where infra_id=%s\n'
+            #           'order by param_id asc;')
+            #    sql_data = (app_infra['id'],)
+            #    cursor.execute(sql, sql_data)
+            #    infra_params = []
+            #    for infra_param in cursor:
+            #        infra_params += [{
+            #            "name": infra_param[0], "value": infra_param[1]
+            #        }, ]
+            #    app_infra["parameters"] = infra_params
+
             # Prepare output
             app_record = {
                 "id": str(app_id),
@@ -1690,50 +1694,80 @@ class FGAPIServerDB:
                             'path'], ifile['override'], app_id)
                 cursor.execute(sql, sql_data)
             # Insert Application infrastructures
+            # ! Infrastructures may be expressed by definition or by
+            #   existing infrastructure ids
             for infra in infrastructures:
-                sql = ('insert into infrastructure (id\n'
-                       '                           ,app_id\n'
-                       '                           ,name\n'
-                       '                           ,description\n'
-                       '                           ,creation\n'
-                       '                           ,enabled\n'
-                       # '                           ,vinfra\n'
-                       '                           )\n'
-                       'select if(max(id) is NULL,1,max(id)+1) \n'
-                       '      ,%s                              \n'
-                       '      ,%s                              \n'
-                       '      ,%s                              \n'
-                       '      ,now()                           \n'
-                       '      ,%s                              \n'
-                       # '      ,%s                             \n'
-                       'from infrastructure;'
-                       )
-                sql_data = (app_id, infra['name'],
-                            infra['description'],
-                            infra['enabled']
-                            # ,infra['vinfra']
-                            )
-                cursor.execute(sql, sql_data)
-                # Get inserted infrastructure_id
-                sql = 'select max(id) from infrastructure;'
-                sql_data = ''
-                cursor.execute(sql)
-                infra_id = cursor.fetchone()[0]
-                # Insert Application infrastructure parameters
-                for param in infra['parameters']:
-                    sql = (
-                        'insert into infrastructure_parameter (infra_id\n'
-                        '                                     ,param_id\n'
-                        '                                     ,pname\n'
-                        '                                     ,pvalue)\n'
-                        'select %s                                          \n'
-                        '      ,if(max(param_id) is NULL,1,max(param_id)+1) \n'
-                        '      ,%s                                          \n'
-                        '      ,%s                                          \n'
-                        'from infrastructure_parameter\n'
-                        'where infra_id = %s;')
-                    sql_data = (infra_id, param['name'], param[
-                                'value'], infra_id)
+                if type(infra) == type({}):
+                    # Infrastructure description is provided
+                    sql = ('insert into infrastructure (id\n'
+                           '                           ,app_id\n'
+                           '                           ,name\n'
+                           '                           ,description\n'
+                           '                           ,creation\n'
+                           '                           ,enabled\n'
+                           # '                           ,vinfra\n'
+                           '                           )\n'
+                           'select if(max(id) is NULL,1,max(id)+1) \n'
+                           '      ,%s                              \n'
+                           '      ,%s                              \n'
+                           '      ,%s                              \n'
+                           '      ,now()                           \n'
+                           '      ,%s                              \n'
+                           # '      ,%s                             \n'
+                           'from infrastructure;'
+                           )
+                    sql_data = (app_id, infra['name'],
+                                infra['description'],
+                                infra['enabled']
+                                # ,infra['vinfra']
+                                )
+                    cursor.execute(sql, sql_data)
+                    # Get inserted infrastructure_id
+                    sql = 'select max(id) from infrastructure;'
+                    sql_data = ''
+                    cursor.execute(sql)
+                    infra_id = cursor.fetchone()[0]
+                    # Insert Application infrastructure parameters
+                    for param in infra['parameters']:
+                        sql = (
+                            'insert into infrastructure_parameter (infra_id\n'
+                            '                                     ,param_id\n'
+                            '                                     ,pname\n'
+                            '                                     ,pvalue)\n'
+                            'select %s                                          \n'
+                            '      ,if(max(param_id) is NULL,1,max(param_id)+1) \n'
+                            '      ,%s                                          \n'
+                            '      ,%s                                          \n'
+                            'from infrastructure_parameter\n'
+                            'where infra_id = %s;')
+                        sql_data = (infra_id, param['name'], param[
+                                    'value'], infra_id)
+                        cursor.execute(sql, sql_data)
+                else:
+                    # Existing infrastructure id is provided
+                    infra_record = self.get_infra_record(infra)
+                    sql = ('insert into infrastructure (id\n'
+                           '                           ,app_id\n'
+                           '                           ,name\n'
+                           '                           ,description\n'
+                           '                           ,creation\n'
+                           '                           ,enabled\n'
+                           # '                           ,vinfra\n'
+                           '                           )\n'
+                           'select if(max(id) is NULL,1,max(id)+1) \n'
+                           '      ,%s                              \n'
+                           '      ,%s                              \n'
+                           '      ,%s                              \n'
+                           '      ,now()                           \n'
+                           '      ,%s                              \n'
+                           # '      ,%s                             \n'
+                           'from infrastructure;'
+                           )
+                    sql_data = (app_id, infra_record['name'],
+                                infra_record['description'],
+                                infra_record['enabled']
+                                # ,infra['vinfra']
+                                )
                     cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
@@ -1835,10 +1869,11 @@ class FGAPIServerDB:
         return count > 0
 
     """
-      get_infra_list - Get the list of infrastructures
+      get_infra_list - Get the list of infrastructures; if app_id is not None
+                       return the infrastructures used by the given application
     """
 
-    def get_infra_list(self):
+    def get_infra_list(self,app_id):
         db = None
         cursor = None
         infra_ids = []
@@ -1847,15 +1882,22 @@ class FGAPIServerDB:
             db = self.connect()
             cursor = db.cursor()
             sql_data = ()
-            sql = ('select distinct id\n'
-                   'from infrastructure order by 1;')
-            cursor.execute(sql)
+            if app_id is None:
+                sql = ('select distinct id\n'
+                       'from infrastructure order by 1 asc;')
+            else:
+                sql = ('select id\n'
+                       'from infrastructure where app_id = %s order by id asc;')
+                sql_data = (app_id,)
+            cursor.execute(sql,sql_data)
             for infra_id in cursor:
+                print infra_id
                 infra_ids += [infra_id[0], ]
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
             self.close_db(db, cursor, False)
+        print infra_ids
         return infra_ids
 
     """
@@ -1873,7 +1915,7 @@ class FGAPIServerDB:
             sql = (
                 'select name,\n'
                 '       description,\n'
-                '       creation,\n'
+                '       date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation,\n'
                 '       enabled,\n'
                 '       vinfra\n'
                 'from infrastructure\n'

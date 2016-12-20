@@ -1646,7 +1646,7 @@ def app_id(app_id=None):
 def infrastructures():
     user_name = current_user.get_name()
     user_id = current_user.get_id()
-    app_id = None
+    infra_id = None
     user = request.values.get('user', user_name)
     page = request.values.get('page')
     per_page = request.values.get('per_page')
@@ -1654,7 +1654,7 @@ def infrastructures():
     state = 0
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "infra_view")
+            current_user, infra_id, user, "infra_view")
         if not auth_state:
             task_state = 402
             task_response = {
@@ -1681,7 +1681,7 @@ def infrastructures():
                 }
             else:
                 # call to get infrastructures
-                infra_list = fgapisrv_db.get_infra_list()
+                infra_list = fgapisrv_db.get_infra_list(None)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # DBError getting TaskList
@@ -1712,8 +1712,6 @@ def infrastructures():
                                     infra_record['id'],
                                     "name":
                                     infra_record['name'],
-                                    #"app_ids":
-                                    #infra_record['app_ids'],
                                     "description":
                                     infra_record['description'],
                                     "created":
@@ -1843,7 +1841,7 @@ def infra_id(infra_id=None):
     user = request.values.get('user', user_name)
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "infra_view")
+            current_user, infra_id, user, "infra_view")
         if not auth_state:
             task_state = 402
             task_response = {
@@ -1871,7 +1869,7 @@ def infra_id(infra_id=None):
                 response = {
                     "message":
                         "Unable to find infrastructure with id: %s"
-                        % app_id}
+                        % infra_id}
             else:
                 # Get task details
                 response = fgapisrv_db.get_infra_record(infra_id)
