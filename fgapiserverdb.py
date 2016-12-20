@@ -1447,7 +1447,7 @@ class FGAPIServerDB:
 # Application
 #
     """
-      app_exists - Return True if the given app_id exists False otherwise
+      app_exists - Return True if the given app_id exists, False otherwise
     """
 
     def app_exists(self, app_id):
@@ -1494,7 +1494,7 @@ class FGAPIServerDB:
         return app_ids
 
     """
-       get_app_record - Get application record
+       get_app_record - Get application record from its id
     """
 
     def get_app_record(self, app_id):
@@ -1504,7 +1504,7 @@ class FGAPIServerDB:
         try:
             db = self.connect()
             cursor = db.cursor()
-            # Task record
+            # application record
             sql = (
                 'select name\n'
                 '      ,description\n'
@@ -1810,3 +1810,114 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, True)
         return None
+
+    """
+        infra_exists - Return True if the given infra_id exists, False otherwise
+    """
+
+    def infra_exists(self, infra_id):
+        db = None
+        cursor = None
+        count = 0
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('select count(*)\n'
+                   'from infrastructure\n'
+                   'where id = %s;')
+            sql_data = (infra_id,)
+            cursor.execute(sql, sql_data)
+            count = cursor.fetchone()[0]
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, False)
+        finally:
+            self.close_db(db, cursor, False)
+        return count > 0
+
+    """
+      get_infra_list - Get the list of infrastructures
+    """
+
+    def get_infra_list(self):
+        db = None
+        cursor = None
+        infra_ids = []
+        try:
+            # Get Task ids preparing the right query (user/app_id)
+            db = self.connect()
+            cursor = db.cursor()
+            sql_data = ()
+            sql = ('select distinct id\n'
+                   'from infrastructure order by 1;')
+            cursor.execute(sql)
+            for infra_id in cursor:
+                infra_ids += [infra_id[0], ]
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, False)
+        finally:
+            self.close_db(db, cursor, False)
+        return infra_ids
+
+    """
+           get_infra_record - Get infrastructure record from its id
+    """
+
+    def get_infra_record(self, infra_id):
+        db = None
+        cursor = None
+        infra_record = {}
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            # infrastructure record
+            sql = (
+                'select name,\n'
+                '       description,\n'
+                '       creation,\n'
+                '       enabled,\n'
+                '       vinfra\n'
+                'from infrastructure\n'
+                'where id=%s\n'
+                'order by 1 asc ,2 asc\n'
+                'limit 1;')
+            sql_data = (infra_id,)
+            cursor.execute(sql, sql_data)
+            infra_dbrec = cursor.fetchone()
+            if infra_dbrec is not None:
+                infra_dicrec = {
+                    "id": str(infra_id),
+                    "name": infra_dbrec[0],
+                    "description": infra_dbrec[1],
+                    "creation": str(
+                        infra_dbrec[2]),
+                    "enabled": infra_dbrec[3],
+                    "virtual": infra_dbrec[4] }
+            else:
+                return {}
+            # Infrastructure parameters
+            sql = ('select pname\n'
+                   '      ,pvalue\n'
+                   'from infrastructure_parameter\n'
+                   'where infra_id=%s\n'
+                   'order by param_id asc;')
+            sql_data = (infra_id,)
+            cursor.execute(sql, sql_data)
+            infra_params = []
+            for param in cursor:
+                infra_params += [{"name": param[0],
+                                "value": param[1]}, ]
+            # Prepare output
+            infra_record = {
+                "id": str(infra_id),
+                "name": infra_dicrec['name'],
+                "description": infra_dicrec['description'],
+                "date": str(
+                    infra_dicrec['creation']),
+                "enabled": infra_dicrec['enabled'],
+                "virtual": infra_dicrec['virtual'],
+                "parameters": infra_params}
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return infra_record
