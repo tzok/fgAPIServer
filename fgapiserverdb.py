@@ -1558,40 +1558,41 @@ class FGAPIServerDB:
             # Application infrastructures
             app_infras = self.get_infra_list(app_id)
             print app_infras
-            #sql = (
-            #    'select id\n'
-            #    '      ,name\n'
-            #    '      ,description\n'
-            #    '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-            #    '      ,enabled\n'
-            #    'from infrastructure\n'
-            #    'where app_id=%s;')
-            #sql_data = (app_id,)
-            #cursor.execute(sql, sql_data)
-            #app_infras = []
-            #for app_infra in cursor:
-            #    app_infra_entry = {"id": str(app_infra[0]),
-            ##                       "name": app_infra[1],
-            #                       "description": app_infra[2],
-            #                       "creation": str(app_infra[3]),
-            #                       "enabled": app_infra[4],
-            #                       "virtual": False}
-            #    #                 ,"parameters"     : []}
-            #    app_infras += [app_infra_entry, ]
-            #for app_infra in app_infras:
-            #    sql = ('select pname\n'
-            #           '      ,pvalue\n'
-            #           'from infrastructure_parameter\n'
-            #           'where infra_id=%s\n'
-            #           'order by param_id asc;')
-            #    sql_data = (app_infra['id'],)
-            #    cursor.execute(sql, sql_data)
-            #    infra_params = []
-            #    for infra_param in cursor:
-            #        infra_params += [{
-            #            "name": infra_param[0], "value": infra_param[1]
-            #        }, ]
-            #    app_infra["parameters"] = infra_params
+            # sql = (
+            #     'select id\n'
+            #     '      ,name\n'
+            #     '      ,description\n'
+            #     '      ,date_format(creation,
+            #                         \'%%Y-%%m-%%dT%%TZ\') creation\n'
+            #     '      ,enabled\n'
+            #     'from infrastructure\n'
+            #     'where app_id=%s;')
+            # sql_data = (app_id,)
+            # cursor.execute(sql, sql_data)
+            # app_infras = []
+            # for app_infra in cursor:
+            #     app_infra_entry = {"id": str(app_infra[0]),
+            # #                       "name": app_infra[1],
+            #                        "description": app_infra[2],
+            #                        "creation": str(app_infra[3]),
+            #                        "enabled": app_infra[4],
+            #                        "virtual": False}
+            #     #                 ,"parameters"     : []}
+            #     app_infras += [app_infra_entry, ]
+            # for app_infra in app_infras:
+            #     sql = ('select pname\n'
+            #            '      ,pvalue\n'
+            #            'from infrastructure_parameter\n'
+            #            'where infra_id=%s\n'
+            #            'order by param_id asc;')
+            #     sql_data = (app_infra['id'],)
+            #     cursor.execute(sql, sql_data)
+            #     infra_params = []
+            #     for infra_param in cursor:
+            #         infra_params += [{
+            #             "name": infra_param[0], "value": infra_param[1]
+            #         }, ]
+            #     app_infra["parameters"] = infra_params
 
             # Prepare output
             app_record = {
@@ -1697,7 +1698,7 @@ class FGAPIServerDB:
             # ! Infrastructures may be expressed by definition or by
             #   existing infrastructure ids
             for infra in infrastructures:
-                if type(infra) == type({}):
+                if isinstance(infra, dict):
                     # Infrastructure description is provided
                     sql = ('insert into infrastructure (id\n'
                            '                           ,app_id\n'
@@ -1734,14 +1735,15 @@ class FGAPIServerDB:
                             '                                     ,param_id\n'
                             '                                     ,pname\n'
                             '                                     ,pvalue)\n'
-                            'select %s                                          \n'
-                            '      ,if(max(param_id) is NULL,1,max(param_id)+1) \n'
-                            '      ,%s                                          \n'
-                            '      ,%s                                          \n'
+                            'select %s\n'
+                            '      ,if(max(param_id) is NULL,\n'
+                            '          1,max(param_id)+1) \n'
+                            '      ,%s\n'
+                            '      ,%s\n'
                             'from infrastructure_parameter\n'
                             'where infra_id = %s;')
-                        sql_data = (infra_id, param['name'], param[
-                                    'value'], infra_id)
+                        sql_data = (infra_id, param['name'],
+                                    param['value'], infra_id)
                         cursor.execute(sql, sql_data)
                 else:
                     # Existing infrastructure id is provided
@@ -1846,7 +1848,8 @@ class FGAPIServerDB:
         return None
 
     """
-        infra_exists - Return True if the given infra_id exists, False otherwise
+        infra_exists - Return True if the given infra_id exists,
+                       False otherwise
     """
 
     def infra_exists(self, infra_id):
@@ -1873,7 +1876,7 @@ class FGAPIServerDB:
                        return the infrastructures used by the given application
     """
 
-    def get_infra_list(self,app_id):
+    def get_infra_list(self, app_id):
         db = None
         cursor = None
         infra_ids = []
@@ -1887,9 +1890,10 @@ class FGAPIServerDB:
                        'from infrastructure order by 1 asc;')
             else:
                 sql = ('select id\n'
-                       'from infrastructure where app_id = %s order by id asc;')
+                       'from infrastructure\n'
+                       'where app_id = %s order by id asc;')
                 sql_data = (app_id,)
-            cursor.execute(sql,sql_data)
+            cursor.execute(sql, sql_data)
             for infra_id in cursor:
                 print infra_id
                 infra_ids += [infra_id[0], ]
@@ -1915,7 +1919,8 @@ class FGAPIServerDB:
             sql = (
                 'select name,\n'
                 '       description,\n'
-                '       date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                '       date_format(creation,\n'
+                '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
                 '       enabled,\n'
                 '       vinfra\n'
                 'from infrastructure\n'
@@ -1933,7 +1938,7 @@ class FGAPIServerDB:
                     "creation": str(
                         infra_dbrec[2]),
                     "enabled": infra_dbrec[3],
-                    "virtual": infra_dbrec[4] }
+                    "virtual": infra_dbrec[4]}
             else:
                 return {}
             # Infrastructure parameters
@@ -1946,8 +1951,10 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             infra_params = []
             for param in cursor:
-                infra_params += [{"name": param[0],
-                                "value": param[1]}, ]
+                infra_params += [
+                    {"name": param[0],
+                     "value": param[1]},
+                ]
             # Prepare output
             infra_record = {
                 "id": str(infra_id),

@@ -1641,6 +1641,7 @@ def app_id(app_id=None):
 # INFRASTRUCTURE
 #
 
+
 @app.route('/%s/infrastructures' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def infrastructures():
@@ -1720,9 +1721,10 @@ def infrastructures():
                                     infra_record['enabled'],
                                     "virtual":
                                     infra_record['virtual'],
-                                    "_links": [{"rel": "self",
-                                                "href": "/%s/infrastructures/%s"
-                                                        % (fgapiver, infra_id)}]
+                                    "_links": [
+                                        {"rel": "self",
+                                         "href": "/%s/infrastructures/%s"
+                                                 % (fgapiver, infra_id)}]
                                 },
                             ]
                     response = {"infrastructures": infrastructures}
@@ -1736,95 +1738,96 @@ def infrastructures():
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        #auth_state, auth_msg = authorize_user(
-        #    current_user, app_id, user, "app_install")
-        #if not auth_state:
-        #    task_state = 402
-        #    task_response = {
-        #        "message": "Not authorized to perform this request:\n%s" %
-        #                   auth_msg}
-        #else:
-        #    # Getting values
-        #    params = request.get_json()
-        #    name = params.get('name', '')
-        #    description = params.get('description', '')
-        #    outcome = params.get('outcome', 'JOB')
-        #    enabled = params.get('enabled', [])
-        #    parameters = params.get('parameters', [])
-        #    inp_files = params.get('input_files', [])
-        #    infrastructures = params.get('infrastructures', [])
-        #    # Connect database
-        #    fgapisrv_db = FGAPIServerDB(
-        #        db_host=fgapisrv_db_host,
-        #        db_port=fgapisrv_db_port,
-        #        db_user=fgapisrv_db_user,
-        #        db_pass=fgapisrv_db_pass,
-        #        db_name=fgapisrv_db_name,
-        #        iosandbbox_dir=fgapisrv_iosandbox,
-        #        geapiserverappid=fgapisrv_geappid)
-        #    db_state = fgapisrv_db.get_state()
-        #    if db_state[0] != 0:
-        #        # Couldn't contact database
-        #        # Prepare for 404 not found
-        #        state = 404
-        #        response = {
-        #            "message": db_state[1]
-        #        }
-        #    else:
-        #        # Create app
-        #        app_id = fgapisrv_db.init_app(
-        #            name,
-        #            description,
-        #            outcome,
-        #            enabled,
-        #            parameters,
-        #            inp_files,
-        #            infrastructures)
-        #        if app_id < 0:
-        #            task_state = fgapisrv_db.get_state()
-        #            # Error initializing task
-        #            # Prepare for 410 error
-        #            state = 410
-        #            response = {
-        #                "message": task_state[1]
-        #            }
-        #        else:
-        #            # Enable the groups owned by the installing user to
-        #            # execute the app
-        #            fgapisrv_db.enable_app_by_userid(
-        #                user_id,
-        #                app_id)
-        #            # Prepare response
-        #            state = 200
-        #            app_record = fgapisrv_db.get_app_record(app_id)
-        #            response = {
-        #                "id": app_record['id'],
-        #                "name": app_record['name'],
-        #                "description": app_record['description'],
-        #                "enabled": app_record['enabled'],
-        #                "parameters": app_record['parameters'],
-        #                "input_files": app_record['input_files'],
-        #                "infrastructures": app_record['infrastructures'],
-        #                "_links": [
-        #                    {
-        #                        "rel": "self",
-        #                        "href": "/%s/application/%s" %
-        #                                (fgapiver,
-        #                                 app_id)}]}
-        #js = json.dumps(response, indent=fgjson_indent)
-        #resp = Response(js, status=state, mimetype='application/json')
-        #resp.headers['Content-type'] = 'application/json'
-        #if state == 200:
-        #    resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
-        #    resp.headers.add('Link', ('</v1.0/tasks/%s/input>; '
-        #                              'rel="input", </v1.0/tasks/%s>; '
-        #                              'rel="self"' % (task_id, task_id)))
-        #return resp
+        # auth_state, auth_msg = authorize_user(
+        #     current_user, app_id, user, "app_install")
+        # if not auth_state:
+        #     task_state = 402
+        #     task_response = {
+        #         "message": "Not authorized to perform this request:\n%s" %
+        #                    auth_msg}
+        # else:
+        #     # Getting values
+        #     params = request.get_json()
+        #     name = params.get('name', '')
+        #     description = params.get('description', '')
+        #     outcome = params.get('outcome', 'JOB')
+        #     enabled = params.get('enabled', [])
+        #     parameters = params.get('parameters', [])
+        #     inp_files = params.get('input_files', [])
+        #     infrastructures = params.get('infrastructures', [])
+        #     # Connect database
+        #     fgapisrv_db = FGAPIServerDB(
+        #         db_host=fgapisrv_db_host,
+        #         db_port=fgapisrv_db_port,
+        #         db_user=fgapisrv_db_user,
+        #         db_pass=fgapisrv_db_pass,
+        #         db_name=fgapisrv_db_name,
+        #         iosandbbox_dir=fgapisrv_iosandbox,
+        #         geapiserverappid=fgapisrv_geappid)
+        #     db_state = fgapisrv_db.get_state()
+        #     if db_state[0] != 0:
+        #         # Couldn't contact database
+        #         # Prepare for 404 not found
+        #         state = 404
+        #         response = {
+        #             "message": db_state[1]
+        #         }
+        #     else:
+        #         # Create app
+        #         app_id = fgapisrv_db.init_app(
+        #             name,
+        #             description,
+        #             outcome,
+        #             enabled,
+        #             parameters,
+        #             inp_files,
+        #             infrastructures)
+        #         if app_id < 0:
+        #             task_state = fgapisrv_db.get_state()
+        #             # Error initializing task
+        #             # Prepare for 410 error
+        #             state = 410
+        #             response = {
+        #                 "message": task_state[1]
+        #             }
+        #         else:
+        #             # Enable the groups owned by the installing user to
+        #             # execute the app
+        #             fgapisrv_db.enable_app_by_userid(
+        #                 user_id,
+        #                 app_id)
+        #             # Prepare response
+        #             state = 200
+        #             app_record = fgapisrv_db.get_app_record(app_id)
+        #             response = {
+        #                 "id": app_record['id'],
+        #                 "name": app_record['name'],
+        #                 "description": app_record['description'],
+        #                 "enabled": app_record['enabled'],
+        #                 "parameters": app_record['parameters'],
+        #                 "input_files": app_record['input_files'],
+        #                 "infrastructures": app_record['infrastructures'],
+        #                 "_links": [
+        #                     {
+        #                         "rel": "self",
+        #                         "href": "/%s/application/%s" %
+        #                                 (fgapiver,
+        #                                  app_id)}]}
+        # js = json.dumps(response, indent=fgjson_indent)
+        # resp = Response(js, status=state, mimetype='application/json')
+        # resp.headers['Content-type'] = 'application/json'
+        # if state == 200:
+        #     resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
+        #     resp.headers.add('Link', ('</v1.0/tasks/%s/input>; '
+        #                               'rel="input", </v1.0/tasks/%s>; '
+        #                               'rel="self"' % (task_id, task_id)))
+        # return resp
         pass
 
 # This is an informative call
 # GET  - shows details
 # POST - could reshape the request (Delete/Recreate)
+
 
 @app.route(
     '/%s/infrastructures/<infra_id>' %
@@ -1888,51 +1891,51 @@ def infra_id(infra_id=None):
         resp = Response(js, status=status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    #elif request.method == 'DELETE':
-    #    auth_state, auth_msg = authorize_user(
-    #        current_user, app_id, user, "app_delete")
-    #    if not auth_state:
-    #        task_state = 402
-    #        task_response = {
-    #            "message": "Not authorized to perform this request:\n%s" %
-    #                       auth_msg}
-    #    else:
-    #        fgapisrv_db = FGAPIServerDB(
-    #            db_host=fgapisrv_db_host,
-    #            db_port=fgapisrv_db_port,
-    #            db_user=fgapisrv_db_user,
-    #            db_pass=fgapisrv_db_pass,
-    #            db_name=fgapisrv_db_name,
-    #            iosandbbox_dir=fgapisrv_iosandbox,
-    #            fgapiserverappid=fgapisrv_geappid)
-    #        db_state = fgapisrv_db.get_state()
-    #        if db_state[0] != 0:
-    #            # Couldn't contact database
-    #            # Prepare for 404 not found
-    #            status = 404
-    #            response = {
-    #                "message": db_state[1]
-    #            }
-    #        elif not fgapisrv_db.app_exists(app_id):
-    #            status = 404
-    #            response = {
-    #                "message": "Unable to find application with id: %s" %
-    #                           app_id}
-    #        elif not fgapisrv_db.app_delete(app_id):
-    #            status = 410
-    #            response = {
-    #                "message": ("Unable to delete application with id: %s; "
-    #                            "reason: '%s'"
-    #                            % (app_id, fgapisrv_db.get_state()[1]))}
-    #        else:
-    #            status = 200
-    #            response = {
-    #                "message": "Successfully removed application with id: %s" %
-    #                           app_id}
-    #    js = json.dumps(response, indent=fgjson_indent)
-    #    resp = Response(js, status=status, mimetype='application/json')
-    #    resp.headers['Content-type'] = 'application/json'
-    #    return resp
+    # elif request.method == 'DELETE':
+    #     auth_state, auth_msg = authorize_user(
+    #         current_user, app_id, user, "app_delete")
+    #     if not auth_state:
+    #         task_state = 402
+    #         task_response = {
+    #             "message": "Not authorized to perform this request:\n%s" %
+    #                        auth_msg}
+    #     else:
+    #         fgapisrv_db = FGAPIServerDB(
+    #             db_host=fgapisrv_db_host,
+    #             db_port=fgapisrv_db_port,
+    #             db_user=fgapisrv_db_user,
+    #             db_pass=fgapisrv_db_pass,
+    #             db_name=fgapisrv_db_name,
+    #             iosandbbox_dir=fgapisrv_iosandbox,
+    #             fgapiserverappid=fgapisrv_geappid)
+    #         db_state = fgapisrv_db.get_state()
+    #         if db_state[0] != 0:
+    #             # Couldn't contact database
+    #             # Prepare for 404 not found
+    #             status = 404
+    #             response = {
+    #                 "message": db_state[1]
+    #             }
+    #         elif not fgapisrv_db.app_exists(app_id):
+    #             status = 404
+    #             response = {
+    #                 "message": "Unable to find application with id: %s" %
+    #                            app_id}
+    #         elif not fgapisrv_db.app_delete(app_id):
+    #             status = 410
+    #             response = {
+    #                 "message": ("Unable to delete application with id: %s; "
+    #                             "reason: '%s'"
+    #                             % (app_id, fgapisrv_db.get_state()[1]))}
+    #         else:
+    #             status = 200
+    #             response = {
+    #                 "message":
+    #                 "Successfully removed application with id: %s" % app_id}
+    #     js = json.dumps(response, indent=fgjson_indent)
+    #     resp = Response(js, status=status, mimetype='application/json')
+    #     resp.headers['Content-type'] = 'application/json'
+    #     return resp
     elif request.method == 'POST':
         task_response = {
             "message": "Not supported method"
