@@ -108,6 +108,13 @@ class FGAPIServerDB:
              self.db_name,
              self.iosandbbox_dir,
              self.geapiserverappid))
+             
+    """
+       mysqlbool - Helper function that convert mysql boolean 1/0 to python
+                   True/False values
+    """
+
+    def mysqlbool(self,x): return x != 0 
 
     """
       catchDBError - common operations performed upon database
@@ -665,7 +672,7 @@ class FGAPIServerDB:
 
     """
       get_app_detail - Return details about a given app_id
-    """
+    """    
 
     def get_app_detail(self, app_id):
         db = None
@@ -694,7 +701,7 @@ class FGAPIServerDB:
                 "outcome": app_record[3],
                 "creation": str(
                     app_record[4]),
-                "enabled": app_record[5]}
+                "enabled": self.mysqlbool(app_record[5])}
             # Add now app parameters
             sql = ('select pname\n'
                    '      ,pvalue\n'
@@ -1525,7 +1532,7 @@ class FGAPIServerDB:
                     "outcome": app_dbrec[2],
                     "creation": str(
                         app_dbrec[3]),
-                    "enabled": app_dbrec[4]}
+                    "enabled": self.mysqlbool(app_dbrec[4])}
             else:
                 return {}
             # Application parameters
@@ -1575,7 +1582,7 @@ class FGAPIServerDB:
             # #                       "name": app_infra[1],
             #                        "description": app_infra[2],
             #                        "creation": str(app_infra[3]),
-            #                        "enabled": app_infra[4],
+            #                        "enabled": self.mysqlbool(app_infra[4]),
             #                        "virtual": False}
             #     #                 ,"parameters"     : []}
             #     app_infras += [app_infra_entry, ]
@@ -1937,7 +1944,7 @@ class FGAPIServerDB:
                     "description": infra_dbrec[1],
                     "creation": str(
                         infra_dbrec[2]),
-                    "enabled": infra_dbrec[3],
+                    "enabled": self.mysqlbool(infra_dbrec[3]),
                     "virtual": infra_dbrec[4]}
             else:
                 return {}
