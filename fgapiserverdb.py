@@ -804,7 +804,7 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             for app_file in cursor:
                 app_files += [{"file": app_file[0],
-                               "path": app_file[1], "override": app_file[2]}, ]
+                               "path": app_file[1], "override": bool(app_file[2])}, ]
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1552,7 +1552,7 @@ class FGAPIServerDB:
             app_ifiles = []
             for ifile in cursor:
                 ifile_entry = {
-                    "name": ifile[0], "path": ifile[1], "override": ifile[2]
+                    "name": ifile[0], "path": ifile[1], "override": bool(ifile[2])
                 }
                 app_ifiles += [ifile_entry, ]
             # Application infrastructures
