@@ -108,13 +108,6 @@ class FGAPIServerDB:
              self.db_name,
              self.iosandbbox_dir,
              self.geapiserverappid))
-             
-    """
-       mysqlbool - Helper function that convert mysql boolean 1/0 to python
-                   True/False values
-    """
-
-    def mysqlbool(self,x): return x != 0 
 
     """
       catchDBError - common operations performed upon database
@@ -701,7 +694,7 @@ class FGAPIServerDB:
                 "outcome": app_record[3],
                 "creation": str(
                     app_record[4]),
-                "enabled": self.mysqlbool(app_record[5])}
+                "enabled": bool(app_record[5])}
             # Add now app parameters
             sql = ('select pname\n'
                    '      ,pvalue\n'
@@ -1532,7 +1525,7 @@ class FGAPIServerDB:
                     "outcome": app_dbrec[2],
                     "creation": str(
                         app_dbrec[3]),
-                    "enabled": self.mysqlbool(app_dbrec[4])}
+                    "enabled": bool(app_dbrec[4])}
             else:
                 return {}
             # Application parameters
@@ -1582,7 +1575,7 @@ class FGAPIServerDB:
             # #                       "name": app_infra[1],
             #                        "description": app_infra[2],
             #                        "creation": str(app_infra[3]),
-            #                        "enabled": self.mysqlbool(app_infra[4]),
+            #                        "enabled": bool(app_infra[4]),
             #                        "virtual": False}
             #     #                 ,"parameters"     : []}
             #     app_infras += [app_infra_entry, ]
@@ -1944,8 +1937,8 @@ class FGAPIServerDB:
                     "description": infra_dbrec[1],
                     "creation": str(
                         infra_dbrec[2]),
-                    "enabled": self.mysqlbool(infra_dbrec[3]),
-                    "virtual": infra_dbrec[4]}
+                    "enabled": bool(infra_dbrec[3]),
+                    "virtual": bool(infra_dbrec[4])}
             else:
                 return {}
             # Infrastructure parameters
