@@ -44,6 +44,8 @@ create table application (
 );
 
 insert into application (id,name,description,outcome,creation,enabled)
+values (0,"infrastructures","unassigned infrastructure","INFRA",now(), false);
+insert into application (id,name,description,outcome,creation,enabled)
 values (1,"hostname","hostname tester application","JOB",now(),true);
 insert into application (id,name,description,outcome,creation,enabled)
 values (2,"SayHello","A more complex app using I/O Sandboxing","JOB",now(),true);
@@ -97,7 +99,7 @@ create table infrastructure (
    ,creation     datetime not null                       -- Creation timestamp
    ,enabled      boolean default false not null          -- Enabled infrastructure flag
    ,vinfra       boolean default false not null          -- True if it is a virtual infrastructure
-   ,primary key(id,app_id)
+   ,primary key(id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
 );
@@ -434,5 +436,5 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.9','baseline setup','../fgapiserver_db.sql',now());
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.10','baseline setup','../fgapiserver_db.sql',now());
 

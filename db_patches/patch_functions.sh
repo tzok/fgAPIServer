@@ -2,6 +2,12 @@
 #
 # Database patch functions
 #
+ASDB_USER=fgapiserver
+ASDB_PASS=fgapiserver_password
+ASDB_HOST=localhost
+ASDB_PORT=3306
+ASDB_NAME=fgapiserver
+
 
 ts() {
   date +%Y%m%d%H%M%S
@@ -19,15 +25,27 @@ err() {
 
 asdb_file() {
   SQLFILE=$1
+  SQLOUT=$2
+  SQLERR=$3
+  if [ "$SQLOUT" = "" ]; then
+    SQLOUTCMD=""
+  else
+    SQLOUTCMD="1>$SQLOUT"
+  fi
+  if [ "$SQLERR" = "" ]; then
+    SQLERRCMD=""
+  else
+    SQLERRCMD="2>$SQLERR"
+  fi
   if [ "$SQLFILE" != "" -a -f $SQLFILE ]; then
-    mysql -h localhost -P 3306 -u fgapiserver -pfgapiserver_password fgapiserver < $SQLFILE
+    mysql -h $ASDB_HOST -P $ASDB_PORT -u $ASDB_USER -p$ASDB_PASS $ASDB_NAME < $SQLFILE $SQLOUTCMD $SQLOUTERR
   fi
 }
 
 asdb_cmd() {
   SQLCMD=$1
   if [ "$SQLCMD" != "" ]; then
-    mysql -h localhost -P 3306 -u fgapiserver -pfgapiserver_password fgapiserver -s -N -e "$SQLCMD"
+    mysql -h $ASDB_HOST -P $ASDB_PORT -u $ASDB_USER -p$ASDB_PASS $ASDB_NAME  -s -N -e "$SQLCMD"
   fi
 }
 
