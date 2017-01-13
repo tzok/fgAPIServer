@@ -1933,13 +1933,11 @@ class FGAPIServerDB:
                 sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             for infra_id in cursor:
-                print infra_id
                 infra_ids += [infra_id[0], ]
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
             self.close_db(db, cursor, False)
-        print infra_ids
         return infra_ids
 
     """
@@ -1997,12 +1995,11 @@ class FGAPIServerDB:
                 ]
             # Prepare output
             infra_record = {
-                "id": str(infra_id),
+                "id": infra_dicrec['id'],
                 "app_id": infra_dicrec['app_id'],
                 "name": infra_dicrec['name'],
                 "description": infra_dicrec['description'],
-                "date": str(
-                    infra_dicrec['creation']),
+                "creation": infra_dicrec['creation'],
                 "enabled": infra_dicrec['enabled'],
                 "virtual": infra_dicrec['virtual'],
                 "parameters": infra_params}
@@ -2031,61 +2028,61 @@ class FGAPIServerDB:
         # Start creating app
         db = None
         cursor = None
+        infra_id = -1
         try:
             # Insert new application record
             db = self.connect()
             cursor = db.cursor()
-            for infra in infrastructures:            
-                sql = ('insert into infrastructure (id\n'
-                       '                           ,app_id\n'
-                       '                           ,name\n'
-                       '                           ,description\n'
-                       '                           ,creation\n'
-                       '                           ,enabled\n'
-                       '                          ,vinfra\n'
-                       '                           )\n'
-                       'select if(max(id) is NULL,1,max(id)+1) \n'
-                       '      ,0                               \n'
-                       '      ,%s                              \n'
-                       '      ,%s                              \n'
-                       '      ,now()                           \n'
-                       '      ,%s                              \n'
-                       '      ,%s                              \n'
-                       'from infrastructure;'
-                       )
-                sql_data = (name,
-                            description,
-                            enabled,
-                            vinfra
-                            )
+            sql = ('insert into infrastructure (id\n'
+                   '                           ,app_id\n'
+                   '                           ,name\n'
+                   '                           ,description\n'
+                   '                           ,creation\n'
+                   '                           ,enabled\n'
+                   '                           ,vinfra\n'
+                   '                           )\n'
+                   'select if(max(id) is NULL,1,max(id)+1) \n'
+                   '      ,0                               \n'
+                   '      ,%s                          \n'
+                   '      ,%s                          \n'
+                   '      ,now()                       \n'
+                   '      ,%s                          \n'
+                   '      ,%s                          \n'
+                   'from infrastructure;'
+                   )
+            sql_data = (name,
+                        description,
+                        enabled,
+                        vinfra
+                        )
+            cursor.execute(sql, sql_data)
+            # Get inserted infrastructure_id
+            sql = 'select max(id) from infrastructure;'
+            sql_data = ''
+            cursor.execute(sql)
+            infra_id = cursor.fetchone()[0]
+            # Insert Application infrastructure parameters
+            for param in infrastructure_parameters:
+                sql = (
+                    'insert into infrastructure_parameter (infra_id\n'
+                    '                                     ,param_id\n'
+                    '                                     ,pname\n'
+                    '                                     ,pvalue)\n'
+                    'select %s\n'
+                    '      ,if(max(param_id) is NULL,\n'
+                    '          1,max(param_id)+1) \n'
+                    '      ,%s\n'
+                    '      ,%s\n'
+                    'from infrastructure_parameter\n'
+                    'where infra_id = %s;')
+                sql_data = (infra_id, param['name'],
+                            param['value'],
+                            infra_id)
                 cursor.execute(sql, sql_data)
-                # Get inserted infrastructure_id
-                sql = 'select max(id) from infrastructure;'
-                sql_data = ''
-                cursor.execute(sql)
-                infra_id = cursor.fetchone()[0]
-                # Insert Application infrastructure parameters
-                for param in infrastructure_parameters:
-                    sql = (
-                        'insert into infrastructure_parameter (infra_id\n'
-                        '                                     ,param_id\n'
-                        '                                     ,pname\n'
-                        '                                     ,pvalue)\n'
-                        'select %s\n'
-                        '      ,if(max(param_id) is NULL,\n'
-                        '          1,max(param_id)+1) \n'
-                        '      ,"%s"\n'
-                        '      ,"%s"\n'
-                        'from infrastructure_parameter\n'
-                        'where infra_id = %s;')
-                    sql_data = (infra_id, param['name'],
-                                param['value'],
-                                infra_id)
-                    cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
             app_id = 0
         finally:
             self.close_db(db, cursor, True)
-        return app_id
+        return infra_id
 

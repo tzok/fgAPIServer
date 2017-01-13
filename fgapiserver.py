@@ -1652,7 +1652,7 @@ def infrastructures():
     page = request.values.get('page')
     per_page = request.values.get('per_page')
     user = request.values.get('user')
-    state = 0
+    infra_state = 0
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, infra_id, user, "infra_view")
@@ -1747,13 +1747,13 @@ def infrastructures():
                            auth_msg}
         else:
             # Getting values
-            params = request.get_json()
+            params = request.get_json()            
             name = params.get('name', '')
             description = params.get('description', '')
-            enabled = params.get('enabled', '')
-            vinfra = params.get('vinfra', '')
+            enabled = params.get('enabled', True)
+            vinfra = params.get('virtual', False)
             infrastructure_parameters = params.get(
-                'infrastructure_parameters', '')
+                'parameters', '')
             # Connect database
             fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
@@ -1777,7 +1777,6 @@ def infrastructures():
                     name,
                     description,
                     enabled,
-                    enabled,
                     vinfra,
                     infrastructure_parameters)
                 if infra_id < 0:
@@ -1791,12 +1790,12 @@ def infrastructures():
                 else:
                     # Prepare response
                     infra_state = 200
-                    infra_record = fgapisrv_db.get_infra_record(app_id)
+                    infra_record = fgapisrv_db.get_infra_record(infra_id)
                     infra_response = {
                         "id": infra_record['id'],
                         "name": infra_record['name'],
                         "description": infra_record['description'],
-                        "creation": infra_record['creation'],
+                        "date": infra_record['creation'],
                         "enabled": infra_record['enabled'],
                         "virtual": infra_record['virtual'],
                         "_links": [
