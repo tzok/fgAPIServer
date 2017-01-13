@@ -1740,80 +1740,80 @@ def infrastructures():
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
              current_user, app_id, user, "infra_add")
-         if not auth_state:
-             task_state = 402
-             task_response = {
-                 "message": "Not authorized to perform this request:\n%s" %
-                            auth_msg}
-         else:
-             # Getting values
-             params = request.get_json()
-             name = params.get('name', '')
-             description = params.get('description', '')
-             enabled = params.get('enabled', '')
-             vinfra = params.get('vinfra', '')
-             infrastructure_parameters =
-                 params.get('infrastructure_parameters', '')             
-             # Connect database
-             fgapisrv_db = FGAPIServerDB(
-                 db_host=fgapisrv_db_host,
-                 db_port=fgapisrv_db_port,
-                 db_user=fgapisrv_db_user,
-                 db_pass=fgapisrv_db_pass,
-                 db_name=fgapisrv_db_name,
-                 iosandbbox_dir=fgapisrv_iosandbox,
-                 geapiserverappid=fgapisrv_geappid)
-             db_state = fgapisrv_db.get_state()
-             if db_state[0] != 0:
-                 # Couldn't contact database
-                 # Prepare for 404 not found
-                 state = 404
-                 response = {
-                     "message": db_state[1]
-                 }
-             else:
-                 # Create infrastructure
-                 infra_id = fgapisrv_db.init_infra(
-                     name,
-                     description,
-                     enabled,
-                     enabled,
-                     vinfra,
-                     infrastructure_parameters)
-                 if infra_id < 0:
-                     task_state = fgapisrv_db.get_state()
-                     # Error initializing task
-                     # Prepare for 410 error
-                     state = 410
-                     response = {
-                         "message": task_state[1]
-                     }
-                 else:
-                     # Prepare response
-                     state = 200
-                     infra_record = fgapisrv_db.get_infra_record(app_id)
-                     response = {
-                         "id": infra_record['id'],
-                         "name": infra_record['name'],
-                         "description": infra_record['description'],
-                         "creation": infra_record['creation'],
-                         "enabled": infra_record['enabled'],
-                         "virtual": infra_record['virtual'],
-                         "_links": [
-                             {
-                                 "rel": "self",
-                                 "href": "/%s/infrastructure/%s" %
-                                         (fgapiver,
-                                          infra_record['id'])}]}
-         js = json.dumps(response, indent=fgjson_indent)
-         resp = Response(js, status=state, mimetype='application/json')
-         resp.headers['Content-type'] = 'application/json'
-         if state == 200:
-             resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
-             resp.headers.add('Link', ('</v1.0/tasks/%s/input>; '
-                                       'rel="input", </v1.0/tasks/%s>; '
-                                       'rel="self"' % (task_id, task_id)))
-         return resp
+        if not auth_state:
+            task_state = 402
+            task_response = {
+                "message": "Not authorized to perform this request:\n%s" %
+                           auth_msg}
+        else:
+            # Getting values
+            params = request.get_json()
+            name = params.get('name', '')
+            description = params.get('description', '')
+            enabled = params.get('enabled', '')
+            vinfra = params.get('vinfra', '')
+            infrastructure_parameters = params.get(
+                'infrastructure_parameters', '')
+            # Connect database
+            fgapisrv_db = FGAPIServerDB(
+                db_host=fgapisrv_db_host,
+                db_port=fgapisrv_db_port,
+                db_user=fgapisrv_db_user,
+                db_pass=fgapisrv_db_pass,
+                db_name=fgapisrv_db_name,
+                iosandbbox_dir=fgapisrv_iosandbox,
+                geapiserverappid=fgapisrv_geappid)
+            db_state = fgapisrv_db.get_state()
+            if db_state[0] != 0:
+                # Couldn't contact database
+                # Prepare for 404 not found
+                state = 404
+                response = {
+                    "message": db_state[1]
+                }
+            else:
+                # Create infrastructure
+                infra_id = fgapisrv_db.init_infra(
+                    name,
+                    description,
+                    enabled,
+                    enabled,
+                    vinfra,
+                    infrastructure_parameters)
+                if infra_id < 0:
+                    task_state = fgapisrv_db.get_state()
+                    # Error initializing infrastructure
+                    # Prepare for 410 error
+                    state = 410
+                    response = {
+                        "message": task_state[1]
+                    }
+                else:
+                    # Prepare response
+                    state = 200
+                    infra_record = fgapisrv_db.get_infra_record(app_id)
+                    response = {
+                        "id": infra_record['id'],
+                        "name": infra_record['name'],
+                        "description": infra_record['description'],
+                        "creation": infra_record['creation'],
+                        "enabled": infra_record['enabled'],
+                        "virtual": infra_record['virtual'],
+                        "_links": [
+                            {
+                                "rel": "self",
+                                "href": "/%s/infrastructure/%s" %
+                                        (fgapiver,
+                                         infra_record['id'])}]}
+        js = json.dumps(response, indent=fgjson_indent)
+        resp = Response(js, status=state, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        if state == 200:
+            resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
+            resp.headers.add('Link', ('</v1.0/tasks/%s/input>; '
+                                      'rel="input", </v1.0/tasks/%s>; '
+                                      'rel="self"' % (task_id, task_id)))
+        return resp
         pass
 
 # This is an informative call
