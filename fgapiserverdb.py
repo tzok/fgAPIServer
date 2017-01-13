@@ -2074,12 +2074,13 @@ class FGAPIServerDB:
                         'select %s\n'
                         '      ,if(max(param_id) is NULL,\n'
                         '          1,max(param_id)+1) \n'
-                        '      ,%s\n'
-                        '      ,%s\n'
+                        '      ,"%s"\n'
+                        '      ,"%s"\n'
                         'from infrastructure_parameter\n'
                         'where infra_id = %s;')
                     sql_data = (infra_id, param['name'],
-                                param['value'], infra_id)
+                                param['value'],
+                                infra_id)
                     cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
