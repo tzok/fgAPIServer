@@ -782,7 +782,7 @@ def tasks():
                     # Prepare response
                     task_response = {}
                     task_array = []
-                    task_state = 200
+                    task_state = 201
                     for task_id in task_list:
                         task_record = fgapisrv_db.get_task_record(task_id)
                         db_state = fgapisrv_db.get_state()
@@ -1385,7 +1385,7 @@ def applications():
                     # Prepare response
                     response = []
                     applications = []
-                    state = 200
+                    state = 201
                     for app_id in app_list:
                         app_record = fgapisrv_db.get_app_record(app_id)
                         db_state = fgapisrv_db.get_state()
@@ -1657,12 +1657,12 @@ def infrastructures():
         auth_state, auth_msg = authorize_user(
             current_user, infra_id, user, "infra_view")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            infra_state = 402
+            infra_response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            # Show the whole task list
+            # Show the whole infra list
             # Connect database
             fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
@@ -1676,8 +1676,8 @@ def infrastructures():
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
-                state = 404
-                response = {
+                infra_state = 404
+                infra_response = {
                     "message": db_state[1]
                 }
             else:
@@ -1685,25 +1685,25 @@ def infrastructures():
                 infra_list = fgapisrv_db.get_infra_list(None)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
-                    # DBError getting TaskList
+                    # DBError getting InfraList
                     # Prepare for 402
-                    state = 402
-                    response = {
+                    infra_state = 402
+                    infra_response = {
                         "message": db_state[1]
                     }
                 else:
                     # Prepare response
-                    response = []
+                    infra_response = []
                     infrastructures = []
-                    state = 200
+                    infra_state = 201
                     for infra_id in infra_list:
                         infra_record = fgapisrv_db.get_infra_record(infra_id)
                         db_state = fgapisrv_db.get_state()
                         if db_state[0] != 0:
-                            # DBError getting TaskRecord
+                            # DBError getting InfraRecord
                             # Prepare for 403
-                            state = 403
-                            response = {
+                            infra_state = 403
+                            infra_response = {
                                 "message": db_state[1]
                             }
                         else:
@@ -1727,22 +1727,22 @@ def infrastructures():
                                                  % (fgapiver, infra_id)}]
                                 },
                             ]
-                    response = {"infrastructures": infrastructures}
+                    infra_response = {"infrastructures": infrastructures}
         # When page, per_page are not none
-        # (page=0..(len(task_response)/per_page)-1)
+        # (page=0..(len(infra_response)/per_page)-1)
         # if page is not None and per_page is not None:
-        # task_response = task_response[page*per_page:(page+1)*per_page]
+        # task_response = infra_response[page*per_page:(page+1)*per_page]
         js = json.dumps(paginate_response(
-            response, page, per_page), indent=fgjson_indent)
-        resp = Response(js, status=state, mimetype='application/json')
+            infra_response, page, per_page), indent=fgjson_indent)
+        resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
              current_user, app_id, user, "infra_add")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            infra_state = 402
+            infra_response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
@@ -1767,8 +1767,8 @@ def infrastructures():
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
-                state = 404
-                response = {
+                infra_state = 404
+                infra_response = {
                     "message": db_state[1]
                 }
             else:
@@ -1781,18 +1781,18 @@ def infrastructures():
                     vinfra,
                     infrastructure_parameters)
                 if infra_id < 0:
-                    task_state = fgapisrv_db.get_state()
+                    init_state = fgapisrv_db.get_state()
                     # Error initializing infrastructure
                     # Prepare for 410 error
-                    state = 410
-                    response = {
-                        "message": task_state[1]
+                    infra_state = 410
+                    infraresponse = {
+                        "message": init_state[1]
                     }
                 else:
                     # Prepare response
-                    state = 200
+                    infra_state = 200
                     infra_record = fgapisrv_db.get_infra_record(app_id)
-                    response = {
+                    infra_response = {
                         "id": infra_record['id'],
                         "name": infra_record['name'],
                         "description": infra_record['description'],
@@ -1805,12 +1805,12 @@ def infrastructures():
                                 "href": "/%s/infrastructure/%s" %
                                         (fgapiver,
                                          infra_record['id'])}]}
-        js = json.dumps(response, indent=fgjson_indent)
-        resp = Response(js, status=state, mimetype='application/json')
+        js = json.dumps(infra_response, indent=fgjson_indent)
+        resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
-        if state == 200:
-            resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
-            resp.headers.add('Link', ('</v1.0/tasks/%s/input>; '
+        if infra_state == 200:
+            resp.headers.add('Location', '/v1.0/infrastructure/%s' % task_id)
+            resp.headers.add('Link', ('</v1.0/infrastructure/%s/input>; '
                                       'rel="input", </v1.0/tasks/%s>; '
                                       'rel="self"' % (task_id, task_id)))
         return resp
@@ -1838,8 +1838,8 @@ def infra_id(infra_id=None):
         auth_state, auth_msg = authorize_user(
             current_user, infra_id, user, "infra_view")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            infra_state = 402
+            infra_response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
@@ -1855,34 +1855,29 @@ def infra_id(infra_id=None):
             if db_state[0] != 0:
                 # Couldn't contact database
                 # Prepare for 404 not found
-                status = 404
-                response = {
+                infra_status = 404
+                infra_response = {
                     "message": db_state[1]
                 }
             elif not fgapisrv_db.infra_exists(infra_id):
-                status = 404
-                response = {
+                infra_status = 404
+                infra_response = {
                     "message":
                         "Unable to find infrastructure with id: %s"
                         % infra_id}
             else:
                 # Get task details
-                response = fgapisrv_db.get_infra_record(infra_id)
+                infra_response = fgapisrv_db.get_infra_record(infra_id)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
                     # Prepare for 404 not found
-                    status = 404
-                    response = {
+                    infra_status = 404
+                    infra_response = {
                         "message": db_state[1]
                     }
                 else:
-                    status = 200
-        # Display infrastructure details
-        js = json.dumps(response, indent=fgjson_indent)
-        resp = Response(js, status=status, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
+                    infra_status = 200
     # elif request.method == 'DELETE':
     #     auth_state, auth_msg = authorize_user(
     #         current_user, app_id, user, "app_delete")
@@ -1929,13 +1924,14 @@ def infra_id(infra_id=None):
     #     resp.headers['Content-type'] = 'application/json'
     #     return resp
     elif request.method == 'POST':
-        task_response = {
+        infra_response = {
             "message": "Not supported method"
         }
-        js = json.dumps(task_response, indent=fgjson_indent)
-        resp = Response(js, status=404, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
+        infra_state = 404
+    js = json.dumps(infra_response, indent=fgjson_indent)
+    resp = Response(js, status=infra_status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
 
 
 # Common header section

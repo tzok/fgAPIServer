@@ -179,7 +179,7 @@ class FGAPIServerDB:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select max(version) from db_patches;')
+            sql = ('select version from db_patches order by id desc limit 1;')
             sql_data = ()
             cursor.execute(sql, sql_data)
             dbver = cursor.fetchone()[0]
