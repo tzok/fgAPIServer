@@ -1786,29 +1786,29 @@ class FGAPIServerDB:
                     else:
                         # Already assigned infrastructure requires a new
                         # entry in infrastructure table						
-						sql = ('insert into infrastructure (id\n'
-							   '                           ,app_id\n'
-							   '                           ,name\n'
-							   '                           ,description\n'
-							   '                           ,creation\n'
-							   '                           ,enabled\n'
-							   # '                           ,vinfra\n'
-							   '                           )\n'
-							   'select if(max(id) is NULL,1,max(id)+1) \n'
-							   '      ,%s                              \n'
-							   '      ,%s                              \n'
-							   '      ,%s                              \n'
-							   '      ,now()                           \n'
-							   '      ,%s                              \n'
-							   # '      ,%s                             \n'
-							   'from infrastructure;')
-						sql_data = (app_id,
-									infra_record['name'],
-									infra_record['description'],
-									infra_record['enabled']
-									# ,infra['vinfra']
-									)
-					cursor.execute(sql, sql_data)
+                        sql = ('insert into infrastructure (id\n'
+                               '                           ,app_id\n'
+                               '                           ,name\n'
+                               '                           ,description\n'
+                               '                           ,creation\n'
+                               '                           ,enabled\n'
+                               # '                           ,vinfra\n'
+                               '                           )\n'
+                               'select if(max(id) is NULL,1,max(id)+1) \n'
+                               '      ,%s                              \n'
+                               '      ,%s                              \n'
+                               '      ,%s                              \n'
+                               '      ,now()                           \n'
+                               '      ,%s                              \n'
+                               # '      ,%s                             \n'
+                               'from infrastructure;')
+                        sql_data = (app_id,
+                                    infra_record['name'],
+                                    infra_record['description'],
+                                    infra_record['enabled']
+                                    # ,infra['vinfra']
+                                    )
+                    cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
             app_id = 0
@@ -1965,7 +1965,7 @@ class FGAPIServerDB:
                 'from infrastructure\n'
                 'where id=%s\n'
                 'order by 1 asc ,2 asc\n'
-                'limit 1;)
+                'limit 1;')
             sql_data = (infra_id,)
             cursor.execute(sql, sql_data)
             infra_dbrec = cursor.fetchone()
