@@ -168,6 +168,45 @@ queries = [
                'select task_id from task_input_file\n'
                'where file=%s and path=%s;'),
      'result': ['1']},
+    {'query': ('select id        \n'
+               '      ,name      \n'
+               '      ,password  \n'
+               '      ,first_name\n'
+               '      ,last_name \n'
+               '      ,institute \n'
+               '      ,mail      \n'
+               '      ,creation  \n'
+               '      ,modified  \n'
+               'from fg_user     \n'
+               'where name=%s;'),
+     'result': [[ '1', 'futuregateway', 'XXXXYYYYZZZZ','futuregateway','futuregateway','futuregateway','futuregateway@futuregateway','1970-01-01T00:00:00','1970-01-01T00:00:00' ],]},
+    {'query': ('select distinct id\n'
+               'from infrastructure order by 1 asc;'),
+     'result': ['1']},
+    {'query': ('select app_id,\n'
+                '       name,\n'
+                '       description,\n'
+                '       date_format(creation,\n'
+                '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                '       enabled,\n'
+                '       vinfra\n'
+                'from infrastructure\n'
+                'where id=%s\n'
+                'order by 1 asc ,2 asc\n'
+                'limit 1;'),
+     'result': [[ '0', 'test infra', 'test infrastructure', '1970-01-01T00:00:00', 0, 0 ]]},
+    {'query': ('select pname\n'
+               '      ,pvalue\n'
+               'from infrastructure_parameter\n'
+               'where infra_id=%s\n'
+               'order by param_id asc;'),
+     'result': [['test_pname1', 'test_pvalue1'],
+                ['test_pname2', 'test_pvalue2'],
+                ['test_pname3', 'test_pvalue3'],]},
+    {'query': ('select count(*)\n'
+               'from infrastructure\n'
+               'where id = %s;'),
+     'result': ['1']},
 ]
 
 

@@ -1716,7 +1716,7 @@ def infrastructures():
                                     "description":
                                     infra_record['description'],
                                     "created":
-                                    infra_record['date'],
+                                    infra_record['creation'],
                                     "enabled":
                                     infra_record['enabled'],
                                     "virtual":

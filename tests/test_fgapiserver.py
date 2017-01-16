@@ -20,6 +20,8 @@
 
 import unittest
 import fgapiserver
+import hashlib
+from fgapiserver import app
 from mklogtoken import token_encode, token_decode, token_info
 
 __author__ = "Riccardo Bruno"
@@ -32,11 +34,25 @@ __email__ = "riccardo.bruno@ct.infn.it"
 
 class Test_fgAPIServer(unittest.TestCase):
 
+    def setUp(self):
+        self.app = app.test_client()
+        self.app.testing = True
+
     def banner(self, test_name):
         print ""
         print "------------------------------------------------"
         print " Testing: %s" % test_name
         print "------------------------------------------------"
+
+    def md5sum(self,filename, blocksize=65536):
+        hash = hashlib.md5()
+        with open(filename, "rb") as f:
+            for block in iter(lambda: f.read(blocksize), b""):
+                hash.update(block)
+        return hash.hexdigest()
+
+    def md5sum_str(self,str):
+        return hashlib.md5(str).hexdigest()
 
     #
     # fgapiserver
@@ -111,6 +127,33 @@ class Test_fgAPIServer(unittest.TestCase):
                % (username2, password2, timestamp2))
         self.assertEqual("%s:%s" % (username, password), "%s:%s" % (username2,
                                                                     password2))
+
+
+    #
+    # REST APIs
+    #
+
+    def test_get_root(self):
+        self.banner("GET /v1.0/")
+        result = self.app.get('/v1.0/') 
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("44dc039b64f657cab4f76b95ccdb81fc",
+                         self.md5sum_str(result.data))
+
+    def test_get_infrastructures(self):
+        self.banner("GET /v1.0/infrastructures")
+        result = self.app.get('/v1.0/infrastructures')
+        print result
+        print result.data
+
+    def test_get_infrastructure(self):
+        self.banner("GET /v1.0/infrastructures/1")
+        result = self.app.get('/v1.0/infrastructures/1')
+        print result
+        print result.data
+
 if __name__ == '__main__':
     print "----------------------------------"
     print "Starting unit tests ..."
