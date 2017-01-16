@@ -147,12 +147,18 @@ class Test_fgAPIServer(unittest.TestCase):
         result = self.app.get('/v1.0/infrastructures')
         print result
         print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("0fa855a95a6d94d759c2bd2c73cb023c",
+                         self.md5sum_str(result.data))
 
     def test_get_infrastructure(self):
         self.banner("GET /v1.0/infrastructures/1")
         result = self.app.get('/v1.0/infrastructures/1')
         print result
         print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("0ccd202bbf2ccbcded52eab2a64857bf",
+                         self.md5sum_str(result.data))
 
 if __name__ == '__main__':
     print "----------------------------------"

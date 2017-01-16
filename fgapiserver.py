@@ -1715,7 +1715,7 @@ def infrastructures():
                                     infra_record['name'],
                                     "description":
                                     infra_record['description'],
-                                    "created":
+                                    "date":
                                     infra_record['creation'],
                                     "enabled":
                                     infra_record['enabled'],
@@ -1866,7 +1866,20 @@ def infra_id(infra_id=None):
                         % infra_id}
             else:
                 # Get task details
-                infra_response = fgapisrv_db.get_infra_record(infra_id)
+                infra_record = fgapisrv_db.get_infra_record(infra_id)
+                infra_response = {
+                        "id": infra_record['id'],
+                        "name": infra_record['name'],
+                        "description": infra_record['description'],
+                        "date": infra_record['creation'],
+                        "enabled": infra_record['enabled'],
+                        "virtual": infra_record['virtual'],
+                        "_links": [
+                            {
+                                "rel": "self",
+                                "href": "/%s/infrastructure/%s" %
+                                        (fgapiver,
+                                         infra_record['id'])}]}
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
