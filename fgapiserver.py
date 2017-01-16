@@ -782,7 +782,7 @@ def tasks():
                     # Prepare response
                     task_response = {}
                     task_array = []
-                    task_state = 201
+                    task_state = 200
                     for task_id in task_list:
                         task_record = fgapisrv_db.get_task_record(task_id)
                         db_state = fgapisrv_db.get_state()
@@ -1018,7 +1018,7 @@ def task_id(task_id=None):
                     "message": "Unable to delete task with id: %s" % task_id
                 }
             else:
-                task_status = 200
+                task_status = 204
                 task_response = {
                     "message": "Successfully removed task with id: %s" %
                                task_id}
@@ -1192,7 +1192,7 @@ def task_id_input(task_id=None):
                     "message": "Unable to find task with id: %s" % task_id
                 }
             else:
-                task_status = 204
+                task_status = 200
                 task_response = fgapisrv_db.get_task_record(task_id)[
                     'input_files']
         js = json.dumps(task_response, indent=fgjson_indent)
@@ -1385,7 +1385,7 @@ def applications():
                     # Prepare response
                     response = []
                     applications = []
-                    state = 201
+                    state = 200
                     for app_id in app_list:
                         app_record = fgapisrv_db.get_app_record(app_id)
                         db_state = fgapisrv_db.get_state()
@@ -1490,7 +1490,7 @@ def applications():
                         user_id,
                         app_id)
                     # Prepare response
-                    state = 200
+                    state = 201
                     app_record = fgapisrv_db.get_app_record(app_id)
                     response = {
                         "id": app_record['id'],
@@ -1620,7 +1620,7 @@ def app_id(app_id=None):
                                 "reason: '%s'"
                                 % (app_id, fgapisrv_db.get_state()[1]))}
             else:
-                status = 200
+                status = 204
                 response = {
                     "message": "Successfully removed application with id: %s" %
                                app_id}
@@ -1695,7 +1695,7 @@ def infrastructures():
                     # Prepare response
                     infra_response = []
                     infrastructures = []
-                    infra_state = 201
+                    infra_state = 200
                     for infra_id in infra_list:
                         infra_record = fgapisrv_db.get_infra_record(infra_id)
                         db_state = fgapisrv_db.get_state()
@@ -1789,7 +1789,7 @@ def infrastructures():
                     }
                 else:
                     # Prepare response
-                    infra_state = 200
+                    infra_state = 201
                     infra_record = fgapisrv_db.get_infra_record(infra_id)
                     infra_response = {
                         "id": infra_record['id'],
@@ -1807,7 +1807,7 @@ def infrastructures():
         js = json.dumps(infra_response, indent=fgjson_indent)
         resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
-        if infra_state == 200:
+        if infra_state == 201:
             resp.headers.add('Location', '/v1.0/infrastructure/%s' % task_id)
             resp.headers.add('Link', ('</v1.0/infrastructure/%s/input>; '
                                       'rel="input", </v1.0/tasks/%s>; '

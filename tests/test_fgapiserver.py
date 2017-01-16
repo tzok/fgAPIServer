@@ -44,14 +44,14 @@ class Test_fgAPIServer(unittest.TestCase):
         print " Testing: %s" % test_name
         print "------------------------------------------------"
 
-    def md5sum(self,filename, blocksize=65536):
+    def md5sum(self, filename, blocksize=65536):
         hash = hashlib.md5()
         with open(filename, "rb") as f:
             for block in iter(lambda: f.read(blocksize), b""):
                 hash.update(block)
         return hash.hexdigest()
 
-    def md5sum_str(self,str):
+    def md5sum_str(self, str):
         return hashlib.md5(str).hexdigest()
 
     #
@@ -128,14 +128,13 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual("%s:%s" % (username, password), "%s:%s" % (username2,
                                                                     password2))
 
-
     #
     # REST APIs
     #
 
     def test_get_root(self):
         self.banner("GET /v1.0/")
-        result = self.app.get('/v1.0/') 
+        result = self.app.get('/v1.0/')
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
