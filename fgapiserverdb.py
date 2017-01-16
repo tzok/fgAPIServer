@@ -1785,7 +1785,7 @@ class FGAPIServerDB:
                         sql = ('update infrstructure set app_id = "%s"\n'
                                'where id = %s\n'
                                '  and app_id = 0;')
-                        sql_data = (app_id,	infra_id)
+                        sql_data = (app_id, infra_id)
                     else:
                         # Already assigned infrastructure requires a new
                         # entry in infrastructure table
@@ -1797,15 +1797,16 @@ class FGAPIServerDB:
                                '                           ,enabled\n'
                                # '                           ,vinfra\n'
                                '                           )\n'
-                               'select if(max(id) is NULL,1,max(id)+1) \n'
-                               '      ,%s                              \n'
-                               '      ,%s                              \n'
-                               '      ,%s                              \n'
-                               '      ,now()                           \n'
-                               '      ,%s                              \n'
-                               # '      ,%s                             \n'
+                               'select %s    \n'
+                               '      ,%s    \n'
+                               '      ,%s    \n'
+                               '      ,%s    \n'
+                               '      ,now() \n'
+                               '      ,%s    \n'
+                               # '      ,%s    \n'
                                'from infrastructure;')
-                        sql_data = (app_id,
+                        sql_data = (infra_id,
+                                    app_id,
                                     infra_record['name'],
                                     infra_record['description'],
                                     infra_record['enabled']
@@ -2045,12 +2046,12 @@ class FGAPIServerDB:
                    '                           ,vinfra\n'
                    '                           )\n'
                    'select if(max(id) is NULL,1,max(id)+1) \n'
-                   '      ,0                               \n'
-                   '      ,%s                          \n'
-                   '      ,%s                          \n'
-                   '      ,now()                       \n'
-                   '      ,%s                          \n'
-                   '      ,%s                          \n'
+                   '      ,0\n'
+                   '      ,%s\n'
+                   '      ,%s\n'
+                   '      ,now()\n'
+                   '      ,%s\n'
+                   '      ,%s\n'
                    'from infrastructure;'
                    )
             sql_data = (name,
