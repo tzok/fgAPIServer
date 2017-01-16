@@ -1747,7 +1747,7 @@ def infrastructures():
                            auth_msg}
         else:
             # Getting values
-            params = request.get_json()            
+            params = request.get_json()
             name = params.get('name', '')
             description = params.get('description', '')
             enabled = params.get('enabled', True)

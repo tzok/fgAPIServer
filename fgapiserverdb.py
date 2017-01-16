@@ -665,7 +665,7 @@ class FGAPIServerDB:
 
     """
       get_app_detail - Return details about a given app_id
-    """    
+    """
 
     def get_app_detail(self, app_id):
         db = None
@@ -804,7 +804,8 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             for app_file in cursor:
                 app_files += [{"file": app_file[0],
-                               "path": app_file[1], "override": bool(app_file[2])}, ]
+                               "path": app_file[1],
+                               "override": bool(app_file[2])}, ]
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1552,7 +1553,9 @@ class FGAPIServerDB:
             app_ifiles = []
             for ifile in cursor:
                 ifile_entry = {
-                    "name": ifile[0], "path": ifile[1], "override": bool(ifile[2])
+                    "name": ifile[0],
+                    "path": ifile[1],
+                    "override": bool(ifile[2])
                 }
                 app_ifiles += [ifile_entry, ]
             # Application infrastructures
@@ -1773,7 +1776,7 @@ class FGAPIServerDB:
                 else:
                     # Existing infrastructure id is provided
                     # Infrastructure may be already assigned or not
-                    # If not yet assigned, just modify the app_id; 
+                    # If not yet assigned, just modify the app_id;
                     # otherwise copy the whole infrastructure
                     infra_record = self.get_infra_record(infra)
                     if infra_record['app_id'] == 0:
@@ -1785,7 +1788,7 @@ class FGAPIServerDB:
                         sql_data = (app_id,	infra_id)
                     else:
                         # Already assigned infrastructure requires a new
-                        # entry in infrastructure table						
+                        # entry in infrastructure table
                         sql = ('insert into infrastructure (id\n'
                                '                           ,app_id\n'
                                '                           ,name\n'
@@ -2008,7 +2011,7 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, True)
         return infra_record
-        
+
     """
       init_infra - initialize an infrastructure
                    from the given parameters: name
@@ -2017,7 +2020,7 @@ class FGAPIServerDB:
                                            ,vinfra
                                            ,infrastructure_parameters
     """
-        
+
     def init_infra(
             self,
             name,
@@ -2085,4 +2088,3 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, True)
         return infra_id
-

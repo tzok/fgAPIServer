@@ -38,9 +38,10 @@ __email__ = "riccardo.bruno@ct.infn.it"
 queries = [
     {'query': 'SELECT VERSION()',
      'result': [['test', ], ]},
-    {'query': 'select max(version) from db_patches;',
-     'result': [['0.0.8'], ]},
-    {'query': ('select  id\n'
+    {'query': 'select version from db_patches order by id desc limit 1;',
+     'result': [['0.0.10'], ]},
+    {'query': ('select '
+               ' id\n'
                ',status\n'
                ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
@@ -49,7 +50,9 @@ queries = [
                ',status\n'
                ',user\n'
                ',iosandbox\n'
-               'from task where id=%s;'),
+               'from task\n'
+               'where id=%s\n'
+               '  and status != "PURGED";'),
      'result': [['1',
                  'DONE',
                  '1970-01-01T00:00:00',
@@ -159,6 +162,12 @@ queries = [
                'from fg_token\n'
                'where token=%s;'),
      'result': [['1', 'test_user'], ]},
+    {'query': ('select task_id from task_output_file\n'
+               'where file=%s and path=%s\n'
+               'union all\n'
+               'select task_id from task_input_file\n'
+               'where file=%s and path=%s;'),
+     'result': ['1']},
 ]
 
 
@@ -174,7 +183,7 @@ class cursor:
         return len(self.cursor_results)
 
     def execute(self, sql, sql_data=None):
-        print "Executing: %s" % sql
+        print "Executing: '%s'" % sql
         self.position = 0
         self.cursor_results = None
         for query in queries:
