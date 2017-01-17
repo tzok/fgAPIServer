@@ -1739,7 +1739,7 @@ def infrastructures():
         return resp
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
-             current_user, app_id, user, "infra_add")
+             current_user, None, user, "infra_add")
         if not auth_state:
             infra_state = 402
             infra_response = {
