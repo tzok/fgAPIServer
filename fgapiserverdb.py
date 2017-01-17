@@ -1797,7 +1797,7 @@ class FGAPIServerDB:
                                '      ,%s    \n'
                                # '      ,%s    \n'
                                'from infrastructure;')
-                        sql_data = (infra_id,
+                        sql_data = (infra_record['id'],
                                     app_id,
                                     infra_record['name'],
                                     infra_record['description'],
