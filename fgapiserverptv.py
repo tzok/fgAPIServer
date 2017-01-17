@@ -130,7 +130,7 @@ class FGAPIServerPTV:
         
         # Now fill class values
         self.portal_validate = \
-            token_info.get('subject', '') is not None
+            token_info.get('subject', '') is not None\
             and len(token_info.get('subject', '')) > 0
         self.portal_user = token_info.get('user', '')
         self.portal_group = token_info.get('group', '')
