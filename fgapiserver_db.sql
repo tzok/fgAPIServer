@@ -43,6 +43,7 @@ create table application (
    ,primary key(id)
 );
 
+set session sql_mode='NO_AUTO_VALUE_ON_ZERO';
 insert into application (id,name,description,outcome,creation,enabled)
 values (0,"infrastructures","unassigned infrastructure","INFRA",now(), false);
 insert into application (id,name,description,outcome,creation,enabled)
@@ -99,7 +100,7 @@ create table infrastructure (
    ,creation     datetime not null                       -- Creation timestamp
    ,enabled      boolean default false not null          -- Enabled infrastructure flag
    ,vinfra       boolean default false not null          -- True if it is a virtual infrastructure
-   ,primary key(id)
+   ,primary key(id,app_id)
    ,foreign key(app_id) references application(id)
    ,index(app_id)
 );

@@ -1720,7 +1720,8 @@ class FGAPIServerDB:
                            # '      ,%s                             \n'
                            'from infrastructure;'
                            )
-                    sql_data = (app_id, infra['name'],
+                    sql_data = (app_id,
+                                infra['name'],
                                 infra['description'],
                                 infra['enabled']
                                 # ,infra['vinfra']
@@ -1731,31 +1732,6 @@ class FGAPIServerDB:
                     sql_data = ''
                     cursor.execute(sql)
                     infra_id = cursor.fetchone()[0]
-                    # Add the infrastructure to the infra catalogue app
-                    sql = ('insert into infrastructure (id\n'
-                           '                           ,app_id\n'
-                           '                           ,name\n'
-                           '                           ,description\n'
-                           '                           ,creation\n'
-                           '                           ,enabled\n'
-                           # '                           ,vinfra\n'
-                           '                           )\n'
-                           'select %s     \n'
-                           '      ,0      \n'
-                           '      ,%s     \n'
-                           '      ,%s     \n'
-                           '      ,now()  \n'
-                           '      ,%s     \n'
-                           # '      ,%s   \n'
-                           'from infrastructure;'
-                           )
-                    sql_data = (infra_id,
-                                infra['name'],
-                                infra['description'],
-                                infra['enabled']
-                                # ,infra['vinfra']
-                                )
-                    cursor.execute(sql, sql_data)
                     # Insert Application infrastructure parameters
                     for param in infra['parameters']:
                         sql = (
@@ -2016,10 +1992,10 @@ class FGAPIServerDB:
     """
       init_infra - initialize an infrastructure
                    from the given parameters: name
-                                           ,description
-                                           ,enabled
-                                           ,vinfra
-                                           ,infrastructure_parameters
+                                             ,description
+                                             ,enabled
+                                             ,vinfra
+                                             ,infrastructure_parameters
     """
 
     def init_infra(
