@@ -139,8 +139,8 @@ queries = [
                '      ,%s\n'
                'from infrastructure_parameter\n'
                'where infra_id = %s;'),
-     'result': [['test_param_1', 'test_param_value_1', 'test_param_desc_1' ],
-                ['test_param_2', 'test_param_value_2'], None ]},
+     'result': [['test_param_1', 'test_param_value_1', 'test_param_desc_1'],
+                ['test_param_2', 'test_param_value_2'], None]},
     {'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
@@ -221,10 +221,9 @@ queries = [
                '      ,pdesc\n'
                'from infrastructure_parameter\n'
                'where infra_id=%s\n'
-               'order by param_id asc;'
-              ),
-     'result': [['test_pname1', 'test_pvalue1', 'test_pdesc1' ],
-                ['test_pname2', 'test_pvalue2', 'test_pdesc2' ],
+               'order by param_id asc;'),
+     'result': [['test_pname1', 'test_pvalue1', 'test_pdesc1'],
+                ['test_pname2', 'test_pvalue2', 'test_pdesc2'],
                 ['test_pname3', 'test_pvalue3', None], ]},
     {'query': ('select count(*)\n'
                'from infrastructure\n'
