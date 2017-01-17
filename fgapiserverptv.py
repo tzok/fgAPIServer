@@ -127,7 +127,7 @@ class FGAPIServerPTV:
         token_info = response.json()
         response.close()
         print token_info
-        
+
         # Now fill class values
         self.portal_validate = \
             token_info.get('subject', '') is not None\

@@ -1475,7 +1475,7 @@ def applications():
                     parameters,
                     inp_files,
                     infrastructures)
-                if app_id < 0:
+                if app_id <= 0:
                     task_state = fgapisrv_db.get_state()
                     # Error initializing task
                     # Prepare for 410 error
