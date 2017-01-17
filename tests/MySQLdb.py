@@ -126,13 +126,21 @@ queries = [
                  '1970-01-01T00:00:00',
                  '1'],
                 ]},
-    {'query': ('select pname\n'
-               '      ,pvalue\n'
-               'from application_parameter\n'
-               'where app_id=%s\n'
-               'order by param_id asc;'),
-     'result': [['test_param_1', 'test_param_value_1'],
-                ['test_param_2', 'test_param_value_2'], ]},
+    {'query': ('insert into infrastructure_parameter (infra_id\n'
+               '                                     ,param_id\n'
+               '                                     ,pname\n'
+               '                                     ,pvalue\n'
+               '                                     ,pdesc)\n'
+               'select %s\n'
+               '      ,if(max(param_id) is NULL,\n'
+               '          1,max(param_id)+1) \n'
+               '      ,%s\n'
+               '      ,%s\n'
+               '      ,%s\n'
+               'from infrastructure_parameter\n'
+               'where infra_id = %s;'),
+     'result': [['test_param_1', 'test_param_value_1', 'test_param_desc_1' ],
+                ['test_param_2', 'test_param_value_2'], None ]},
     {'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
@@ -210,16 +218,49 @@ queries = [
                  0]]},
     {'query': ('select pname\n'
                '      ,pvalue\n'
+               '      ,pdesc\n'
                'from infrastructure_parameter\n'
                'where infra_id=%s\n'
-               'order by param_id asc;'),
-     'result': [['test_pname1', 'test_pvalue1'],
-                ['test_pname2', 'test_pvalue2'],
-                ['test_pname3', 'test_pvalue3'], ]},
+               'order by param_id asc;'
+              ),
+     'result': [['test_pname1', 'test_pvalue1', 'test_pdesc1' ],
+                ['test_pname2', 'test_pvalue2', 'test_pdesc2' ],
+                ['test_pname3', 'test_pvalue3', None], ]},
     {'query': ('select count(*)\n'
                'from infrastructure\n'
                'where id = %s;'),
      'result': ['1']},
+    {'query': ('select count(*)>0      \n'
+               'from fg_user        u  \n'
+               '    ,fg_group       g  \n'
+               '    ,fg_user_group ug  \n'
+               '    ,fg_group_role gr  \n'
+               '    ,fg_role        r  \n'
+               'where u.id=%s          \n'
+               '  and u.id=ug.user_id  \n'
+               '  and g.id=ug.group_id \n'
+               '  and g.id=gr.group_id \n'
+               '  and r.id=gr.role_id  \n'
+               '  and r.name = %s;'),
+     'result': ['1']},
+    {'query': ('select count(*)>1               \n'
+               'from fg_user_group              \n'
+               'where user_id = (select id      \n'
+               '                 from fg_user   \n'
+               '                 where name=%s) \n'
+               '   or user_id = (select id      \n'
+               '                 from fg_user   \n'
+               '                 where name=%s) \n'
+               'group by group_id               \n'
+               'having count(*) > 1;'),
+     'result': ['1']},
+    {'query': ('select pname\n'
+               '      ,pvalue\n'
+               'from application_parameter\n'
+               'where app_id=%s\n'
+               'order by param_id asc;'),
+     'result': [['test_pname1', 'test_pvalue1'],
+                ['test_pname2', 'test_pvalue2'], ]},
 ]
 
 

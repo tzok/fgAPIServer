@@ -131,6 +131,9 @@ class Test_fgAPIServer(unittest.TestCase):
     #
     # REST APIs
     #
+    # MD5 values are taken from the self.md5sum_str(result.data) value
+    # then they are hardcoded in the assertEqual statement
+    #
 
     def test_get_root(self):
         self.banner("GET /v1.0/")
@@ -156,7 +159,7 @@ class Test_fgAPIServer(unittest.TestCase):
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("0ccd202bbf2ccbcded52eab2a64857bf",
+        self.assertEqual("0f814c236f26fd5fd5feb6449f9f8afc",
                          self.md5sum_str(result.data))
 
 if __name__ == '__main__':

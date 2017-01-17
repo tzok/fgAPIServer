@@ -290,34 +290,45 @@ class FGAPIServerDB:
         return
 
     """
-      verify_user_role - Verify if the given user has the given role
+      verify_user_role - Verify if the given user has the given roles
+                         Role list is a comma separated list of names
+                         The result is successful only if all roles  in
+                         the list are satisfied
     """
 
-    def verify_user_role(self, user_id, role_name):
+    def verify_user_role(self, user_id, roles):
+        print "verify_user_role"
         db = None
         cursor = None
-        try:
-            db = self.connect()
-            cursor = db.cursor()
-            sql = ('select count(*)>0      \n'
-                   'from fg_user        u  \n'
-                   '    ,fg_group       g  \n'
-                   '    ,fg_user_group ug  \n'
-                   '    ,fg_group_role gr  \n'
-                   '    ,fg_role        r  \n'
-                   'where u.id=%s          \n'
-                   '  and u.id=ug.user_id  \n'
-                   '  and g.id=ug.group_id \n'
-                   '  and g.id=gr.group_id \n'
-                   '  and r.id=gr.role_id  \n'
-                   '  and r.name = %s;')
-            sql_data = (user_id, role_name)
-            cursor.execute(sql, sql_data)
-            result = cursor.fetchone()[0]
-        except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
-        finally:
-            self.close_db(db, cursor, False)
+        result = 1
+        for role_name in roles.split(','):
+            try:
+                db = self.connect()
+                cursor = db.cursor()
+                sql = ('select count(*)>0      \n'
+                       'from fg_user        u  \n'
+                       '    ,fg_group       g  \n'
+                       '    ,fg_user_group ug  \n'
+                       '    ,fg_group_role gr  \n'
+                       '    ,fg_role        r  \n'
+                       'where u.id=%s          \n'
+                       '  and u.id=ug.user_id  \n'
+                       '  and g.id=ug.group_id \n'
+                       '  and g.id=gr.group_id \n'
+                       '  and r.id=gr.role_id  \n'
+                       '  and r.name = %s;')
+                sql_data = (user_id, role_name)
+                cursor.execute(sql, sql_data)
+                hasrole = cursor.fetchone()[0]
+                print "- %s -> %s" % (role_name, hasrole)
+                result *= hasrole
+            except MySQLdb.Error as e:
+                self.catch_db_error(e, db, False)
+                result = 0
+                break
+            finally:
+                self.close_db(db, cursor, False)
+        print "result: %s" % result
         return result
 
     """
@@ -1738,16 +1749,21 @@ class FGAPIServerDB:
                             'insert into infrastructure_parameter (infra_id\n'
                             '                                     ,param_id\n'
                             '                                     ,pname\n'
-                            '                                     ,pvalue)\n'
+                            '                                     ,pvalue\n'
+                            '                                     ,pdesc)\n'
                             'select %s\n'
                             '      ,if(max(param_id) is NULL,\n'
                             '          1,max(param_id)+1) \n'
                             '      ,%s\n'
                             '      ,%s\n'
+                            '      ,%s\n'
                             'from infrastructure_parameter\n'
                             'where infra_id = %s;')
-                        sql_data = (infra_id, param['name'],
-                                    param['value'], infra_id)
+                        sql_data = (infra_id,
+                                    param['name'],
+                                    param['value'],
+                                    param.get('description', None),
+                                    infra_id)
                         cursor.execute(sql, sql_data)
                 else:
                     # Existing infrastructure id is provided
@@ -1962,6 +1978,7 @@ class FGAPIServerDB:
             # Infrastructure parameters
             sql = ('select pname\n'
                    '      ,pvalue\n'
+                   '      ,pdesc\n'
                    'from infrastructure_parameter\n'
                    'where infra_id=%s\n'
                    'order by param_id asc;')
@@ -1971,7 +1988,8 @@ class FGAPIServerDB:
             for param in cursor:
                 infra_params += [
                     {"name":  param[0],
-                     "value": param[1]},
+                     "value": param[1],
+                     "description": param[2]},
                 ]
             # Prepare output
             infra_record = {
@@ -2043,20 +2061,23 @@ class FGAPIServerDB:
             infra_id = cursor.fetchone()[0]
             # Insert Application infrastructure parameters
             for param in infrastructure_parameters:
-                sql = (
-                    'insert into infrastructure_parameter (infra_id\n'
-                    '                                     ,param_id\n'
-                    '                                     ,pname\n'
-                    '                                     ,pvalue)\n'
-                    'select %s\n'
-                    '      ,if(max(param_id) is NULL,\n'
-                    '          1,max(param_id)+1) \n'
-                    '      ,%s\n'
-                    '      ,%s\n'
-                    'from infrastructure_parameter\n'
-                    'where infra_id = %s;')
-                sql_data = (infra_id, param['name'],
+                sql = ('insert into infrastructure_parameter (infra_id\n'
+                       '                                     ,param_id\n'
+                       '                                     ,pname\n'
+                       '                                     ,pvalue\n'
+                       '                                     ,pdesc)\n'
+                       'select %s\n'
+                       '      ,if(max(param_id) is NULL,\n'
+                       '          1,max(param_id)+1) \n'
+                       '      ,%s\n'
+                       '      ,%s\n'
+                       '      ,%s\n'
+                       'from infrastructure_parameter\n'
+                       'where infra_id = %s;')
+                sql_data = (infra_id,
+                            param['name'],
                             param['value'],
+                            param.get('description', None),
                             infra_id)
                 cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:

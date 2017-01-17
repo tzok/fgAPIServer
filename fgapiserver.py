@@ -314,7 +314,7 @@ def create_session_token(**kwargs):
     return sestoken
 
 
-def authorize_user(current_user, app_id, user, reqrole):
+def authorize_user(current_user, app_id, user, reqroles):
     """
     This function returns true if the given user is authorized to process the
     requested action
@@ -323,12 +323,12 @@ def authorize_user(current_user, app_id, user, reqrole):
     :param current_user: The user requesting the action
     :param app_id: The application id (if appliable)
     :param user: The user specified by the filter
-    :param reqrole: The requested role: task_view, app_run, ...
+    :param reqroles: The requested roles: task_view, app_run, ...
     :return:
     """
     # Return True if token management is disabled
-    if fgapisrv_notoken:
-        return True, 'Authorization disabled'
+    # if fgapisrv_notoken:
+    #     return True, 'Authorization disabled'
 
     # Database connection is necessary to perform the authorization
     fgapisrv_db = FGAPIServerDB(
@@ -346,12 +346,12 @@ def authorize_user(current_user, app_id, user, reqrole):
     message = ''
     user_id = current_user.get_id()
     user_name = current_user.get_name()
-    auth_z = True
 
     # Check if requested action is in the user group roles
-    auth_z = auth_z and fgapisrv_db.verify_user_role(user_id, reqrole)
+    auth_z = fgapisrv_db.verify_user_role(user_id, reqroles)
     if not auth_z:
-        message = "User '%s' does not have '%s' role\n" % (user_name, reqrole)
+        message = "User '%s' does not have requested '%s' role(s)\n"\
+                % (user_name, reqroles)
     # Check current_user and filter user are different
     if user_name != user:
         user_impersonate = fgapisrv_db.verify_user_role(
@@ -1835,9 +1835,9 @@ def infra_id(infra_id=None):
     user = request.values.get('user', user_name)
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, infra_id, user, "infra_view")
+            current_user, None, user, "infra_view")
         if not auth_state:
-            infra_state = 402
+            infra_status = 402
             infra_response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
@@ -1874,6 +1874,7 @@ def infra_id(infra_id=None):
                         "date": infra_record['creation'],
                         "enabled": infra_record['enabled'],
                         "virtual": infra_record['virtual'],
+                        "parameters": infra_record['parameters'],
                         "_links": [
                             {
                                 "rel": "self",
