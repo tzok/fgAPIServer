@@ -1646,7 +1646,6 @@ class FGAPIServerDB:
             inp_files,
             infrastructures):
         # Start creating app
-        print "........................................"
         db = None
         cursor = None
         app_id = -1
@@ -1669,12 +1668,10 @@ class FGAPIServerDB:
                    'from application;\n'
                    )
             sql_data = (name, description, outcome, enabled)
-            print sql % sql_data
             cursor.execute(sql, sql_data)
             # Get inserted application_id
             sql = 'select max(id) from application;'
             sql_data = ()
-            print sql % sql_data
             cursor.execute(sql)
             app_id = cursor.fetchone()[0]
             # Insert Application parameters
@@ -1695,7 +1692,6 @@ class FGAPIServerDB:
                                 param['name'],
                                 param['value'],
                                 app_id)
-                    print sql % sql_data
                     cursor.execute(sql, sql_data)
             # Insert Application input_files
             for ifile in inp_files:
@@ -1714,7 +1710,6 @@ class FGAPIServerDB:
                     'where app_id=%s')
                 sql_data = (app_id, ifile['name'], ifile[
                             'path'], ifile['override'], app_id)
-                print sql % sql_data
                 cursor.execute(sql, sql_data)
             # Insert Application infrastructures
             # ! Infrastructures may be expressed by definition or by
@@ -1728,7 +1723,7 @@ class FGAPIServerDB:
                            '                           ,description\n'
                            '                           ,creation\n'
                            '                           ,enabled\n'
-                           # '                           ,vinfra\n'
+                           '                           ,vinfra\n'
                            '                           )\n'
                            'select if(max(id) is NULL,1,max(id)+1) \n'
                            '      ,%s                              \n'
@@ -1736,16 +1731,15 @@ class FGAPIServerDB:
                            '      ,%s                              \n'
                            '      ,now()                           \n'
                            '      ,%s                              \n'
-                           # '      ,%s                             \n'
+                           '      ,%s                              \n'
                            'from infrastructure;'
                            )
                     sql_data = (app_id,
                                 infra['name'],
                                 infra['description'],
-                                infra['enabled']
-                                # ,infra['vinfra']
+                                infra['enabled'],
+                                infra['virtual']
                                 )
-                    print sql % sql_data
                     cursor.execute(sql, sql_data)
                     # Get inserted infrastructure_id
                     sql = 'select max(id) from infrastructure;'
@@ -1773,16 +1767,44 @@ class FGAPIServerDB:
                                     param['value'],
                                     param.get('description', None),
                                     infra_id)
-                        print sql % sql_data
                         cursor.execute(sql, sql_data)
                 else:
                     # Existing infrastructure id is provided
                     # Infrastructure may be already assigned or not
                     # If not yet assigned, just modify the app_id;
                     # otherwise copy the whole infrastructure
-                    infra_record = self.get_infra_record(infra)
-                    if int(infra_record['app_id']) == 0:
-                        print "unassigned infra! (%s)" % infra_record['app_id']
+                    #
+                    # infra_record = self.get_infra_record(infra)
+                    #
+                    # !!! I cannot use get_infra_record call due
+                    #     to the transaction lost; infra record
+                    #     must be taken within this transaction.
+                    #     Needed values are:
+                    #         app_id
+                    #         name
+                    #         description
+                    #         enabled
+                    #         virtual
+                    #
+                    sql = ('select app_id,\n'
+                           '       name,\n'
+                           '       description,\n'
+                           '       enabled,\n'
+                           '       vinfra\n'
+                           'from infrastructure\n'
+                           'where id=%s\n'
+                           'order by 1 asc ,2 asc\n'
+                           'limit 1;')
+                    sql_data = (int(infra),)
+                    cursor.execute(sql, sql_data)
+                    sql_record = cursor.fetchone()
+                    infra_record = {'id': int(infra),
+                                    'app_id': int(sql_record[0]),
+                                    'name': sql_record[1],
+                                    'description': sql_record[2],
+                                    'enabled': bool(sql_record[3]),
+                                    'virtual': bool(sql_record[4])}
+                    if infra_record['app_id'] == 0:
                         # Unassigned infrastructure just requires to
                         # switch app_id from 0 to the current app_id
                         sql = ('update infrastructure set app_id = "%s"\n'
@@ -1790,7 +1812,6 @@ class FGAPIServerDB:
                                '  and app_id = 0;')
                         sql_data = (app_id, infra_record['id'])
                     else:
-                        print "assigned infra! (%s)" % infra_record['app_id']
                         # Already assigned infrastructure requires a new
                         # entry in infrastructure table
                         sql = ('insert into infrastructure (id\n'
@@ -1799,24 +1820,22 @@ class FGAPIServerDB:
                                '                           ,description\n'
                                '                           ,creation\n'
                                '                           ,enabled\n'
-                               # '                           ,vinfra\n'
+                               '                           ,vinfra\n'
                                '                           )\n'
-                               'select %s    \n'
-                               '      ,%s    \n'
-                               '      ,%s    \n'
-                               '      ,%s    \n'
-                               '      ,now() \n'
-                               '      ,%s    \n'
-                               # '      ,%s    \n'
-                               'from infrastructure;')
-                        sql_data = (infra_record['id'],
+                               'values (%s    \n'
+                               '       ,%s    \n'
+                               '       ,%s    \n'
+                               '       ,%s    \n'
+                               '       ,now() \n'
+                               '       ,%s    \n'
+                               '       ,%s);')
+                        sql_data = (int(infra_record['id']),
                                     app_id,
                                     infra_record['name'],
                                     infra_record['description'],
-                                    infra_record['enabled']
-                                    # ,infra['vinfra']
+                                    infra_record['enabled'],
+                                    infra_record['virtual']
                                     )
-                    print sql % sql_data
                     cursor.execute(sql, sql_data)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)

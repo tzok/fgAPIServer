@@ -1752,8 +1752,8 @@ def infrastructures():
             description = params.get('description', '')
             enabled = params.get('enabled', True)
             vinfra = params.get('virtual', False)
-            infrastructure_parameters = params.get(
-                'parameters', '')
+            infrastructure_parameters =\
+                params.get('parameters', '')
             # Connect database
             fgapisrv_db = FGAPIServerDB(
                 db_host=fgapisrv_db_host,
