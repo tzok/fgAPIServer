@@ -37,6 +37,7 @@ class Test_fgAPIServer(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
+        self.app.debug = True
 
     def banner(self, test_name):
         print ""
@@ -153,13 +154,29 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual("0fa855a95a6d94d759c2bd2c73cb023c",
                          self.md5sum_str(result.data))
 
-    def test_get_infrastructure(self):
+    def test_get_infrastructures(self):
         self.banner("GET /v1.0/infrastructures/1")
         result = self.app.get('/v1.0/infrastructures/1')
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("0f814c236f26fd5fd5feb6449f9f8afc",
+                         self.md5sum_str(result.data))
+
+    def test_post_infrastructures(self):
+        self.banner("POST /v1.0/infrastructures")
+        result = self.app.post('/v1.0/infrastructures',
+                               data="""{
+                               "virtual": false,
+                               "name": "Test infrastructure",
+                               "description": "Test infrastructure desc",
+                               "parameters": [],
+                               "enabled": "True"}""",
+                               content_type="application/json")
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("0ccd202bbf2ccbcded52eab2a64857bf",
                          self.md5sum_str(result.data))
 
 if __name__ == '__main__':

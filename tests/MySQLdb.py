@@ -260,6 +260,25 @@ queries = [
                'order by param_id asc;'),
      'result': [['test_pname1', 'test_pvalue1'],
                 ['test_pname2', 'test_pvalue2'], ]},
+    {'query': ('insert into infrastructure (id\n'
+               '                           ,app_id\n'
+               '                           ,name\n'
+               '                           ,description\n'
+               '                           ,creation\n'
+               '                           ,enabled\n'
+               '                           ,vinfra\n'
+               '                           )\n'
+               'select if(max(id) is NULL,1,max(id)+1) \n'
+               '      ,0\n'
+               '      ,%s\n'
+               '      ,%s\n'
+               '      ,now()\n'
+               '      ,%s\n'
+               '      ,%s\n'
+               'from infrastructure;'),
+     'result': []},
+    {'query': ('select max(id) from infrastructure;'),
+     'result': ['1']},
 ]
 
 
