@@ -1543,6 +1543,7 @@ class FGAPIServerDB:
             # Application parameters
             sql = ('select pname\n'
                    '      ,pvalue\n'
+                   '      ,pdesc\n'
                    'from application_parameter\n'
                    'where app_id=%s\n'
                    'order by param_id asc;')
@@ -1551,7 +1552,8 @@ class FGAPIServerDB:
             app_params = []
             for param in cursor:
                 app_params += [{"name": param[0],
-                                "value": param[1], "description": ""}, ]
+                                "value": param[1],
+                                "description": param[2]}, ]
             # Application input files
             sql = ('select file\n'
                    '      ,path\n'
@@ -1681,9 +1683,11 @@ class FGAPIServerDB:
                         'insert into application_parameter (app_id\n'
                         '                                  ,param_id\n'
                         '                                  ,pname\n'
-                        '                                  ,pvalue)\n'
+                        '                                  ,pvalue\n'
+                        '                                  ,pdesc)\n'
                         'select %s                                          \n'
                         '      ,if(max(param_id) is NULL,1,max(param_id)+1) \n'
+                        '      ,%s                                          \n'
                         '      ,%s                                          \n'
                         '      ,%s                                          \n'
                         'from application_parameter\n'
@@ -1691,7 +1695,9 @@ class FGAPIServerDB:
                     sql_data = (app_id,
                                 param['name'],
                                 param['value'],
+                                param.get('description', None),
                                 app_id)
+                    print sql % sql_data
                     cursor.execute(sql, sql_data)
             # Insert Application input_files
             for ifile in inp_files:
