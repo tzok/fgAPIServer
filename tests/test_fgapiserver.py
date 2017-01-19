@@ -21,6 +21,7 @@
 import unittest
 import fgapiserver
 import hashlib
+import json
 from fgapiserver import app
 from mklogtoken import token_encode, token_decode, token_info
 
@@ -164,15 +165,16 @@ class Test_fgAPIServer(unittest.TestCase):
                          self.md5sum_str(result.data))
 
     def test_post_infrastructures(self):
+        post_data = {'virtual': False,
+                     'name': 'Test infrastructure',
+                     'description': 'Testinfrastructure description',
+                     'parameters': [],
+                     'enabled': True}
         self.banner("POST /v1.0/infrastructures")
-        result = self.app.post('/v1.0/infrastructures',
-                               data="""{
-                               "virtual": false,
-                               "name": "Test infrastructure",
-                               "description": "Test infrastructure desc",
-                               "parameters": [],
-                               "enabled": "True"}""",
-                               content_type="application/json")
+        result = self.app.post(
+                    '/v1.0/infrastructures',
+                    data=json.dumps(post_data),
+                    content_type="application/json")
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
