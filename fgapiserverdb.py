@@ -297,7 +297,6 @@ class FGAPIServerDB:
     """
 
     def verify_user_role(self, user_id, roles):
-        print "verify_user_role"
         db = None
         cursor = None
         result = 1
@@ -320,7 +319,6 @@ class FGAPIServerDB:
                 sql_data = (user_id, role_name)
                 cursor.execute(sql, sql_data)
                 hasrole = cursor.fetchone()[0]
-                print "- %s -> %s" % (role_name, hasrole)
                 result *= hasrole
             except MySQLdb.Error as e:
                 self.catch_db_error(e, db, False)
@@ -328,7 +326,6 @@ class FGAPIServerDB:
                 break
             finally:
                 self.close_db(db, cursor, False)
-        print "result: %s" % result
         return result
 
     """
@@ -1573,7 +1570,6 @@ class FGAPIServerDB:
                 app_ifiles += [ifile_entry, ]
             # Application infrastructures
             app_infras = self.get_infra_list(app_id)
-            print app_infras
             # sql = (
             #     'select id\n'
             #     '      ,name\n'
@@ -1697,7 +1693,6 @@ class FGAPIServerDB:
                                 param['value'],
                                 param.get('description', None),
                                 app_id)
-                    print sql % sql_data
                     cursor.execute(sql, sql_data)
             # Insert Application input_files
             for ifile in inp_files:
@@ -2128,25 +2123,43 @@ class FGAPIServerDB:
         return infra_id
 
     """
-      infra_delete - delete infrastructure with a given infra_id 
+      infra_delete - delete infrastructure with a given infra_id
                      and/or app_id
+                     app_orphan flag, then true allow to delete  the
+                     infrastructure when it is used by applications
     """
 
-    def infra_delete(self, infra_id, app_id):
-        # Start deleting app
+    def infra_delete(self, infra_id, app_id, app_orhpan=False):
+        # Start deleting infrastructure
         db = None
         cursor = None
         result = False
         try:
-            # Delete given application records
             db = self.connect()
             cursor = db.cursor()
+            # Check for orphan applications
+            if not app_orhpan:
+                sql = (
+                    'select count(*)\n'
+                    'from application a\n'
+                    '    ,infrastructure i\n'
+                    'where i.app_id=a.id\n'
+                    '  and i.id = %s;')
+            sql_data = (infra_id,)
+            cursor.execute(sql, sql_data)
+            app_orphans = int(cursor.fetchone()[0])
+            if app_orphans > 0:
+                self.err_msg = ('Infrastructure having id: \'%s\' '
+                                'is actually used by one or more '
+                                'applications; please check the '
+                                'configuration' % (infra_id,))
+                return result
             if app_id is not None:
                 #
                 # (!) What about RUNNING instances in queue table that
                 #     are using the infrastructure?
                 #
-                sql=(
+                sql = (
                     'select count(*)\n'
                     'from as_queue q\n'
                     '    ,task t\n'
@@ -2157,8 +2170,8 @@ class FGAPIServerDB:
                     '  and q.task_id=t.id\n'
                     '  and t.app_id=a.id\n'
                     '  and q.status=\'RUNNING\'\n'
-                    '  and a.id = %s and i.id = %s;');
-                sql_data = (app_id,infra_id,)
+                    '  and a.id = %s and i.id = %s;')
+                sql_data = (app_id, infra_id,)
                 cursor.execute(sql, sql_data)
                 task_count = int(cursor.fetchone()[0])
                 if task_count > 0:
@@ -2191,7 +2204,7 @@ class FGAPIServerDB:
                 # (!) What about RUNNING instances in queue table that
                 #     are using the infrastructure?
                 #
-                sql=(
+                sql = (
                     'select count(*)\n'
                     'from as_queue q\n'
                     '    ,task t\n'
@@ -2202,7 +2215,7 @@ class FGAPIServerDB:
                     '  and q.task_id=t.id\n'
                     '  and t.app_id=a.id\n'
                     '  and q.status=\'RUNNING\'\n'
-                    '  and i.id = %s;');
+                    '  and i.id = %s;')
                 sql_data = (infra_id,)
                 cursor.execute(sql, sql_data)
                 task_count = int(cursor.fetchone()[0])
@@ -2221,7 +2234,7 @@ class FGAPIServerDB:
                 sql_data = (infra_id,)
                 cursor.execute(sql, sql_data)
                 #
-                # (!) In the future here should be handled the 
+                # (!) In the future here should be handled the
                 #     infrastructure_task table
                 #
                 sql = ('delete from infrastructure where id=%s;')

@@ -111,7 +111,6 @@ class Test_fgAPIServer(unittest.TestCase):
     #
     # fgapiserverdb
     #
-    
 
     #
     # mklogtoken
@@ -192,6 +191,8 @@ class Test_fgAPIServer(unittest.TestCase):
                     '/v1.0/infrastructures/1')
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("8ba55904600d405ea07f71e499ca3aa5",
+                         self.md5sum_str(result.data))
 
 if __name__ == '__main__':
     print "----------------------------------"

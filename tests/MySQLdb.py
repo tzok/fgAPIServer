@@ -296,6 +296,12 @@ queries = [
      'result': []},
     {'query': ('delete from infrastructure where id=%s;'),
      'result': []},
+    {'query': ('select count(*)\n'
+               'from application a\n'
+               '    ,infrastructure i\n'
+               'where i.app_id=a.id\n'
+               '  and i.id = %s;'),
+     'result': ['0']},
 ]
 
 
