@@ -109,6 +109,11 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual(result[1], 'test_user')
 
     #
+    # fgapiserverdb
+    #
+    
+
+    #
     # mklogtoken
     #
     def test_mklogtoken(self):
@@ -131,7 +136,7 @@ class Test_fgAPIServer(unittest.TestCase):
                                                                     password2))
 
     #
-    # REST APIs
+    # REST APIs - Following tests are functional tests
     #
     # MD5 values are taken from the self.md5sum_str(result.data) value
     # then they are hardcoded in the assertEqual statement
@@ -180,6 +185,13 @@ class Test_fgAPIServer(unittest.TestCase):
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("0ccd202bbf2ccbcded52eab2a64857bf",
                          self.md5sum_str(result.data))
+
+    def test_delete_infrastructure(self):
+        self.banner("DELETE /v1.0/infrastructures/1")
+        result = self.app.delete(
+                    '/v1.0/infrastructures/1')
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
 
 if __name__ == '__main__':
     print "----------------------------------"

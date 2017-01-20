@@ -279,6 +279,23 @@ queries = [
      'result': []},
     {'query': ('select max(id) from infrastructure;'),
      'result': ['1']},
+    {'query': ('select count(*)\n'
+               'from as_queue q\n'
+               '    ,task t\n'
+               '    ,application a\n'
+               '    ,infrastructure i\n'
+               'where i.app_id=a.id\n'
+               '  and t.app_id=a.id\n'
+               '  and q.task_id=t.id\n'
+               '  and t.app_id=a.id\n'
+               '  and q.status=\'RUNNING\'\n'
+               '  and i.id = %s;'),
+     'result': ['0']},
+    {'query': ('delete from infrastructure_parameter\n'
+               'where infra_id=%s;'),
+     'result': []},
+    {'query': ('delete from infrastructure where id=%s;'),
+     'result': []},
 ]
 
 

@@ -2160,11 +2160,13 @@ class FGAPIServerDB:
                     '  and a.id = %s and i.id = %s;');
                 sql_data = (app_id,infra_id,)
                 cursor.execute(sql, sql_data)
-                task_count = cursor.fetchone()[0]
+                task_count = int(cursor.fetchone()[0])
                 if task_count > 0:
                     self.err_msg = ('Infrastructure having id: \'%s\' '
-                                    'may be actually in use; please check '
-                                    'the queue table.')
+                                    'may be actually in use by application '
+                                    'having id: \'%s\'; please check '
+                                    'the queue table.' % (infra_id,
+                                                          app_id))
                     return result
                 #
                 # (!)The app_id is specified; the action impacts
@@ -2203,11 +2205,11 @@ class FGAPIServerDB:
                     '  and i.id = %s;');
                 sql_data = (infra_id,)
                 cursor.execute(sql, sql_data)
-                task_count = cursor.fetchone()[0]
+                task_count = int(cursor.fetchone()[0])
                 if task_count > 0:
                     self.err_msg = ('Infrastructure having id: \'%s\' '
                                     'may be actually in use; please check '
-                                    'the queue table.')
+                                    'the queue table.' % infra_id)
                     return result
                 #
                 # (!) The app_id is not specified; the action impacts
