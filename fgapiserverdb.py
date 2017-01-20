@@ -1858,6 +1858,7 @@ class FGAPIServerDB:
         # Start deleting app
         db = None
         cursor = None
+        result = False
         try:
             # Delete given application records
             db = self.connect()
@@ -1887,11 +1888,12 @@ class FGAPIServerDB:
             sql = ('delete from application where id=%s;')
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
+            result = True
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
             self.close_db(db, cursor, True)
-        return app_id
+        return result
 
     """
       enable_app_by_userid - enable all groups owned by the given userid to
@@ -2124,3 +2126,108 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, True)
         return infra_id
+
+    """
+      infra_delete - delete infrastructure with a given infra_id 
+                     and/or app_id
+    """
+
+    def infra_delete(self, infra_id, app_id):
+        # Start deleting app
+        db = None
+        cursor = None
+        result = False
+        try:
+            # Delete given application records
+            db = self.connect()
+            cursor = db.cursor()
+            if app_id is not None:
+                #
+                # (!) What about RUNNING instances in queue table that
+                #     are using the infrastructure?
+                #
+                sql=(
+                    'select count(*)\n'
+                    'from as_queue q\n'
+                    '    ,task t\n'
+                    '    ,application a\n'
+                    '    ,infrastructure i\n'
+                    'where i.app_id=a.id\n'
+                    '  and t.app_id=a.id\n'
+                    '  and q.task_id=t.id\n'
+                    '  and t.app_id=a.id\n'
+                    '  and q.status=\'RUNNING\'\n'
+                    '  and a.id = %s and i.id = %s;');
+                sql_data = (app_id,infra_id,)
+                cursor.execute(sql, sql_data)
+                task_count = cursor.fetchone()[0]
+                if task_count > 0:
+                    self.err_msg = ('Infrastructure having id: \'%s\' '
+                                    'may be actually in use; please check '
+                                    'the queue table.')
+                    return result
+                #
+                # (!)The app_id is specified; the action impacts
+                #    only the specified application
+                #
+                sql = (
+                    'delete from infrastructure_parameter\n'
+                    'where infra_id in (select id \n'
+                    '                   from infrastructure \n'
+                    '                   where app_id=%s\n'
+                    '                     and (select count(*)\n'
+                    '                          from infrastructure\n'
+                    '                          where id=%s)=1);')
+                sql_data = (app_id, infra_id)
+                cursor.execute(sql, sql_data)
+                sql = ('delete from infrastructure where app_id=%s;')
+                sql_data = (app_id,)
+                cursor.execute(sql, sql_data)
+                result = True
+            else:
+                #
+                # (!) What about RUNNING instances in queue table that
+                #     are using the infrastructure?
+                #
+                sql=(
+                    'select count(*)\n'
+                    'from as_queue q\n'
+                    '    ,task t\n'
+                    '    ,application a\n'
+                    '    ,infrastructure i\n'
+                    'where i.app_id=a.id\n'
+                    '  and t.app_id=a.id\n'
+                    '  and q.task_id=t.id\n'
+                    '  and t.app_id=a.id\n'
+                    '  and q.status=\'RUNNING\'\n'
+                    '  and i.id = %s;');
+                sql_data = (infra_id,)
+                cursor.execute(sql, sql_data)
+                task_count = cursor.fetchone()[0]
+                if task_count > 0:
+                    self.err_msg = ('Infrastructure having id: \'%s\' '
+                                    'may be actually in use; please check '
+                                    'the queue table.')
+                    return result
+                #
+                # (!) The app_id is not specified; the action impacts
+                #     all applications
+                #
+                sql = (
+                    'delete from infrastructure_parameter\n'
+                    'where infra_id=%s;')
+                sql_data = (infra_id,)
+                cursor.execute(sql, sql_data)
+                #
+                # (!) In the future here should be handled the 
+                #     infrastructure_task table
+                #
+                sql = ('delete from infrastructure where id=%s;')
+                sql_data = (infra_id,)
+                cursor.execute(sql, sql_data)
+                result = True
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return result

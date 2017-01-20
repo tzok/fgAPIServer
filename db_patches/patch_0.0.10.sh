@@ -21,12 +21,22 @@ SQLTMP=$(mktemp /tmp/patch_${PATCH}_XXXXXX)
 # Alter columns/tables
 #
 
-out "Modifying database"
+out "Adding unassigned infrastructure application (app_id=0)"
 cat >$SQLTMP <<EOF
 set session sql_mode='NO_AUTO_VALUE_ON_ZERO';
 insert into application (id,name,description,outcome,creation,enabled) values (0,'infrastructure','unassigned infrastructure','INFRA',now(), false);
 EOF
 asdb_file $SQLTMP
+
+out "Removing foreign key in infrastructure_parameter"
+SQLCMD="SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE information_schema.TABLE_CONSTRAINTS.CONSTRAINT_TYPE = 'FOREIGN KEY'AND information_schema.TABLE_CONSTRAINTS.TABLE_SCHEMA = '"$ASDB_NAME"' AND information_schema.TABLE_CONSTRAINTS.TABLE_NAME = 'infrastructure_parameter'"
+FKNAME=$(asdb_cmd "$SQLCMD")
+out "foreign key name: '"$FKNAME"'"
+cat >$SQLTMP <<EOF
+alter table infrastructure_parameter drop foreign key $FKNAME
+EOF
+asdb_file $SQLTMP
+
 out "Database changed"
 out ""
 

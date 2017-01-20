@@ -1891,51 +1891,52 @@ def infra_id(infra_id=None):
                     }
                 else:
                     infra_status = 200
-    # elif request.method == 'DELETE':
-    #     auth_state, auth_msg = authorize_user(
-    #         current_user, app_id, user, "app_delete")
-    #     if not auth_state:
-    #         task_state = 402
-    #         task_response = {
-    #             "message": "Not authorized to perform this request:\n%s" %
-    #                        auth_msg}
-    #     else:
-    #         fgapisrv_db = FGAPIServerDB(
-    #             db_host=fgapisrv_db_host,
-    #             db_port=fgapisrv_db_port,
-    #             db_user=fgapisrv_db_user,
-    #             db_pass=fgapisrv_db_pass,
-    #             db_name=fgapisrv_db_name,
-    #             iosandbbox_dir=fgapisrv_iosandbox,
-    #             fgapiserverappid=fgapisrv_geappid)
-    #         db_state = fgapisrv_db.get_state()
-    #         if db_state[0] != 0:
-    #             # Couldn't contact database
-    #             # Prepare for 404 not found
-    #             status = 404
-    #             response = {
-    #                 "message": db_state[1]
-    #             }
-    #         elif not fgapisrv_db.app_exists(app_id):
-    #             status = 404
-    #             response = {
-    #                 "message": "Unable to find application with id: %s" %
-    #                            app_id}
-    #         elif not fgapisrv_db.app_delete(app_id):
-    #             status = 410
-    #             response = {
-    #                 "message": ("Unable to delete application with id: %s; "
-    #                             "reason: '%s'"
-    #                             % (app_id, fgapisrv_db.get_state()[1]))}
-    #         else:
-    #             status = 200
-    #             response = {
-    #                 "message":
-    #                 "Successfully removed application with id: %s" % app_id}
-    #     js = json.dumps(response, indent=fgjson_indent)
-    #     resp = Response(js, status=status, mimetype='application/json')
-    #     resp.headers['Content-type'] = 'application/json'
-    #     return resp
+    elif request.method == 'DELETE':
+         app_id = request.values.get('app_id', None)
+         auth_state, auth_msg = authorize_user(
+             current_user, app_id, user, "infra_delete")
+         if not auth_state:
+             task_state = 402
+             task_response = {
+                 "message": "Not authorized to perform this request:\n%s" %
+                            auth_msg}
+         else:
+             fgapisrv_db = FGAPIServerDB(
+                 db_host=fgapisrv_db_host,
+                 db_port=fgapisrv_db_port,
+                 db_user=fgapisrv_db_user,
+                 db_pass=fgapisrv_db_pass,
+                 db_name=fgapisrv_db_name,
+                 iosandbbox_dir=fgapisrv_iosandbox,
+                 fgapiserverappid=fgapisrv_geappid)
+             db_state = fgapisrv_db.get_state()
+             if db_state[0] != 0:
+                 # Couldn't contact database
+                 # Prepare for 404 not found
+                 status = 404
+                 response = {
+                     "message": db_state[1]
+                 }
+             elif not fgapisrv_db.infra_exists(infra_id):
+                 status = 404
+                 response = {
+                     "message": "Unable to find infrastructure with id: %s" %
+                                infra_id}
+             elif not fgapisrv_db.infra_delete(infra_id, app_id):
+                 status = 410
+                 response = {
+                     "message": ("Unable to delete infrastructure with id: %s; "
+                                 "reason: '%s'"
+                                 % (infra_id, fgapisrv_db.get_state()[1]))}
+             else:
+                 status = 200
+                 response = {
+                     "message":
+                     "Successfully removed infrastructure with id: %s" % infra_id}
+         js = json.dumps(response, indent=fgjson_indent)
+         resp = Response(js, status=status, mimetype='application/json')
+         resp.headers['Content-type'] = 'application/json'
+         return resp
     elif request.method == 'POST':
         infra_response = {
             "message": "Not supported method"

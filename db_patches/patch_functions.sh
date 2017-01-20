@@ -2,11 +2,11 @@
 #
 # Database patch functions
 #
-ASDB_USER=fgapiserver
-ASDB_PASS=fgapiserver_password
-ASDB_HOST=localhost
-ASDB_PORT=3306
-ASDB_NAME=fgapiserver
+export ASDB_USER=fgapiserver
+export ASDB_PASS=fgapiserver_password
+export ASDB_HOST=localhost
+export ASDB_PORT=3306
+export ASDB_NAME=fgapiserver
 
 
 ts() {
@@ -73,7 +73,7 @@ get_dbver() {
 check_patch() {
   VER=$1
   VERCHK=$(asdb_cmd "select count(*) from db_patches where version=\"$VER\"")
-  if [ "$VERCHK" != "" -a $VERCHK -ne 0 ]; then
+  if [ "$FORCE_PATCH" != "" -a "$VERCHK" != "" -a $VERCHK -ne 0 ]; then
     out "Patch $VER already applied"
     exit 1
   else

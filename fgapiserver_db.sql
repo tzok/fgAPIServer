@@ -113,7 +113,11 @@ create table infrastructure_parameter (
    ,pvalue       varchar(256) not null -- Parameter value
    ,pdesc        varchar(1024)         -- App. parameter description as in specs.
    ,primary key(infra_id,param_id)
-   ,foreign key(infra_id) references infrastructure(id)
+   -- There is no foreign key infrastructure.id for infra_id
+   -- since it causes problems while removing records in
+   -- infrastructure table. The key gets a violation even
+   -- other records is the infrastructure table exist having
+   -- the same infrastructure.id value
 );
 
 -- Infra for helloworld app@csgfsdk
