@@ -80,7 +80,9 @@ class FGApiServerConfig:
         self.fgConfig['fgapisrv_ptvpass'] = config.get(
             'fgapiserver', 'fgapisrv_ptvpass')
         self.fgConfig['fgapisrv_ptvdefusr'] = config.get(
-            'fgapiserver', 'fgapisrv_ptvdefusr')
+            'fgapiserver', 'fgapisrv_ptvdefusr')            
+        self.fgConfig['fgapisrv_ptvdefgrp'] = config.get(
+            'fgapiserver', 'fgapisrv_ptvdefgrp')
         self.fgConfig['fgapisrv_ptvmapfile'] = config.get(
             'fgapiserver', 'fgapisrv_ptvmapfile')
 
@@ -172,6 +174,8 @@ class FGApiServerConfig:
             def_value = 'ptvpass'
         elif key == 'fgapisrv_ptvdefusr':
             def_value = 'futuregateway'
+        elif key == 'fgapisrv_ptvdefgrp':
+            def_value = 'administrator'
         elif key == 'fgapisrv_ptvmapfile':
             def_value = 'fgapiserver_ptvmap.json'
         else:

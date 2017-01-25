@@ -269,7 +269,8 @@ create table fg_group (
 -- Groups baseline values
 insert into fg_group (id,name,creation,modified) values (1,'administrator',now(),now()); -- Can do anything
 insert into fg_group (id,name,creation,modified) values (2,'test',now(),now());          -- Can do tests only
-insert into fg_group (id,name,creation,modified) values (3,'generic user',now(),now());  -- Restricted user (view only)
+insert into fg_group (id,name,creation,modified) values (3,'users',now(),now());         -- Restricted user (view only)
+insert into fg_group (id,name,creation,modified) values (4,'developers',now(),now());    -- Restricted user (view only)
 
 --  Roles table, different actions can be done by users and groups
 create table fg_role (
@@ -342,8 +343,12 @@ insert into fg_group_role (group_id,role_id,creation) values (2,13, now()); -- T
 insert into fg_group_role (group_id,role_id,creation) values (2,14, now()); -- Test can manage userdata on tasks
 insert into fg_group_role (group_id,role_id,creation) values (2,22, now()); -- Test can change the status of a task
 
--- Generic user roles
-insert into fg_group_role (group_id,role_id,creation) values (3, 4, now()); -- GenericUser can view applications
+-- users roles
+insert into fg_group_role (group_id,role_id,creation) values (3, 4, now()); -- User group can view applications
+
+-- Developers roles (grant all privileges like administrator)
+insert into fg_group_role (group_id,role_id,creation)
+select 4,id,now() from fg_role;
 
 -- Associate applications to Groups
 create table fg_group_apps (
@@ -358,6 +363,9 @@ insert into fg_group_apps (group_id, app_id, creation)
 select 1,id,now() from application;                                        -- Administrator access to all appications
 insert into fg_group_apps (group_id, app_id, creation) values (2,1,now()); -- Test access to hostname
 insert into fg_group_apps (group_id, app_id, creation) values (2,2,now()); -- Test access to helloworld
+insert into fg_group_apps (group_id, app_id, creation)
+select 4,id,now() from application;                                        -- Developers access to all appications
+
 
 -- AccessTokens
 -- Any API call needs an access token which uniquelly authorized and identifies the issuer

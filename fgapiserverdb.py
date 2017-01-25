@@ -434,6 +434,100 @@ class FGAPIServerDB:
         return user_info
 
     """
+      get_ptv_groups - Scan the given array of groups to identify
+                       valid FG groups returning only valid group names
+    """
+    def get_ptv_groups(self, portal_groups):
+        db = None
+        cursor = None
+        fg_groups = []
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            for group in portal_groups:
+                sql = ('select count(*) from fg_group where lower(name)=%s;')
+                sql_data = (group,)
+                cursor.execute(sql, sql_data)
+                record = cursor.fetchone()[0]
+                if record > 0:
+                    fg_groups.append(group)
+                else:
+                    logging.warn("Group '%s' does not exists" % group)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, False)
+        finally:
+            self.close_db(db, cursor, False)
+        return fg_groups
+
+    
+    """
+      register_ptv_subject - Check and eventually register the given subject
+                             as a fgAPIServer user. The portal_user field
+                             contains the returned PTV subject value
+                            the fg_groups contains a list of groups associated
+                            to the user
+    """
+    def register_ptv_subject(self,portal_user,
+                                  fg_groups):
+        db = None
+        cursor = None
+        user_record = (None, None)
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('select id, name from fg_user where name=%s;')
+            sql_data = (portal_user,)
+            cursor.execute(sql, sql_data)
+            user_record = cursor.fetchone()
+            if user_record is not None:
+                return (user_record[0], user_record[1])
+            # The ptv subject does not exists
+            # register it as new user using groups
+            # information to associate correct groups
+            # Create the user
+            sql = ('insert into fg_user (name, \n'
+                   '                     password,\n'
+                   '                     first_name,\n'
+                   '                     last_name,\n'
+                   '                     institute,\n'
+                   '                     mail,\n'
+                   '                     creation,\n'
+                   '                     modified)\n'
+                   'values (%s,\n'
+                   '        password(\'NOPASSWORD\'),\n'
+                   '        \'PTV_TOKEN\',\n'
+                   '        \'PTV_TOKEN\',\n'
+                   '        \'PTV_TOKEN\',\n'
+                   '        \'PTV@TOKEN\',\n'
+                   '        now(),\n'
+                   '        now());')
+            sql_data = (portal_user,)
+            cursor.execute(sql, sql_data)
+            # Retrieve the inserted user_id
+            sql = ('select max(id) from fg_user;')
+            sql_data = ()
+            cursor.execute(sql, sql_data)
+            user_id = cursor.fetchone()[0]
+            # Associate groups
+            for group_name in fg_groups:
+                sql = ('select id from fg_group where name=%s;')
+                sql_data = (group_name,)
+                cursor.execute(sql, sql_data)
+                group_id = cursor.fetchone()[0]
+                sql = ('insert into fg_user_group (user_id,\n'
+                       '                           group_id,\n'
+                       '                           creation)\n'
+                       'values (%s,%s,now());')
+                sql_data = (user_id,group_id)
+                cursor.execute(sql, sql_data)
+            user_record = (user_id, portal_user)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return user_record
+
+    """
       task_exists - Return True if the given task_id exists False otherwise
     """
 
