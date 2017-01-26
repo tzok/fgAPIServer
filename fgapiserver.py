@@ -715,53 +715,44 @@ def tasks():
                 user = user + user_name
             # call to get tasks list
             task_list = fgapisrv_db.get_task_list(user, app_id)
-            db_state = fgapisrv_db.get_state()
-            if db_state[0] != 0:
-                # DBError getting TaskList
-                # Prepare for 402
-                task_state = 402
-                task_response = {
-                    "message": db_state[1]
-                }
-            else:
-                # Prepare response
-                task_response = {}
-                task_array = []
-                task_state = 200
-                for task_id in task_list:
-                    task_record = fgapisrv_db.get_task_record(task_id)
-                    db_state = fgapisrv_db.get_state()
-                    if db_state[0] != 0:
-                        # DBError getting TaskRecord
-                        # Prepare for 403
-                        task_state = 403
-                        task_array = {
-                            "message": db_state[1]
-                        }
-                    else:
-                        task_array += [{
-                            "id": task_record['id'],
-                            "application": task_record['application'],
-                            "description": task_record['description'],
-                            "arguments": task_record['arguments'],
-                            "input_files": task_record['input_files'],
-                            "output_files": task_record['output_files'],
-                            "status": task_record['status'],
-                            "user": task_record['user'],
-                            "date": str(task_record['creation']),
-                            "last_change": str(task_record['last_change']),
-                            "_links": [
-                                {"rel": "self",
-                                 "href": "/%s/tasks/%s" % (fgapiver,
-                                                           task_id)
-                                 },
-                                {"rel": "input",
-                                 "href": "/%s/tasks/%s/input" %
-                                         (fgapiver, task_id)
-                                 }
-                            ]},
-                        ]
-                task_response = {"tasks": task_array}
+            # Prepare response
+            task_response = {}
+            task_array = []
+            task_state = 200
+            for task_id in task_list:
+                task_record = fgapisrv_db.get_task_record(task_id)
+                db_state = fgapisrv_db.get_state()
+                if db_state[0] != 0:
+                    # DBError getting TaskRecord
+                    # Prepare for 403
+                    task_state = 403
+                    task_array = {
+                        "message": db_state[1]
+                    }
+                else:
+                    task_array += [{
+                        "id": task_record['id'],
+                        "application": task_record['application'],
+                        "description": task_record['description'],
+                        "arguments": task_record['arguments'],
+                        "input_files": task_record['input_files'],
+                        "output_files": task_record['output_files'],
+                        "status": task_record['status'],
+                        "user": task_record['user'],
+                        "date": str(task_record['creation']),
+                        "last_change": str(task_record['last_change']),
+                        "_links": [
+                            {"rel": "self",
+                             "href": "/%s/tasks/%s" % (fgapiver,
+                                                       task_id)
+                             },
+                            {"rel": "input",
+                             "href": "/%s/tasks/%s/input" %
+                                     (fgapiver, task_id)
+                             }
+                        ]},
+                    ]
+            task_response = {"tasks": task_array}
         # When page, per_page are not none
         # (page=0..(len(task_response)/per_page)-1)
         # if page is not None and per_page is not None:
@@ -871,7 +862,8 @@ def task_id(task_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            if not fgapisrv_db.task_exists(task_id):
+            # User should be able to see the given app_id            
+            if not fgapisrv_db.task_exists(task_id,user_id):
                 task_state = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -903,7 +895,7 @@ def task_id(task_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            if not fgapisrv_db.task_exists(task_id):
+            if not fgapisrv_db.task_exists(task_id,user_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -936,7 +928,7 @@ def task_id(task_id=None):
                                "request:\n%s" %
                                auth_msg}
             else:
-                if not fgapisrv_db.task_exists(task_id):
+                if not fgapisrv_db.task_exists(task_id,user_id):
                     task_status = 404
                     task_response = {
                         "message": "Unable to find task with id: %s" % task_id
@@ -981,7 +973,7 @@ def task_id(task_id=None):
             else:
                 params = request.get_json()
                 runtime_data = params.get('runtime_data', [])
-                if not fgapisrv_db.task_exists(task_id):
+                if not fgapisrv_db.task_exists(task_id,user_id):
                     task_status = 404
                     task_response = {
                         "message": "Unable to find task with id: %s" % task_id
@@ -1035,7 +1027,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # Display task_input_file details
-            if not fgapisrv_db.task_exists(task_id):
+            if not fgapisrv_db.task_exists(task_id,user_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -1058,7 +1050,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # First determine IO Sandbox location for this task
-            if not fgapisrv_db.task_exists(task_id):
+            if not fgapisrv_db.task_exists(task_id,user_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id

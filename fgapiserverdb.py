@@ -531,7 +531,7 @@ class FGAPIServerDB:
       task_exists - Return True if the given task_id exists False otherwise
     """
 
-    def task_exists(self, task_id):
+    def task_exists(self, task_id, user_id):
         db = None
         cursor = None
         count = 0
@@ -540,8 +540,11 @@ class FGAPIServerDB:
             cursor = db.cursor()
             sql = ('select count(*)\n'
                    'from task\n'
-                   'where id = %s;')
-            sql_data = (task_id,)
+                   'where id = %s\n'
+                   '  and user = (select name\n'
+                   '              from fg_user\n'
+                   '              where id = %s);')
+            sql_data = (task_id, user_id)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
         except MySQLdb.Error as e:
