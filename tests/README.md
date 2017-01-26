@@ -5,6 +5,11 @@ In order to test fgapiserver; the `PYTHON_PATH` environment variable must be set
 export PYTHONPATH=$PYTHONPATH:..:.
 ./test_fgapiserver.py
 ```
+Another mandatory configuration is related to the fgapiserver.conf file that must contain default development configuration settings. In particular ensure the matching of the following configuration values in `fgapiserver.conf` fie.
+```
+fgapisrv_notoken    = True
+fgapisrv_notokenusr = test
+```
 
 ## MySQLdb
 Test script makes use of a custom `MySQLdb` class where each SQL statement executed by the `fgapiserverdb.py` file is hardcoded.

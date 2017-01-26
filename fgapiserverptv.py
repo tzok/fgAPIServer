@@ -135,7 +135,7 @@ class FGAPIServerPTV:
         self.portal_user = token_info.get('user', '')
         self.portal_group = token_info.get('group', '')
         self.portal_groups = token_info.get('groups', [])
-        self.portal_subject = token_info.get('subject', None)               
+        self.portal_subject = token_info.get('subject', None)
 
         return {
             "portal_validate": self.portal_validate,

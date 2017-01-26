@@ -135,6 +135,15 @@ class FGAPIServerDB:
             db.close()
 
     """
+      query_done - reset the query error flag and eventually set
+                   a given query related message
+    """
+
+    def query_done(self, message):
+            self.err_flag = False
+            self.err_msg = message
+
+    """
       connect Connects to the fgapiserver database
     """
 
@@ -161,8 +170,7 @@ class FGAPIServerDB:
             cursor.execute("SELECT VERSION()")
             # Fetch a single row using fetchone() method.
             data = cursor.fetchone()
-            self.err_flag = False
-            self.err_msg = 'Database version : %s' % data[0]
+            self.query_done("Database version : '%s'" % data[0])
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -183,6 +191,7 @@ class FGAPIServerDB:
             sql_data = ()
             cursor.execute(sql, sql_data)
             dbver = cursor.fetchone()[0]
+            self.query_done("fgapiserver DB schema version: '%s'" % dbver)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -225,6 +234,7 @@ class FGAPIServerDB:
                        '    and fg_user.password=password(%s);')
                 sql_data = (sestoken, username, password)
                 cursor.execute(sql, sql_data)
+                self.query_done("session token is '%s'" % sestoken)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -255,6 +265,12 @@ class FGAPIServerDB:
             if user_rec is not None:
                 user_id = user_rec[0]
                 user_name = user_rec[1]
+            self.query_done(
+                ("session token: '%s' -> "
+                 "user_id='%s', "
+                 "user_name='%s'" % (sestoken,
+                                     user_id,
+                                     user_name)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -283,6 +299,7 @@ class FGAPIServerDB:
                        '       where token=%s) = 0;')
                 sql_data = (token, subject, userid, token)
                 cursor.execute(sql, sql_data)
+                self.query_done("token: '%s' successfully registered" % token)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -326,13 +343,17 @@ class FGAPIServerDB:
                 break
             finally:
                 self.close_db(db, cursor, False)
+        self.query_done(
+            ("role(s) '%s' for user_id '%s' is %s'" % (roles,
+                                                       user_id,
+                                                       result > 0)))
         return result
 
     """
       verify_user_app - Verify if the given user has the given app in its roles
     """
 
-    def verifyUserApp(self, user_id, app_id):
+    def verify_user_app(self, user_id, app_id):
         db = None
         cursor = None
         try:
@@ -353,6 +374,11 @@ class FGAPIServerDB:
             sql_data = (user_id, app_id)
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()[0]
+            self.query_done(
+                "User id '%s' access to application "
+                "id '%s' is %s'" % (user_id,
+                                    app_id,
+                                    result > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -385,6 +411,11 @@ class FGAPIServerDB:
             record = cursor.fetchone()
             if record is not None:
                 result = record[0]
+            self.query_done(
+                ("same group for user '%s' "
+                 "and '%s' is %s" % (user_1,
+                                     user_2,
+                                     result > 0)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -427,6 +458,8 @@ class FGAPIServerDB:
                     "mail": record[6],
                     "creation": record[7],
                     "modified": record[8]}
+            self.query_done(
+                "User '%s' info: '%s'" % (name, user_info))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -457,9 +490,11 @@ class FGAPIServerDB:
             self.catch_db_error(e, db, False)
         finally:
             self.close_db(db, cursor, False)
+        self.query_done(
+            "Passed groups: '%s' -> valid groups: '%s'" % (portal_groups,
+                                                           fg_groups))
         return fg_groups
 
-    
     """
       register_ptv_subject - Check and eventually register the given subject
                              as a fgAPIServer user. The portal_user field
@@ -467,8 +502,7 @@ class FGAPIServerDB:
                             the fg_groups contains a list of groups associated
                             to the user
     """
-    def register_ptv_subject(self,portal_user,
-                                  fg_groups):
+    def register_ptv_subject(self, portal_user, fg_groups):
         db = None
         cursor = None
         user_record = (None, None)
@@ -480,6 +514,9 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             user_record = cursor.fetchone()
             if user_record is not None:
+                self.query_done(
+                    "PTV user '%s' record: '%s'" % (portal_user,
+                                                    user_record))
                 return (user_record[0], user_record[1])
             # The ptv subject does not exists
             # register it as new user using groups
@@ -518,9 +555,11 @@ class FGAPIServerDB:
                        '                           group_id,\n'
                        '                           creation)\n'
                        'values (%s,%s,now());')
-                sql_data = (user_id,group_id)
+                sql_data = (user_id, group_id)
                 cursor.execute(sql, sql_data)
             user_record = (user_id, portal_user)
+            self.query_done(
+                "Portal user '%s' successfully inserted" % portal_user)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -547,6 +586,7 @@ class FGAPIServerDB:
             sql_data = (task_id, user_id)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
+            self.query_done("Task '%s' exists is %s" % (task_id, count > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -597,6 +637,7 @@ class FGAPIServerDB:
                     "user": task_dbrec[7],
                     "iosandbox": task_dbrec[8]}
             else:
+                self.query_done("Task '%s' not found" % task_id)
                 return {}
             # Task arguments
             sql = ('select argument\n'
@@ -699,6 +740,9 @@ class FGAPIServerDB:
                 "output_files": task_ofiles,
                 "runtime_data": runtime_data,
                 "iosandbox": task_dicrec['iosandbox']}
+            self.query_done(
+                "Task '%s' record: '%s'" % (task_id,
+                                            task_record))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -734,6 +778,9 @@ class FGAPIServerDB:
                     "name": ifile[0], "status": ifile[1]
                 }
                 task_ifiles += (file_info,)
+            self.query_done(
+                "Input files for task '%s': '%s'" % (task_id,
+                                                     task_ifiles))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -747,7 +794,7 @@ class FGAPIServerDB:
     def get_task_output_files(self, task_id):
         db = None
         cursor = None
-        task_ifiles = ()
+        task_ofiles = ()
         try:
             db = self.connect()
             cursor = db.cursor()
@@ -757,16 +804,19 @@ class FGAPIServerDB:
                    'where task_id = %s;')
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
-            for ifile in cursor:
+            for ofile in cursor:
                 file_info = {
-                    "name": ifile[0], "status": ifile[1]
+                    "name": ofile[0], "status": ofile[1]
                 }
-                task_ifiles += (file_info,)
+                task_ofiles += (file_info,)
+            self.query_done(
+                "Output files for task '%s': '%s'" % (task_id,
+                                                      task_ofiles))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
             self.close_db(db, cursor, False)
-        return task_ifiles
+        return task_ofiles
 
     """
       get_app_detail - Return details about a given app_id
@@ -856,11 +906,13 @@ class FGAPIServerDB:
                     infra_parameters += [param_details, ]
                 infra['parameters'] = infra_parameters
             app_detail['infrastructures'] = infrastructures
-            return app_detail
+            self.query_done(
+                "Details for app '%s': '%s'" % (app_id, app_detail))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
             self.close_db(db, cursor, False)
+        return app_detail
 
     """
       get_task_app_detail - Return application details of a given Task
@@ -885,6 +937,8 @@ class FGAPIServerDB:
         task_info = task_record
         del task_info['application']
         task_info['application'] = task_app_details
+        self.query_done(
+            "Task '%s' info: '%s'" % (task_id, task_info))
         return task_info
 
     """
@@ -911,6 +965,8 @@ class FGAPIServerDB:
                 app_files += [{"file": app_file[0],
                                "path": app_file[1],
                                "override": bool(app_file[2])}, ]
+            self.query_done(
+                "Files for application '%s': '%s'" % (app_id, app_files))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -958,8 +1014,7 @@ class FGAPIServerDB:
                    '      ,\'WAITING\'                     -- status WAITING\n'
                    '      ,%s                              -- user\n'
                    '      ,%s                              -- iosandbox\n'
-                   'from task;\n'
-                   )
+                   'from task;\n')
             sql_data = (app_id, description, user, iosandbox)
             cursor.execute(sql, sql_data)
             sql = 'select max(id) from task;'
@@ -1057,6 +1112,8 @@ class FGAPIServerDB:
                     'where task_id=%s')
                 sql_data = (task_id, outfile['name'], task_id)
                 cursor.execute(sql, sql_data)
+            self.query_done(
+                "Task successfully inserted with id: '%s'" % task_id)
         except IOError as xxx_todo_changeme:
             (errno, strerror) = xxx_todo_changeme.args
             self.err_flag = True
@@ -1100,6 +1157,8 @@ class FGAPIServerDB:
                 self.err_msg = "[ERROR] Unable to find task id: %s" % task_id
             else:
                 iosandbox = result[0]
+                self.query_done(
+                    "IO sandbox for task '%s': '%s'" % (task_id, iosandbox))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1123,6 +1182,8 @@ class FGAPIServerDB:
                    '  and file=%s;')
             sql_data = (filepath, task_id, filename)
             cursor.execute(sql, sql_data)
+            self.query_done(
+                "input sandbox for task '%s' successfully updated" % task_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -1151,6 +1212,9 @@ class FGAPIServerDB:
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             sandbox_ready = cursor.fetchone()[0]
+            self.query_done(
+                "sandbox ready for task '%s' is %s"
+                % (task_id, 1 == int(sandbox_ready)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1215,6 +1279,8 @@ class FGAPIServerDB:
         try:
             # Save native APIServer JSON file, having the format:
             # <task_iosandbox_dir>/<task_id>.json
+            print "YYY"
+            print '%s/%s.json' % (task_info['iosandbox'], task_info['id'])
             as_file = open('%s/%s.json' %
                            (task_info['iosandbox'], task_info['id']), "w")
             as_file.write(json.dumps(task_info))
@@ -1240,15 +1306,15 @@ class FGAPIServerDB:
                     '  ,last_change   \n'
                     '  ,check_ts      \n'
                     '  ,action_info   \n'
-                    ') values (%s,'
-                    '          NULL,'
-                    '          %s,'
-                    '          \'SUBMIT\','
-                    '          \'QUEUED\','
-                    '          NULL,'
-                    '          now(),'
-                    '          now(),'
-                    '          now(),'
+                    ') values (%s,\n'
+                    '          NULL,\n'
+                    '          %s,\n'
+                    '          \'SUBMIT\',\n'
+                    '          \'QUEUED\',\n'
+                    '          NULL,\n'
+                    '          now(),\n'
+                    '          now(),\n'
+                    '          now(),\n'
                     '          %s);')
                 sql_data = (task_info['id'],
                             target_executor, task_info['iosandbox'])
@@ -1258,6 +1324,8 @@ class FGAPIServerDB:
                     'last_change=now() where id=%s;')
                 sql_data = (str(task_info['id']),)
                 cursor.execute(sql, sql_data)
+                self.query_done(
+                    "Task '%s' enqueued successfully" % task_info)
             except MySQLdb.Error as e:
                 self.catch_db_error(e, db, True)
             finally:
@@ -1293,20 +1361,21 @@ class FGAPIServerDB:
                 user_clause = ''
             elif user_filter == '@':
                 user_name = user[1:]
-                user_clause = ('  and user in (select distinct(u.name)      \n'
-                               '               from fg_user        u        \n'
-                               '                  , fg_group       g        \n'
-                               '                  , fg_user_group ug        \n'
-                               '               where u.id=ug.user_id        \n'
-                               '                 and g.id=ug.group_id       \n'
-                               '                 and g.id in                \n'
-                               '                   (select g.id             \n'
-                               '                    from fg_user_group ug   \n'
-                               '                        ,fg_user        u   \n'
-                               '                        ,fg_group       g   \n'
-                               '                     where ug.user_id=u.id  \n'
-                               '                       and ug.group_id=g.id \n'
-                               '                       and u.name=%s))')
+                user_clause = (
+                    '  and user in (select distinct(u.name)      \n'
+                    '               from fg_user        u        \n'
+                    '                  , fg_group       g        \n'
+                    '                  , fg_user_group ug        \n'
+                    '               where u.id=ug.user_id        \n'
+                    '                 and g.id=ug.group_id       \n'
+                    '                 and g.id in                \n'
+                    '                   (select g.id             \n'
+                    '                    from fg_user_group ug   \n'
+                    '                        ,fg_user        u   \n'
+                    '                        ,fg_group       g   \n'
+                    '                     where ug.user_id=u.id  \n'
+                    '                       and ug.group_id=g.id \n'
+                    '                       and u.name=%s))')
                 sql_data += (user_name,)
             else:
                 user_name = user
@@ -1321,8 +1390,13 @@ class FGAPIServerDB:
                    '%s%s;'
                    ) % (user_clause, app_clause)
             cursor.execute(sql, sql_data)
+            print cursor
             for task_id in cursor:
                 task_ids += [task_id[0], ]
+            self.query_done(
+                "Task list for user '%s', app '%s': '%s'" % (user,
+                                                             app_id,
+                                                             task_ids))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1372,6 +1446,7 @@ class FGAPIServerDB:
                 'last_change=now() where id=%s;')
             sql_data = (str(task_info['id']),)
             cursor.execute(sql, sql_data)
+            self.query_done("Task '%s' successfully deleted" % task_id)
             status = True
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
@@ -1451,6 +1526,9 @@ class FGAPIServerDB:
                     sql_data = (data_value, data_name, task_id)
                     cursor.execute(sql, sql_data)
                     status = True
+            self.query_done(
+                ("Runtime data '%s' successfully updated"
+                 " on task '%s'" % (runtime_data, task_id)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -1481,6 +1559,10 @@ class FGAPIServerDB:
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             no_override = cursor.fetchone()[0]
+            self.query_done(
+                ("overridden sandbox "
+                 "for app '%s' is %s" % (app_id,
+                                         1 == int(no_override))))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1506,6 +1588,11 @@ class FGAPIServerDB:
             sql_data = (file_name, file_path, file_name, file_path)
             cursor.execute(sql, sql_data)
             task_id = cursor.fetchone()[0]
+            self.query_done(
+                ("task_id for file name '%s' "
+                 "having path '%s' is: '%s'" % (file_name,
+                                                file_path,
+                                                task_id)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1544,6 +1631,9 @@ class FGAPIServerDB:
                    '         now());')
             sql_data = (task_id, task_id, new_status)
             cursor.execute(sql, sql_data)
+            self.query_done(
+                ("Status change for task '%s' "
+                 "successfully changed to '%s'" % (task_id, new_status)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -1569,6 +1659,8 @@ class FGAPIServerDB:
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
+            self.query_done(
+                "App \'%s\' existing is %s" % (app_id, count > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1594,6 +1686,8 @@ class FGAPIServerDB:
             cursor.execute(sql)
             for app_id in cursor:
                 app_ids += [app_id[0], ]
+            self.query_done(
+                "Application list: '%s'" % app_ids)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -1633,6 +1727,7 @@ class FGAPIServerDB:
                         app_dbrec[3]),
                     "enabled": bool(app_dbrec[4])}
             else:
+                self.query_done("Could not find application '%s'" % app_id)
                 return {}
             # Application parameters
             sql = ('select pname\n'
@@ -1715,6 +1810,8 @@ class FGAPIServerDB:
                 "parameters": app_params,
                 "input_files": app_ifiles,
                 "infrastructures": app_infras}
+            self.query_done(
+              "Application '%s' record: '%s'" % (app_id, app_record))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -1935,6 +2032,8 @@ class FGAPIServerDB:
                                     infra_record['virtual']
                                     )
                     cursor.execute(sql, sql_data)
+            self.query_done(
+                "Application successfully inserted with id '%s'" % app_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
             app_id = 0
@@ -1981,6 +2080,8 @@ class FGAPIServerDB:
             sql_data = (app_id,)
             cursor.execute(sql, sql_data)
             result = True
+            self.query_done(
+                "Application '%s' successfully deleted" % app_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -2007,6 +2108,9 @@ class FGAPIServerDB:
                        " values (%s,%s,now())")
                 sql_data = (group_id, app_id)
                 cursor.execute(sql, sql_data)
+            self.query_done(
+                "Application '%s' enabled for user '%s'" % (app_id,
+                                                            user_id))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -2031,6 +2135,8 @@ class FGAPIServerDB:
             sql_data = (infra_id,)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
+            self.query_done(
+                "Infrastructure '%s' exists is: %s" % (infra_id, count > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -2062,6 +2168,9 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             for infra_id in cursor:
                 infra_ids += [infra_id[0], ]
+            self.query_done(
+                "Infrastructure list for app '%s': '%s'" % (app_id,
+                                                            infra_ids))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
@@ -2106,6 +2215,8 @@ class FGAPIServerDB:
                     "enabled": bool(infra_dbrec[4]),
                     "virtual": bool(infra_dbrec[5])}
             else:
+                self.query_done(
+                    "Could not find infrastructure '%s'" % infra_id)
                 return {}
             # Infrastructure parameters
             sql = ('select pname\n'
@@ -2133,6 +2244,8 @@ class FGAPIServerDB:
                 "enabled": infra_dicrec['enabled'],
                 "virtual": infra_dicrec['virtual'],
                 "parameters": infra_params}
+            self.query_done(
+                "Infrastructure '%s': '%s'" % (infra_id, infra_record))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -2212,6 +2325,8 @@ class FGAPIServerDB:
                             param.get('description', None),
                             infra_id)
                 cursor.execute(sql, sql_data)
+            self.query_done(
+                "Infrastructure successfully created with id '%s'" % infra_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
             app_id = 0
@@ -2338,6 +2453,8 @@ class FGAPIServerDB:
                 sql_data = (infra_id,)
                 cursor.execute(sql, sql_data)
                 result = True
+            self.query_done(
+                "Infrastructure '%s' successfully deleted" % infra_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:

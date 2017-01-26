@@ -107,15 +107,16 @@ login_manager.init_app(app)
 # FutureGateway database object holder
 fgapisrv_db = None
 
-##
-## Helper functions
-##
+#
+# Helper functions
+#
+
 
 def get_fgapiserver_db():
     """
     Retrieve the fgAPIServer database object
-    
-    :return: Return the fgAPIServer database object or None if the 
+
+    :return: Return the fgAPIServer database object or None if the
              database connection fails
     """
     fgapisrv_db = FGAPIServerDB(
@@ -142,14 +143,14 @@ def get_fgapiserver_db():
         return None
     return fgapisrv_db
 
-# database versioning check
+
 def check_db_ver():
     """
     Database versioning check
 
-    :return: This function will check the database connectivity, set the 
-             fgapisrv_db global variable and terminate with error if the 
-             database schema version is not aligned with the version 
+    :return: This function will check the database connectivity, set the
+             fgapisrv_db global variable and terminate with error if the
+             database schema version is not aligned with the version
              required by the code; see fgapisrv_dbver in configuration file
     """
     global fgapisrv_db
@@ -354,7 +355,7 @@ def authorize_user(current_user, app_id, user, reqroles):
                 user_name, user_text)
     # Check if app belongs to Group apps
     if (app_id is not None):
-        auth_z = auth_z and fgapisrv_db.verifyUserApp(user_id, app_id)
+        auth_z = auth_z and fgapisrv_db.verify_user_app(user_id, app_id)
         if not auth_z:
             message = ("User '%s' cannot perform any activity on application "
                        "having id: '%s'\n") % (user_name, app_id)
@@ -423,25 +424,24 @@ def load_user(request):
                 # to an unregistered subject id (i.e. LiferayIAM).
                 # When name is empty and subject value is provided, the name
                 # field will be populated with the subject value and the name
-                # will be registered if not present in the database. this allows 
-                # not registered users to access the APIs in an isolated way.
-                # The Group/s field will be used to register the subject user 
+                # will be registered if not present in the DB. this allows
+                # not registered users to access the APIs in an isolated way
+                # The Group/s field will be used to register the subject user
                 # in the proper group(s) providing the correct rights
                 ptv_subj = None
                 ptv_groups = None
-                if portal_user == '' and \
-                    portal_subject is not None:
+                if portal_user == '' and portal_subject is not None:
                     portal_user = portal_subject
                     # Now pepare a groups vector containing group(s) associated
-                    # to the PTV user. Returned PTV groups should exist in the 
-                    # fgAPIServer database; otherwise a default group will be 
+                    # to the PTV user. Returned PTV groups should exist in the
+                    # fgAPIServer database; otherwise a default group will be
                     # associated
                     if portal_group != '':
-                           portal_groups.append(portal_group)
+                        portal_groups.append(portal_group)
                     fg_groups = fgapisrv_db.get_ptv_groups(portal_groups)
                     if fg_groups == []:
                         # Assign a default FG group
-                        fg_groups = [ fgapisrv_ptvdefgrp ]
+                        fg_groups = [fgapisrv_ptvdefgrp]
                     fg_user = fgapisrv_db.register_ptv_subject(portal_user,
                                                                fg_groups)
                     if fg_user != ():
@@ -862,8 +862,8 @@ def task_id(task_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            # User should be able to see the given app_id            
-            if not fgapisrv_db.task_exists(task_id,user_id):
+            # User should be able to see the given app_id
+            if not fgapisrv_db.task_exists(task_id, user_id):
                 task_state = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -895,7 +895,7 @@ def task_id(task_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            if not fgapisrv_db.task_exists(task_id,user_id):
+            if not fgapisrv_db.task_exists(task_id, user_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -928,7 +928,7 @@ def task_id(task_id=None):
                                "request:\n%s" %
                                auth_msg}
             else:
-                if not fgapisrv_db.task_exists(task_id,user_id):
+                if not fgapisrv_db.task_exists(task_id, user_id):
                     task_status = 404
                     task_response = {
                         "message": "Unable to find task with id: %s" % task_id
@@ -973,7 +973,7 @@ def task_id(task_id=None):
             else:
                 params = request.get_json()
                 runtime_data = params.get('runtime_data', [])
-                if not fgapisrv_db.task_exists(task_id,user_id):
+                if not fgapisrv_db.task_exists(task_id, user_id):
                     task_status = 404
                     task_response = {
                         "message": "Unable to find task with id: %s" % task_id
@@ -1027,7 +1027,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # Display task_input_file details
-            if not fgapisrv_db.task_exists(task_id,user_id):
+            if not fgapisrv_db.task_exists(task_id, user_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -1050,7 +1050,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # First determine IO Sandbox location for this task
-            if not fgapisrv_db.task_exists(task_id,user_id):
+            if not fgapisrv_db.task_exists(task_id, user_id):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
