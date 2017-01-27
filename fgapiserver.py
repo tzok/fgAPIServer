@@ -1075,7 +1075,7 @@ def task_id_input(task_id=None):
                     for f in uploaded_files:
                         filename = secure_filename(f.filename)
                         f.save(os.path.join(task_sandbox, filename))
-                        fgapisrv_db.update_iniput_sandbox_file(
+                        fgapisrv_db.update_input_sandbox_file(
                             task_id, filename, os.path.join(task_sandbox))
                         file_list += (filename,)
                     # Now get input_sandbox status
@@ -1170,6 +1170,7 @@ def applications():
     per_page = request.values.get('per_page')
     user = request.values.get('user')
     state = 0
+    response = {}
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_view")
@@ -1191,8 +1192,6 @@ def applications():
                     "message": db_state[1]
                 }
             else:
-                # Prepare response
-                response = []
                 applications = []
                 state = 200
                 for app_id in app_list:
@@ -1256,6 +1255,7 @@ def applications():
             enabled = params.get('enabled', [])
             parameters = params.get('parameters', [])
             inp_files = params.get('input_files', [])
+            files = params.get('files', [])
             infrastructures = params.get('infrastructures', [])
             # Create app
             app_id = fgapisrv_db.init_app(
@@ -1265,6 +1265,7 @@ def applications():
                 enabled,
                 parameters,
                 inp_files,
+                files,
                 infrastructures)
             if app_id <= 0:
                 task_state = fgapisrv_db.get_state()
@@ -1394,6 +1395,85 @@ def app_id(app_id=None):
         }
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=404, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        return resp
+
+
+@app.route('/%s/applications/<app_id>/input' % fgapiver,
+           methods=['GET', 'POST'])
+@login_required
+def app_id_input(app_id=None):
+    global fgapisrv_db
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
+    user = request.values.get('user', user_name)
+    app_state = 404
+    if request.method == 'GET':
+        auth_state, auth_msg = authorize_user(
+            current_user, app_id, user, "app_view")
+        if not auth_state:
+            app_state = 402
+            app_response = {
+                "message": "Not authorized to perform this request:\n%s" %
+                           auth_msg}
+        else:
+            # Display app_input_file details
+            if not fgapisrv_db.app_exists(app_id):
+                app_status = 404
+                app_response = {
+                    "message":
+                        "Unable to find application with id: %s" % app_id
+                }
+            else:
+                app_status = 200
+                app_response =\
+                    fgapisrv_db.get_app_record(app_id)['input_files']
+        js = json.dumps(app_response, indent=fgjson_indent)
+        resp = Response(js, status=app_status, mimetype='application/json')
+        resp.headers['Content-type'] = 'application/json'
+        return resp
+    elif request.method == 'POST':
+        auth_state, auth_msg = authorize_user(
+            current_user, app_id, user, "app_install")
+        if not auth_state:
+            app_state = 402
+            app_response = {
+                "message": "Not authorized to perform this request:\n%s" %
+                           auth_msg}
+        else:
+            # First determine IO Sandbox location for this task
+            if not fgapisrv_db.app_exists(app_id):
+                app_state = 404
+                app_response = {
+                    "message":
+                        "Unable to find application with id: %s" % task_id
+                }
+            else:
+                # Now process files to upload
+                app_dir = 'apps/%s' % app_id
+                try:
+                    os.stat(app_dir)
+                except:
+                    os.makedirs(app_dir)
+                uploaded_files = request.files.getlist('file[]')
+                print "uploading file"
+                print uploaded_files
+                file_list = ()
+                for f in uploaded_files:
+                    print "uploading file '%s'" % f
+                    filename = secure_filename(f.filename)
+                    f.save(os.path.join(app_dir, filename))
+                    fgapisrv_db.insert_or_update_app_file(app_id,
+                                                          filename,
+                                                          app_dir)
+                    file_list += (filename,)
+                app_state = 200
+                app_response = {
+                    "application": app_id,
+                    "files": file_list,
+                    "message": "uploaded successfully"}
+        js = json.dumps(app_response, indent=fgjson_indent)
+        resp = Response(js, status=app_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
 

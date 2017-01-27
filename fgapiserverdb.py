@@ -1166,11 +1166,11 @@ class FGAPIServerDB:
         return iosandbox
 
     """
-      update_iniput_sandbox_file - Update input_sandbox_table with the fullpath
+      update_input_sandbox_file - Update input_sandbox_table with the fullpath
       of a given (task,filename)
     """
 
-    def update_iniput_sandbox_file(self, task_id, filename, filepath):
+    def update_input_sandbox_file(self, task_id, filename, filepath):
         db = None
         cursor = None
         try:
@@ -1836,6 +1836,7 @@ class FGAPIServerDB:
             enabled,
             parameters,
             inp_files,
+            files,
             infrastructures):
         # Start creating app
         db = None
@@ -1905,6 +1906,26 @@ class FGAPIServerDB:
                     'where app_id=%s')
                 sql_data = (app_id, ifile['name'], ifile[
                             'path'], ifile['override'], app_id)
+                cursor.execute(sql, sql_data)
+            # Insert Application files
+            # Application files behave differently they have forced override
+            # flag and do not have path information until application/input
+            # API call is executed
+            for file in files:
+                sql = (
+                    'insert into application_file (app_id\n'
+                    '                            ,file_id\n'
+                    '                            ,file\n'
+                    '                            ,path\n'
+                    '                            ,override)\n'
+                    'select %s                                          \n'
+                    '      ,if(max(file_id) is NULL,1,max(file_id)+1)   \n'
+                    '      ,%s                                          \n'
+                    '      ,''                                          \n'
+                    '      ,TRUE                                        \n'
+                    'from application_file\n'
+                    'where app_id=%s')
+                sql_data = (app_id, file, app_id)
                 cursor.execute(sql, sql_data)
             # Insert Application infrastructures
             # ! Infrastructures may be expressed by definition or by
@@ -2040,6 +2061,59 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, True)
         return app_id
+
+    """
+      insert_or_update_app_file - Insert or update the application files
+    """
+
+    def insert_or_update_app_file(self, app_id, file_name, file_path):
+        db = None
+        cursor = None
+        status = False
+        try:
+            # Delete given application records
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('select count(*)\n'
+                   'from application_file\n'
+                   'where app_id = %s\n'
+                   '  and file = %s;')
+            sql_data = (app_id, file_name)
+            print sql % sql_data
+            cursor.execute(sql, sql_data)
+            count = cursor.fetchone()[0]
+            if count > 0:
+                sql = ('update application_file\n'
+                       'set path = %s\n'
+                       'where app_id = %s\n'
+                       '  and file = %s;')
+                sql_data = (file_path, app_id, file_path)
+            else:
+                sql = ('insert into application_file (app_id\n'
+                       '                            ,file_id\n'
+                       '                            ,file\n'
+                       '                            ,path\n'
+                       '                            ,override)\n'
+                       'select %s                                          \n'
+                       '      ,if(max(file_id) is NULL,1,max(file_id)+1)   \n'
+                       '      ,%s                                          \n'
+                       '      ,%s                                          \n'
+                       '      ,TRUE                                        \n'
+                       'from application_file\n'
+                       'where app_id=%s')
+                sql_data = (app_id, file_name, file_path, app_id)
+            print sql % sql_data
+            cursor.execute(sql, sql_data)
+            self.query_done(
+                "insert or update of file '%s/%s' for app '%s'" % (file_path,
+                                                                   file_name,
+                                                                   app_id))
+            status = True
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return status
 
     """
       app_delete - delete application with a given id

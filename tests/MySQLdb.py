@@ -562,6 +562,88 @@ queries = [
                'from infrastructure\n'
                'where app_id = %s order by id asc;'),
      'result': ['1']},
+    {'query': ('insert into application (id\n'
+               '                        ,name\n'
+               '                        ,description\n'
+               '                        ,outcome\n'
+               '                        ,creation\n'
+               '                        ,enabled)\n'
+               'select if(max(id) is NULL,1,max(id)+1) -- new id\n'
+               '      ,%s                              -- name\n'
+               '      ,%s                              -- description\n'
+               '      ,%s                              -- outcome\n'
+               '      ,now()                           -- creation\n'
+               '      ,%s                              -- enabled\n'
+               'from application;\n'),
+     'result': []},
+    {'query': ('insert into application_parameter (app_id\n'
+               '                                  ,param_id\n'
+               '                                  ,pname\n'
+               '                                  ,pvalue\n'
+               '                                  ,pdesc)\n'
+               'select %s                                          \n'
+               '      ,if(max(param_id) is NULL,1,max(param_id)+1) \n'
+               '      ,%s                                          \n'
+               '      ,%s                                          \n'
+               '      ,%s                                          \n'
+               'from application_parameter\n'
+               'where app_id=%s'),
+     'result': []},
+    {'query': 'select max(id) from application;',
+     'result': [[1], ]},
+    {'query': ('insert into application_file (app_id\n'
+               '                            ,file_id\n'
+               '                            ,file\n'
+               '                            ,path\n'
+               '                            ,override)\n'
+               'select %s                                          \n'
+               '      ,if(max(file_id) is NULL,1,max(file_id)+1)   \n'
+               '      ,%s                                          \n'
+               '      ,''                                          \n'
+               '      ,TRUE                                        \n'
+               'from application_file\n'
+               'where app_id=%s'),
+     'result': []},
+    {'query': ('select app_id,\n'
+               '       name,\n'
+               '       description,\n'
+               '       enabled,\n'
+               '       vinfra\n'
+               'from infrastructure\n'
+               'where id=%s\n'
+               'order by 1 asc ,2 asc\n'
+               'limit 1;'),
+     'result': [[1,
+                 'test application',
+                 'test application description',
+                 1,
+                 0], ]},
+    {'query':  ('insert into infrastructure (id\n'
+                '                           ,app_id\n'
+                '                           ,name\n'
+                '                           ,description\n'
+                '                           ,creation\n'
+                '                           ,enabled\n'
+                '                           ,vinfra\n'
+                '                           )\n'
+                'values (%s    \n'
+                '       ,%s    \n'
+                '       ,%s    \n'
+                '       ,%s    \n'
+                '       ,now() \n'
+                '       ,%s    \n'
+                '       ,%s);'),
+     'result': None},
+    {'query': ('select count(*)\n'
+               'from application_file\n'
+               'where app_id = %s\n'
+               '  and file = %s;'),
+     'result': ['1']},
+    {'query': ('update application_file\n'
+               'set path = %s\n'
+               'where app_id = %s\n'
+               '  and file = %s;'),
+     'result': []},
     {'query': None,
      'result': None},
 ]

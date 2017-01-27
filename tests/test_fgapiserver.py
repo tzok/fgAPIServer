@@ -332,9 +332,9 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_dbobj_update_iniput_sandbox_file(self):
         self.banner("Testing fgapiserverdb update_iniput_sandbox_file")
-        result = self.fgapisrv_db.update_iniput_sandbox_file(1,
-                                                             'test_file1',
-                                                             '/path/to/file')
+        result = self.fgapisrv_db.update_input_sandbox_file(1,
+                                                            'test_file1',
+                                                            '/path/to/file')
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
         assert state[0] is False
@@ -509,6 +509,27 @@ class Test_fgAPIServer(unittest.TestCase):
         assert state[0] is False
         assert result['name'] == 'test_app'
 
+    def test_dbobj_init_app(self):
+        self.banner("Testing fgapiserverdb init_app")
+        result = self.fgapisrv_db.init_app(
+                    'test application',
+                    'test application description',
+                    'JOB',
+                    True,
+                    [{'name': 'test_param_name1',
+                      'value': 'test_param_value1',
+                      'description': 'test_param_desc1'},
+                     {'name': 'test_param_name1',
+                      'value': 'test_param_value1',
+                      'description': 'test_param_desc1'}],
+                    [],
+                    ['test_app_file1', 'test_app_file2'],
+                    [1])
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        assert result == 1
+
     def test_dbobj_get_infra_record(self):
         self.banner("Testing fgapiserverdb get_infra_record")
         result = self.fgapisrv_db.get_infra_record(1)
@@ -516,6 +537,16 @@ class Test_fgAPIServer(unittest.TestCase):
         print "DB state: %s" % (state,)
         assert state[0] is False
         assert result['name'] == 'test infra'
+
+    def test_dbobj_insert_or_update_app_file(self):
+        self.banner("Testing fgapiserverdb insert_or_update_app_file")
+        result = self.fgapisrv_db.insert_or_update_app_file(1,
+                                                            'test_app_file',
+                                                            'test/file/path')
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        assert result is True
 
     def test_dbobj_init_infra(self):
         self.banner("Testing fgapiserverdb init_infra")
