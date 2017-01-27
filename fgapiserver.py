@@ -1219,8 +1219,8 @@ def applications():
                                 app_record['enabled'],
                                 "parameters":
                                 app_record['parameters'],
-                                "input_files":
-                                app_record['input_files'],
+                                "files":
+                                app_record['files'],
                                 "infrastructures":
                                 app_record['infrastructures'],
                                 "_links": [{"rel": "self",
@@ -1290,7 +1290,7 @@ def applications():
                     "description": app_record['description'],
                     "enabled": app_record['enabled'],
                     "parameters": app_record['parameters'],
-                    "input_files": app_record['input_files'],
+                    "files": app_record['files'],
                     "infrastructures": app_record['infrastructures'],
                     "_links": [
                         {
@@ -1427,7 +1427,7 @@ def app_id_input(app_id=None):
             else:
                 app_status = 200
                 app_response =\
-                    fgapisrv_db.get_app_record(app_id)['input_files']
+                    fgapisrv_db.get_app_record(app_id)['files']
         js = json.dumps(app_response, indent=fgjson_indent)
         resp = Response(js, status=app_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'

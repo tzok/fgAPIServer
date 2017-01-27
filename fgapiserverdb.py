@@ -1808,7 +1808,7 @@ class FGAPIServerDB:
                     app_dicrec['creation']),
                 "enabled": app_dicrec['enabled'],
                 "parameters": app_params,
-                "input_files": app_ifiles,
+                "files": app_ifiles,
                 "infrastructures": app_infras}
             self.query_done(
               "Application '%s' record: '%s'" % (app_id, app_record))
