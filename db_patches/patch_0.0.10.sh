@@ -22,7 +22,7 @@ SQLTMP=$(mktemp /tmp/patch_${PATCH}_XXXXXX)
 #
 
 out "Adding unassigned infrastructure application (app_id=0)"
-out "Changing group name 'generic user' to 'users';
+out "Changing group name 'generic user' to 'users'";
 out "Adding group developers and assigning all privileges"
 out "Adding all applications to developers group"
 cat >$SQLTMP <<EOF

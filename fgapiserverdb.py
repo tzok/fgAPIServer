@@ -686,11 +686,14 @@ class FGAPIServerDB:
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             task_ofiles = []
+
             for ofile in cursor:
+                file_url = ''
+                if ofile[1] != '':
+                    file_url = 'file?%s' % urllib.urlencode({"path": ofile[1],
+                                                             "name": ofile[0]})
                 ofile_entry = {"name": ofile[0],
-                               "url": 'file?%s'
-                               % urllib.urlencode({"path": ofile[1],
-                                                   "name": ofile[0]})}
+                               "url": file_url}
                 task_ofiles += [ofile_entry, ]
             # runtime_data
             sql = (
@@ -1036,6 +1039,16 @@ class FGAPIServerDB:
                     sql_data = (task_id, arg, task_id)
                     cursor.execute(sql, sql_data)
             # Insert Task input_files
+            # First of all load application level input files
+            sql = ('select file, path, override\n'
+                   'from application_file\n'
+                   'where app_id = %s;')
+            sql_data = (app_id,)
+            cursor.execute(sql, sql_data)
+            for files_rec in cursor:
+                input_files.append({"name": files_rec[0],
+                                    "path": files_rec[1],
+                                    "override": files_rec[2]})
             # Process input files specified in the REST URL (input_files)
             # producing a new vector called inp_file having the same structure
             # of app_files: [ { "name": <filname>
@@ -1279,8 +1292,6 @@ class FGAPIServerDB:
         try:
             # Save native APIServer JSON file, having the format:
             # <task_iosandbox_dir>/<task_id>.json
-            print "YYY"
-            print '%s/%s.json' % (task_info['iosandbox'], task_info['id'])
             as_file = open('%s/%s.json' %
                            (task_info['iosandbox'], task_info['id']), "w")
             as_file.write(json.dumps(task_info))
@@ -1390,7 +1401,6 @@ class FGAPIServerDB:
                    '%s%s;'
                    ) % (user_clause, app_clause)
             cursor.execute(sql, sql_data)
-            print cursor
             for task_id in cursor:
                 task_ids += [task_id[0], ]
             self.query_done(
@@ -2079,7 +2089,6 @@ class FGAPIServerDB:
                    'where app_id = %s\n'
                    '  and file = %s;')
             sql_data = (app_id, file_name)
-            print sql % sql_data
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
             if count > 0:
@@ -2102,7 +2111,6 @@ class FGAPIServerDB:
                        'from application_file\n'
                        'where app_id=%s')
                 sql_data = (app_id, file_name, file_path, app_id)
-            print sql % sql_data
             cursor.execute(sql, sql_data)
             self.query_done(
                 "insert or update of file '%s/%s' for app '%s'" % (file_path,
