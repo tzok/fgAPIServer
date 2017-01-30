@@ -686,7 +686,6 @@ class FGAPIServerDB:
             sql_data = (task_id,)
             cursor.execute(sql, sql_data)
             task_ofiles = []
-
             for ofile in cursor:
                 file_url = ''
                 if ofile[1] != '':

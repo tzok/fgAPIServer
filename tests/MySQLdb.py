@@ -644,6 +644,10 @@ queries = [
                'where app_id = %s\n'
                '  and file = %s;'),
      'result': []},
+    {'query': ('select file, path, override\n'
+               'from application_file\n'
+               'where app_id = %s;'),
+     'result': [["test_input_file", "/tmp/test", 0], ]},
     {'query': None,
      'result': None},
 ]
