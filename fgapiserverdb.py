@@ -1930,7 +1930,7 @@ class FGAPIServerDB:
                     'select %s                                          \n'
                     '      ,if(max(file_id) is NULL,1,max(file_id)+1)   \n'
                     '      ,%s                                          \n'
-                    '      ,''                                          \n'
+                    '      ,\'\'                                        \n'
                     '      ,TRUE                                        \n'
                     'from application_file\n'
                     'where app_id=%s')
