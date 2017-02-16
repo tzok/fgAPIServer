@@ -3,6 +3,6 @@ packaging
 pyOpenSSL
 flask
 flask-login
-pyMySQL
+MySQL-python
 pycrypto
 requests
