@@ -1,3 +1,5 @@
+setuptools
+packaging
 pyOpenSSL
 flask
 flask-login
