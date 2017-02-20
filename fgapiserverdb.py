@@ -580,6 +580,7 @@ class FGAPIServerDB:
             sql = ('select count(*)\n'
                    'from task\n'
                    'where id = %s\n'
+                   '  and status != \'PURGED\''
                    '  and user = (select name\n'
                    '              from fg_user\n'
                    '              where id = %s);')
