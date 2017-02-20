@@ -916,6 +916,7 @@ def task_id(task_id=None):
         return resp
     elif request.method == 'PATCH':
         # PATCH on tasks accepts status change or on runtime_data
+        params = request.get_json()
         new_status = params.get('status', None)
         if new_status is not None:
             # status change:
@@ -971,7 +972,6 @@ def task_id(task_id=None):
                     "message": "Not authorized to perform this request:\n%s" %
                                auth_msg}
             else:
-                params = request.get_json()
                 runtime_data = params.get('runtime_data', [])
                 if not fgapisrv_db.task_exists(task_id, user_id):
                     task_status = 404
