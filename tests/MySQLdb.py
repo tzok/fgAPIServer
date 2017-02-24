@@ -403,12 +403,13 @@ queries = [
                'where task_id=%s\n'
                '  and file=%s;'),
      'result': []},
-    {'query': ('select id\n'
+    {'query': ('select count(*)\n'
                'from task\n'
-               'where status != "PURGED"\n'
-               '  and user = %s\n'
-               '  and app_id = %s\n'
-               ';'),
+               'where id = %s\n'
+               '  and status != \'PURGED\''
+               '  and user = (select name\n'
+               '              from fg_user\n'
+               '              where id = %s);'),
      'result': [[1], ]},
     {'query': ('insert into as_queue (\n'
                '   task_id\n'
@@ -648,6 +649,13 @@ queries = [
                'from application_file\n'
                'where app_id = %s;'),
      'result': [["test_input_file", "/tmp/test", 0], ]},
+    {'query': ('select id\n'
+               'from task\n'
+               'where status != "PURGED"\n'
+               '  and user = %s\n'
+               '  and app_id = %s\n'
+               ';'),
+     'result': [[1], ]},
     {'query': None,
      'result': None},
 ]

@@ -184,7 +184,8 @@ def paginate_response(response, page, per_page):
     """
     if page is not None and per_page is not None:
         pg = int(page)
-        if pg > 0: pg-=1
+        if pg > 0:
+            pg -= 1
         ppg = int(per_page)
         return response[pg * ppg:(pg + 1) * ppg]
     else:
@@ -1227,9 +1228,9 @@ def applications():
                             },
                         ]
                 response = {"applications": paginate_response(applications,
-                                                              page, 
+                                                              page,
                                                               per_page)}
-        js = json.dumps(response, page, per_page), indent=fgjson_indent)
+        js = json.dumps(response, indent=fgjson_indent)
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
@@ -1545,11 +1546,11 @@ def infrastructures():
                                              % (fgapiver, infra_id)}]
                             },
                         ]
-                infra_response = {"infrastructures": paginate_response(infrastructures,
-                                                                       page, 
-                                                                       per_page)} 
-        js = json.dumps(paginate_response(infra_response, page, per_page),
-                                          indent=fgjson_indent)
+                infra_response = {
+                    "infrastructures": paginate_response(infrastructures,
+                                                         page,
+                                                         per_page)}
+        js = json.dumps(infra_response, indent=fgjson_indent)
         resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp

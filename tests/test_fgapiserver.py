@@ -85,7 +85,7 @@ class Test_fgAPIServer(unittest.TestCase):
         expected_page = ['444444444444444444444444444\n',
                          '555555555555555555555555555\n',
                          '666666666666666666666666666\n', ]
-        received_page = fgapiserver.paginate_response(response, '1', '3')
+        received_page = fgapiserver.paginate_response(response, '2', '3')
         self.assertEqual(expected_page, received_page)
 
     def test_checkDbVer(self):
