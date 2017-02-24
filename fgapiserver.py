@@ -184,6 +184,7 @@ def paginate_response(response, page, per_page):
     """
     if page is not None and per_page is not None:
         pg = int(page)
+        if pg > 0: pg-=1
         ppg = int(per_page)
         return response[pg * ppg:(pg + 1) * ppg]
     else:
@@ -752,13 +753,10 @@ def tasks():
                              }
                         ]},
                     ]
-            task_response = {"tasks": task_array}
-        # When page, per_page are not none
-        # (page=0..(len(task_response)/per_page)-1)
-        # if page is not None and per_page is not None:
-        # task_response = task_response[page*per_page:(page+1)*per_page]
-        js = json.dumps(paginate_response(
-            task_response, page, per_page), indent=fgjson_indent)
+            task_response = {"tasks": paginate_response(task_array,
+                                                        page,
+                                                        per_page)}
+        js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
@@ -1228,13 +1226,10 @@ def applications():
                                                     % (fgapiver, app_id)}]
                             },
                         ]
-                response = {"applications": applications}
-        # When page, per_page are not none
-        # (page=0..(len(task_response)/per_page)-1)
-        # if page is not None and per_page is not None:
-        # task_response = task_response[page*per_page:(page+1)*per_page]
-        js = json.dumps(paginate_response(
-            response, page, per_page), indent=fgjson_indent)
+                response = {"applications": paginate_response(applications,
+                                                              page, 
+                                                              per_page)}
+        js = json.dumps(response, page, per_page), indent=fgjson_indent)
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
@@ -1550,13 +1545,11 @@ def infrastructures():
                                              % (fgapiver, infra_id)}]
                             },
                         ]
-                infra_response = {"infrastructures": infrastructures}
-        # When page, per_page are not none
-        # (page=0..(len(infra_response)/per_page)-1)
-        # if page is not None and per_page is not None:
-        # task_response = infra_response[page*per_page:(page+1)*per_page]
-        js = json.dumps(paginate_response(
-            infra_response, page, per_page), indent=fgjson_indent)
+                infra_response = {"infrastructures": paginate_response(infrastructures,
+                                                                       page, 
+                                                                       per_page)} 
+        js = json.dumps(paginate_response(infra_response, page, per_page),
+                                          indent=fgjson_indent)
         resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
