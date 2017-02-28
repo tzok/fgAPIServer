@@ -1238,8 +1238,8 @@ def applications():
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_install")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            state = 402
+            response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
