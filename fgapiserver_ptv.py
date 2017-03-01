@@ -136,19 +136,22 @@ default_token = ("eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIzYTJkN"
                  "UhMUIP_Xiw4ZuWVIIhNPDSdu4lhWy5kkcoQ3rI9myNT2WxLA3IP2ZEwP"
                  "InefF0LzAlMj4-iQQw-kAavKgvA00sO8cww9Hzx6Thfw")
 
+
 def get_token_file(token_file):
     """This function returns the token stored in the given token_file"""
     token = default_token
     try:
-        tkn_f = open(token_file,'rt')
+        tkn_f = open(token_file, 'rt')
         token = tkn_f.read()[:-1]
         tkn_f.close()
     except IOError:
-        print "Token file '%s' could not be accessed; using default" % token_file
+        print ("Token file '%s' could not be accessed; using default"
+               % token_file)
     return token
 
 subject_file = '.iam/subject'
 default_subject = '98e3009e-e39b-11e6-bcba-5eef910c8578'
+
 
 def get_subject_file(subject_file):
     """This function returns the subject stored in the given subject_file"""
@@ -158,12 +161,14 @@ def get_subject_file(subject_file):
         subject = sbj_f.read()[:-1]
         sbj_f.close()
     except IOError:
-        print "Subject file '%s' could not be accessed; using default" % subject_file
-    return subject 
+        print ("Subject file '%s' could not be accessed; using default"
+               % subject_file)
+    return subject
 
 groups_file = '.iam/groups'
 default_groups = ['Admin',
                   'Developers']
+
 
 def get_groups_file(groups_file):
     """This function returns the groups stored in the fiven groups file"""
@@ -173,8 +178,9 @@ def get_groups_file(groups_file):
         groups = [grp[:-1] for grp in grp_f]
         grp_f.close()
     except IOError:
-        print "Groups file '%s' could not be accessed; using default" % grous_file
-    return groups 
+        print ("Groups file '%s' could not be accessed; using default"
+               % grous_file)
+    return groups
 
 ##
 # PTV handlers
@@ -209,7 +215,7 @@ def get_token():
             "error": None,
             "groups": get_groups_file(groups_file),
             "subject": subject,
-            "token": get_token_file(token_file) 
+            "token": get_token_file(token_file)
         }
         ctk_status = 200
     else:
@@ -260,8 +266,8 @@ def checktoken():
         # }
         response = {
             "error": None,
-            "groups": get_groups_file(groups_file), 
-            "subject": get_subject_file(subject_file) 
+            "groups": get_groups_file(groups_file),
+            "subject": get_subject_file(subject_file)
         }
         ctk_status = 200
     else:
@@ -490,4 +496,3 @@ if __name__ == "__main__":
                 ssl_context=context, debug=fgapisrv_debug)
     else:
         app.run(host=fgapisrv_host, port=fgapisrv_port+1, debug=fgapisrv_debug)
-

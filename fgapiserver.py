@@ -1068,6 +1068,8 @@ def task_id_input(task_id=None):
                         "message": 'Could not find IO Sandbox dir for task: %s'
                                    % task_id}
                 else:
+                    # Process default application files
+                    fgapisrv_db.setup_default_inputs(task_id, task_sandbox)
                     # Now process files to upload
                     uploaded_files = request.files.getlist('file[]')
                     file_list = ()
