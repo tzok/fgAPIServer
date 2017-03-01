@@ -447,6 +447,9 @@ def load_user(request):
                     fg_user = fgapisrv_db.register_ptv_subject(portal_user,
                                                                fg_groups)
                     if fg_user != ():
+                        fgapisrv_db.register_token(fg_user[0],
+                                                   token,
+                                                   portal_subject)
                         return User(fg_user[0], fg_user[1])
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
