@@ -1150,6 +1150,55 @@ class FGAPIServerDB:
         return task_id
 
     """
+      setup_default_inputs - process the application_file table and update the
+                             task_input_file having null paths; thus inserting
+                             default application files in to the task inputs
+                             (see POST action in /tasks/<id>/input endpoint)
+    """
+    def setup_default_inputs(self, task_id, task_sandbox):
+        db = None
+        cursor = None
+        iosandbox = None
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('select file\n'
+                   '      ,path\n'
+                   'from application_file\n'
+                   'where app_id = (select app_id\n'
+                   '                from task\n'
+                   '                where id=%s)'
+                   '  and path is not NULL;')
+            sql_data = (task_id,)
+            cursor.execute(sql, sql_data)
+            def_app_files = []
+            for app_file_rec in cursor:
+                def_app_files += [{"file": app_file_rec[0],
+                                   "path": app_file_rec[1]}, ]
+            for app_file in def_app_files:
+                shutil.copy('%s/%s' % (app_file['path'], app_file['file']),
+                            '%s/%s' % (task_sandbox, app_file['file']))
+                sql = ('update task_input_file\n'
+                       'set path=%s\n'
+                       'where file=%s\n'
+                       '  and task_id=%s\n'
+                       '  and path is null;')
+                sql_data = (app_file['path'], app_file['file'], task_id)
+                print sql % sql_data
+                cursor.execute(sql, sql_data)
+            self.query_done(
+                "Default input files for task '%s' successfully processed"
+                % task_id)
+        except IOError as xxx_todo_changeme:
+            (errno, strerror) = xxx_todo_changeme.args
+            self.err_flag = True
+            self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+
+    """
       get_task_io_sandbox - Get the assigned IO Sandbox folder of the
                             given task_id
     """

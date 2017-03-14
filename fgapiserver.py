@@ -447,6 +447,9 @@ def load_user(request):
                     fg_user = fgapisrv_db.register_ptv_subject(portal_user,
                                                                fg_groups)
                     if fg_user != ():
+                        fgapisrv_db.register_token(fg_user[0],
+                                                   token,
+                                                   portal_subject)
                         return User(fg_user[0], fg_user[1])
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
@@ -1068,6 +1071,8 @@ def task_id_input(task_id=None):
                         "message": 'Could not find IO Sandbox dir for task: %s'
                                    % task_id}
                 else:
+                    # Process default application files
+                    fgapisrv_db.setup_default_inputs(task_id, task_sandbox)
                     # Now process files to upload
                     uploaded_files = request.files.getlist('file[]')
                     file_list = ()
@@ -1238,8 +1243,8 @@ def applications():
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_install")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            state = 402
+            response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
