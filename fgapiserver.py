@@ -865,7 +865,7 @@ def task_id(task_id=None):
                            auth_msg}
         else:
             # User should be able to see the given app_id
-            if not fgapisrv_db.task_exists(task_id, user_id):
+            if not fgapisrv_db.task_exists(task_id, user_id, user):
                 task_state = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id

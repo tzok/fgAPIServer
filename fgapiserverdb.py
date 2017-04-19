@@ -570,29 +570,28 @@ class FGAPIServerDB:
       task_exists - Return True if the given task_id exists False otherwise
     """
 
-    def task_exists(self, task_id, user_id):
+    def task_exists(self, task_id, user_id, user):
         db = None
         cursor = None
-        count = 0
+        v_user = []
+        v_task = []
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('select count(*)\n'
-                   'from task\n'
-                   'where id = %s\n'
-                   '  and status != \'PURGED\''
-                   '  and user = (select name\n'
-                   '              from fg_user\n'
-                   '              where id = %s);')
-            sql_data = (task_id, user_id)
+            sql = ('select name from fg_user where id = %s;')
+            sql_data = (user_id,)
             cursor.execute(sql, sql_data)
-            count = cursor.fetchone()[0]
-            self.query_done("Task '%s' exists is %s" % (task_id, count > 0))
+            v_user.append(cursor.fetchone()[0])
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, False)
         finally:
             self.close_db(db, cursor, False)
-        return count > 0
+        if v_user[0] != user:
+            v_user.append(user)
+        for user in v_user:
+            v_task+=self.get_task_list(user,None)
+        self.query_done("Task '%s' exists is %s" % (task_id, int(task_id) in v_task))
+        return int(task_id) in v_task
 
     """
        get_task_record - Retrieve the whole task information
@@ -1451,7 +1450,7 @@ class FGAPIServerDB:
                    ) % (user_clause, app_clause)
             cursor.execute(sql, sql_data)
             for task_id in cursor:
-                task_ids += [task_id[0], ]
+                task_ids.append(task_id[0])
             self.query_done(
                 "Task list for user '%s', app '%s': '%s'" % (user,
                                                              app_id,
