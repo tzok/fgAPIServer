@@ -589,8 +589,9 @@ class FGAPIServerDB:
         if v_user[0] != user:
             v_user.append(user)
         for user in v_user:
-            v_task+=self.get_task_list(user,None)
-        self.query_done("Task '%s' exists is %s" % (task_id, int(task_id) in v_task))
+            v_task += self.get_task_list(user, None)
+        self.query_done("Task '%s' exists is %s" %
+                        (task_id, int(task_id) in v_task))
         return int(task_id) in v_task
 
     """
@@ -2234,9 +2235,10 @@ class FGAPIServerDB:
             sql_data = (user_id,)
             cursor.execute(sql, sql_data)
             for group_id in cursor:
-                sql = ("insert into fg_group_apps (group_id,app_id, creation)"
-                       " values (%s,%s,now())")
-                sql_data = (group_id, app_id)
+                sql = (
+                    "insert into fg_group_apps (group_id, app_id, creation)\n"
+                    "values (%s, %s, now())")
+                sql_data = (group_id[0], app_id)
                 cursor.execute(sql, sql_data)
             self.query_done(
                 "Application '%s' enabled for user '%s'" % (app_id,
