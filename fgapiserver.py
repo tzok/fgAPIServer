@@ -897,7 +897,7 @@ def task_id(task_id=None):
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            if not fgapisrv_db.task_exists(task_id, user_id):
+            if not fgapisrv_db.task_exists(task_id, user_id, user):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -931,7 +931,7 @@ def task_id(task_id=None):
                                "request:\n%s" %
                                auth_msg}
             else:
-                if not fgapisrv_db.task_exists(task_id, user_id):
+                if not fgapisrv_db.task_exists(task_id, user_id, user):
                     task_status = 404
                     task_response = {
                         "message": "Unable to find task with id: %s" % task_id
@@ -975,7 +975,7 @@ def task_id(task_id=None):
                                auth_msg}
             else:
                 runtime_data = params.get('runtime_data', [])
-                if not fgapisrv_db.task_exists(task_id, user_id):
+                if not fgapisrv_db.task_exists(task_id, user_id, user):
                     task_status = 404
                     task_response = {
                         "message": "Unable to find task with id: %s" % task_id
@@ -1029,7 +1029,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # Display task_input_file details
-            if not fgapisrv_db.task_exists(task_id, user_id):
+            if not fgapisrv_db.task_exists(task_id, user_id, user):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
@@ -1052,7 +1052,7 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # First determine IO Sandbox location for this task
-            if not fgapisrv_db.task_exists(task_id, user_id):
+            if not fgapisrv_db.task_exists(task_id, user_id, user):
                 task_status = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
