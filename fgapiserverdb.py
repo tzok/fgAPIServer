@@ -1229,7 +1229,7 @@ class FGAPIServerDB:
 
     """
       update_input_sandbox_file - Update input_sandbox_table with the fullpath
-      of a given (task,filename)
+      of a given (task_id, filename, filepat filepath)
     """
 
     def update_input_sandbox_file(self, task_id, filename, filepath):
