@@ -347,7 +347,7 @@ class FGAPIServerDB:
             ("role(s) '%s' for user_id '%s' is %s'" % (roles,
                                                        user_id,
                                                        result > 0)))
-        return result
+        return result != 0
 
     """
       verify_user_app - Verify if the given user has the given app in its roles

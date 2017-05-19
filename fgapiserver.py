@@ -1332,8 +1332,8 @@ def app_id(app_id=None):
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_view")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            status = 402
+            response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
