@@ -209,7 +209,7 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_dbobj_register_task_exists(self):
         self.banner("Testing fgapiserverdb task_exists")
-        result = self.fgapisrv_db.task_exists(1, 1)
+        result = self.fgapisrv_db.task_exists(1, 1, [1])
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
         assert state[0] is False
@@ -596,7 +596,7 @@ class Test_fgAPIServer(unittest.TestCase):
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("44dc039b64f657cab4f76b95ccdb81fc",
+        self.assertEqual("42a4770302cbe940f3c7f809ca5675af",
                          self.md5sum_str(result.data))
 
     def test_get_infrastructures(self):
