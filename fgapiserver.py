@@ -259,6 +259,13 @@ def process_log_token(logtoken):
         username = credfields[0].split("=")[1]
         password = credfields[1].split("=")[1]
         timestamp = credfields[2].split("=")[1]
+    logger.debug("Logtoken: '%s'\n"
+                 "    User: '%s'\n"
+                 "    Password: '%s'\n"
+                 "    Timestamp: '%s'" % (logtoken,
+                                          username,
+                                          password,
+                                          timestamp))
     return username, password, timestamp
 
 
@@ -287,6 +294,14 @@ def create_session_token(**kwargs):
         sestoken = fgapisrv_db.create_session_token(username,
                                                     password,
                                                     timestamp)
+    logger.debug("Session token is:\n"
+                 "logtoken: '%s'\n"
+                 "username: '%s'\n"
+                 "password: '%s'\n"
+                 "timestamp: '%s'\n" % (sestoken,
+                                        logtoken,
+                                        username,
+                                        password))
     return sestoken
 
 
@@ -595,7 +610,8 @@ def load_user(request):
 @app.route('/auth', methods=['GET', 'POST'])
 @app.route('/%s/auth' % fgapiver, methods=['GET', 'POST'])
 def auth():
-    logger.debug('auth(%s): %s' % (request.method, request.values))
+    global logger
+    logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
     token = ""
     message = ""
     logtoken = request.values.get('token')
@@ -674,7 +690,8 @@ def auth():
 @app.route('/')
 @app.route('/%s/' % fgapiver)
 def index():
-    logger.debug('index(%s): %s' % (request.method, request.values))
+    global logger
+    logger.debug('index(%s): %s' % (request.method, request.values.to_dict()))
     versions = ({"id": fgapiver,
                  "_links": ({"rel": "self",
                             "href": fgapiver},),
@@ -705,8 +722,9 @@ def index():
 @app.route('/%s/tasks' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def tasks():
-    logger.debug('tasks(%s): %s' % (request.method, request.values))
     global fgapisrv_db
+    global logger
+    logger.debug('tasks(%s): %s' % (request.method, request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     logger.debug("user_name: '%s'" % user_name)
@@ -794,7 +812,6 @@ def tasks():
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        logger.debug("username %s - %s" % (user_name, user))
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")
         logger.debug("[app_run]: auth_state: '%s', auth_msg: '%s'"
@@ -884,6 +901,10 @@ def tasks():
 @login_required
 def task_id(task_id=None):
     global fgapisrv_db
+    global logger
+    logger.debug('tasks(%s)/%s: %s' % (request.method,
+                                       task_id,
+                                       request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     app_id = get_task_app_id(task_id)
@@ -1047,6 +1068,9 @@ def task_id(task_id=None):
 @login_required
 def task_id_input(task_id=None):
     global fgapisrv_db
+    global logger
+    logger.debug('task_id_input(%s): %s' % (request.method,
+                                            request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     app_id = get_task_app_id(task_id)
@@ -1148,6 +1172,8 @@ def task_id_input(task_id=None):
 @login_required
 def file():
     global fgapisrv_db
+    global logger
+    logger.debug('file(%s): %s' % (request.method, request.values.to_dict()))
     serve_file = None
     user_name = current_user.get_name()
     user_id = current_user.get_id()
@@ -1199,6 +1225,9 @@ def file():
 @login_required
 def applications():
     global fgapisrv_db
+    global logger
+    logger.debug('applications(%s): %s' % (request.method,
+                                           request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     app_id = None
@@ -1358,6 +1387,10 @@ def applications():
 @login_required
 def app_id(app_id=None):
     global fgapisrv_db
+    global logger
+    logger.debug('application(%s)/%s: %s' % (request.method,
+                                             app_id,
+                                             request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
@@ -1438,6 +1471,10 @@ def app_id(app_id=None):
 @login_required
 def app_id_input(app_id=None):
     global fgapisrv_db
+    global logger
+    logger.debug('index(%s)/%s/input: %s' % (request.method,
+                                             app_id,
+                                             request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
@@ -1520,6 +1557,9 @@ def app_id_input(app_id=None):
 @login_required
 def infrastructures():
     global fgapisrv_db
+    global logger
+    logger.debug('infrastructures(%s): %s' % (request.method,
+                                              request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     infra_id = None
@@ -1667,6 +1707,10 @@ def infrastructures():
 @login_required
 def infra_id(infra_id=None):
     global fgapisrv_db
+    global logger
+    logger.debug('infrastructures(%s)/%s: %s' % (request.method,
+                                                 app_id,
+                                                 request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
