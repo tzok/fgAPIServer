@@ -47,9 +47,11 @@ import logging.config
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
 __license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
+__version__ = "v0.0.7-1"
 __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
+__status__ = "release"
+__update__ = "23-05-2017 17:23:15"
 
 # setup path
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -696,8 +698,8 @@ def index():
                  "_links": ({"rel": "self",
                             "href": fgapiver},),
                  "media-types": ({"type": "application/json"}),
-                 "status": "release",
-                 "updated": "2017-05-19",
+                 "status": __status__,
+                 "updated": __update__,
                  "build:": __version__},)
     index_response = {
         "versions": versions,
