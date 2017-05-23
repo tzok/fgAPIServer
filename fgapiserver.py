@@ -156,20 +156,25 @@ def check_db_ver():
     global fgapisrv_db
     fgapisrv_db = get_fgapiserver_db()
     if fgapisrv_db is None:
-        print "Unable to connect to the database!"
+        msg = "Unable to connect to the database!"
+        logger.error(msg)
+        print msg
         sys.exit(1)
     else:
         # getDBVersion
         db_ver = fgapisrv_db.get_db_version()
-        if fgapisrv_dbver is None \
-                or fgapisrv_dbver == '' \
-                or fgapisrv_dbver != db_ver:
-            logger.debug(("Current database version '%s' is not compatible "
-                          "with this version of the API server front-end; "
-                          "version %s is required") % (db_ver, fgapisrv_dbver))
-            logger.debug(("It is suggested to update your database applying "
-                          "new available patches"))
+        if fgapisrv_dbver is None or\
+           fgapisrv_dbver == '' or\
+           fgapisrv_dbver != db_ver:
+            msg = ("Current database version '%s' is not compatible "
+                   "with this version of the API server front-end; "
+                   "version %s is required."
+                   "It is suggested to update your database applying "
+                   "new available patches" % (db_ver, fgapisrv_dbver))
+            logger.error(msg)
+            print msg
             sys.exit(1)
+    logger.debug("Check database version passed")
     return db_ver
 
 
@@ -202,33 +207,11 @@ def get_task_app_id(task_id):
     task_info = fgapisrv_db.get_task_info(task_id)
     app_record = task_info.get('application', None)
     if app_record is not None:
+        logger.debug("Found app_id: '%s' for task_id: '%s'"
+                     % (app_record['id'], task_id))
         return app_record['id']
+    logger.warn("Could not find app_id for task_id: '%s'" % task_id)
     return None
-
-
-def get_file_task_id(file_name, file_path):
-    """
-    Return the task id associated to the file name and output
-    :param file_name: The name of the file
-    :param file_path: The path of the file
-    :return: The task id associated to the <file_path>/<file_name>
-    """
-    global fgapisrv_db
-    return fgapisrv_db.get_file_task_id(file_name, file_path)
-
-
-def verify_session_token(sestoken):
-    """
-     verifySessionToken verifies the given session token returning user id and
-     its name user id and name will be later used to retrieve user privileges
-
-     (!) Override this method to manage more complex and secure algorithms;
-    :param sestoken: Session token
-    :return: A couple (user_id, user_name) corresponding to the given session
-             token
-    """
-    global fgapisrv_db
-    return fgapisrv_db.verify_session_token(sestoken)
 
 
 def process_log_token(logtoken):
@@ -319,7 +302,7 @@ def authorize_user(current_user, app_id, user, reqroles):
     :param reqroles: The requested roles: task_view, app_run, ...
     :return:
     """
-    logger.debug("AuthUser: begin")
+    logger.debug("AuthUser: (begin)")
     global fgapisrv_db
 
     # Return True if token management is disabled
@@ -581,7 +564,7 @@ def load_user(request):
         else:
             logger.debug(("LoadUser: Verifying token with "
                           "baseline token management"))
-            user_rec = verify_session_token(token)
+            user_rec = fgapisrv_db.verify_session_token(token)
             logger.debug("LoadUser: user_id: '%s',user_name: '%s'"
                          % (user_rec[0], user_rec[1]))
             if user_rec is not None and user_rec[0] is not None:
@@ -1171,7 +1154,7 @@ def file():
     user = request.values.get('user', user_name)
     file_path = request.values.get('path', None)
     file_name = request.values.get('name', None)
-    task_id = get_file_task_id(file_name, file_path)
+    task_id = fgapisrv_db.get_file_task_id(file_name, file_path)
     app_id = get_task_app_id(task_id)
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(

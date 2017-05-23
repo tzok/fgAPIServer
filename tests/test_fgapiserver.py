@@ -96,20 +96,6 @@ class Test_fgAPIServer(unittest.TestCase):
         self.banner("get_task_app_id(1)")
         self.assertEqual('1', fgapiserver.get_task_app_id(1))
 
-    def test_get_file_task_id(self):
-        self.banner("get_file_task_id('test_file','/tmp')")
-        task_id = fgapiserver.get_file_task_id('test_file', '/tmp')
-        print task_id
-        self.assertEqual(task_id, '1')
-
-    def test_verify_session_token(self):
-        self.banner("verify_session_token("
-                    "'AAABBBCCCDDDEEEFFFGGGHHHIIIJJJKKK')")
-        result = fgapiserver.verify_session_token(
-            'AAABBBCCCDDDEEEFFFGGGHHHIIIJJJKKK')
-        self.assertEqual(result[0], '1')
-        self.assertEqual(result[1], 'test_user')
-
     #
     # fgapiserverdb
     #
