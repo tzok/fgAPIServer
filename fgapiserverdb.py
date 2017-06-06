@@ -1085,19 +1085,6 @@ class FGAPIServerDB:
                     self.log.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
 
-            # below code is in app_files variable
-            # First of all load application level input files
-            #sql = ('select file, path, override\n'
-            #       'from application_file\n'
-            #       'where app_id = %s;')
-            #sql_data = (app_id,)
-            #self.log.debug(sql % sql_data)
-            #cursor.execute(sql, sql_data)
-            #for files_rec in cursor:
-            #    input_files.append({"name": files_rec[0],
-            #                        "path": files_rec[1],
-            #                        "override": files_rec[2]})
-
             # Process input files specified in the REST URL (input_files)
             # producing a new vector called task_input_file having the same
             # structure of app_files: [ { "name": <filname>
