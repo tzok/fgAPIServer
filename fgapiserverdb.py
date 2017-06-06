@@ -1031,6 +1031,8 @@ class FGAPIServerDB:
             output_files):
         # Get app defined files
         app_files = self.get_app_files(app_id)
+        self.log.debug("Application files for app_id %s are: %s"
+                       % (app_id, app_files))
         # Start creating task
         db = None
         cursor = None
@@ -1082,22 +1084,24 @@ class FGAPIServerDB:
                     sql_data = (task_id, arg, task_id)
                     self.log.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
-            # Insert Task input_files
+
+            # below code is in app_files variable
             # First of all load application level input files
-            sql = ('select file, path, override\n'
-                   'from application_file\n'
-                   'where app_id = %s;')
-            sql_data = (app_id,)
-            self.log.debug(sql % sql_data)
-            cursor.execute(sql, sql_data)
-            for files_rec in cursor:
-                input_files.append({"name": files_rec[0],
-                                    "path": files_rec[1],
-                                    "override": files_rec[2]})
+            #sql = ('select file, path, override\n'
+            #       'from application_file\n'
+            #       'where app_id = %s;')
+            #sql_data = (app_id,)
+            #self.log.debug(sql % sql_data)
+            #cursor.execute(sql, sql_data)
+            #for files_rec in cursor:
+            #    input_files.append({"name": files_rec[0],
+            #                        "path": files_rec[1],
+            #                        "override": files_rec[2]})
+
             # Process input files specified in the REST URL (input_files)
-            # producing a new vector called inp_file having the same structure
-            # of app_files: [ { "name": <filname>
-            #                  ,"path": <path to file> },...]
+            # producing a new vector called task_input_file having the same
+            # structure of app_files: [ { "name": <filname>
+            #                             ,"path": <path to file> },...]
             # except for the 'override' key not necessary in this second array.
             # For each file specified inside input_file, verify if it exists
             # alredy in the app_file vector. If the file exists there are two
@@ -1107,8 +1111,10 @@ class FGAPIServerDB:
             # * app_file['override'] flag is false; user input couldn't be
             #   ignored, thus the path to the file will be set to NULL waiting
             #   for user input
-            inp_file = []
+            self.log.debug("Input files processing")
+            task_input_files = []
             for file in input_files:
+                self.log.debug("file: %s" % file)
                 skip_file = False
                 for app_file in app_files:
                     if file['name'] == app_file['file']:
@@ -1120,9 +1126,11 @@ class FGAPIServerDB:
                             break
                 if not skip_file:
                     # The file is not in app_file
-                    inp_file += [{"path": None, "file": file['name']}, ]
+                    task_input_files += [{"path": None,
+                                          "file": file['name']}, ]
+
             # Files can be registered in task_input_files
-            for inpfile in app_files + inp_file:
+            for inpfile in app_files + task_input_files:
                 # Not None paths having not empty content refers to an
                 # existing app_file that could be copied into the iosandbox
                 # task directory and path can be modifies with the iosandbox
@@ -1939,8 +1947,8 @@ class FGAPIServerDB:
                 "parameters": app_params,
                 "files": app_ifiles,
                 "infrastructures": app_infras}
-            self.query_done(
-              "Application '%s' record: '%s'" % (app_id, app_record))
+            self.query_done("Application '%s' record: '%s'"
+                            % (app_id, app_record))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -2061,7 +2069,7 @@ class FGAPIServerDB:
                     '      ,TRUE\n'
                     'from application_file\n'
                     'where app_id=%s')
-                sql_data = (app_id, file, app_id)
+                sql_data = (app_id, file['name'], app_id)
                 self.log.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             # Insert Application infrastructures
@@ -2229,7 +2237,7 @@ class FGAPIServerDB:
                        'set path = %s\n'
                        'where app_id = %s\n'
                        '  and file = %s;')
-                sql_data = (file_path, app_id, file_path)
+                sql_data = (file_path, app_id, file_name)
             else:
                 sql = ('insert into application_file (app_id\n'
                        '                            ,file_id\n'
@@ -2244,7 +2252,7 @@ class FGAPIServerDB:
                        'from application_file\n'
                        'where app_id=%s')
                 sql_data = (app_id, file_name, file_path, app_id)
-                self.log.debug(sql % sql_data)
+            self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             self.query_done(
                 "insert or update of file '%s/%s' for app '%s'" % (file_path,

@@ -48,44 +48,43 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
 
 # Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
+fg_config_obj = FGApiServerConfig(fgapiserver_config_file)
+fg_config = fg_config_obj.get_config()
 
 # fgapiserver settings
-fgapiver = fg_config.get_config_value('fgapiver')
-fgapiserver_name = fg_config.get_config_value('fgapiserver_name')
-fgapisrv_host = fg_config.get_config_value('fgapisrv_host')
-fgapisrv_port = int(fg_config.get_config_value('fgapisrv_port'))
-fgapisrv_debug = (fg_config.get_config_value(
-    'fgapisrv_debug').lower() == 'true')
-fgapisrv_iosandbox = fg_config.get_config_value('fgapisrv_iosandbox')
-fgapisrv_geappid = int(fg_config.get_config_value('fgapisrv_geappid'))
-fgjson_indent = int(fg_config.get_config_value('fgjson_indent'))
-fgapisrv_key = fg_config.get_config_value('fgapisrv_key')
-fgapisrv_crt = fg_config.get_config_value('fgapisrv_crt')
-fgapisrv_logcfg = fg_config.get_config_value('fgapisrv_logcfg')
-fgapisrv_dbver = fg_config.get_config_value('fgapisrv_dbver')
-fgapisrv_secret = fg_config.get_config_value('fgapisrv_secret')
-fgapisrv_notoken = (fg_config.get_config_value(
-    'fgapisrv_notoken').lower() == 'true')
-fgapisrv_notokenusr = fg_config.get_config_value('fgapisrv_notokenusr')
-fgapisrv_lnkptvflag = fg_config.get_config_value('fgapisrv_lnkptvflag')
-fgapisrv_ptvendpoint = fg_config.get_config_value('fgapisrv_ptvendpoint')
-fgapisrv_ptvuser = fg_config.get_config_value('fgapisrv_ptvuser')
-fgapisrv_ptvpass = fg_config.get_config_value('fgapisrv_ptvpass')
-fgapisrv_ptvdefusr = fg_config.get_config_value('fgapisrv_ptvdefusr')
-fgapisrv_ptvmapfile = fg_config.get_config_value('fgapisrv_ptvmapfile')
+fgapiver = fg_config['fgapiver']
+fgapiserver_name = fg_config['fgapiserver_name']
+fgapisrv_host = fg_config['fgapisrv_host']
+fgapisrv_port = int(fg_config['fgapisrv_port'])
+fgapisrv_debug = (fg_config['fgapisrv_debug'].lower() == 'true')
+fgapisrv_iosandbox = fg_config['fgapisrv_iosandbox']
+fgapisrv_geappid = fg_config['fgapisrv_geappid']
+fgjson_indent = int(fg_config['fgjson_indent'])
+fgapisrv_key = fg_config['fgapisrv_key']
+fgapisrv_crt = fg_config['fgapisrv_crt']
+fgapisrv_logcfg = fg_config['fgapisrv_logcfg']
+fgapisrv_dbver = fg_config['fgapisrv_dbver']
+fgapisrv_secret = fg_config['fgapisrv_secret']
+fgapisrv_notoken = (fg_config['fgapisrv_notoken'].lower() == 'true')
+fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
+fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
+fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
+fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
+fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
+fgapisrv_ptvdefusr = fg_config['fgapisrv_ptvdefusr']
+fgapisrv_ptvmapfile = fg_config['fgapisrv_ptvmapfile']
 
 # fgapiserver database settings
-fgapisrv_db_host = fg_config.get_config_value('fgapisrv_db_host')
-fgapisrv_db_port = int(fg_config.get_config_value('fgapisrv_db_port'))
-fgapisrv_db_user = fg_config.get_config_value('fgapisrv_db_user')
-fgapisrv_db_pass = fg_config.get_config_value('fgapisrv_db_pass')
-fgapisrv_db_name = fg_config.get_config_value('fgapisrv_db_name')
+fgapisrv_db_host = fg_config['fgapisrv_db_host']
+fgapisrv_db_port = int(fg_config['fgapisrv_db_port'])
+fgapisrv_db_user = fg_config['fgapisrv_db_user']
+fgapisrv_db_pass = fg_config['fgapisrv_db_pass']
+fgapisrv_db_name = fg_config['fgapisrv_db_name']
 
 # Logging
 logging.config.fileConfig(fgapisrv_logcfg)
 logger = logging.getLogger(__name__)
-logger.debug(fg_config.show_conf())
+logger.debug(fg_config_obj.get_messages())
 
 # setup Flask app
 app = Flask(__name__)

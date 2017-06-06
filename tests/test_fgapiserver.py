@@ -361,8 +361,8 @@ class Test_fgAPIServer(unittest.TestCase):
              'application': {
                  'infrastructures': [
                      {'status': 'enabled',
-                      'description':
-                          'test infrastructure for test application',
+                      'description': ('test infrastructure for '
+                                      'test application'),
                       'parameters': [
                           {'name': 'test_infra_param_name_1',
                            'value': 'test_infra_param_value_1'},
@@ -498,19 +498,19 @@ class Test_fgAPIServer(unittest.TestCase):
     def test_dbobj_init_app(self):
         self.banner("Testing fgapiserverdb init_app")
         result = self.fgapisrv_db.init_app(
-                    'test application',
-                    'test application description',
-                    'JOB',
-                    True,
-                    [{'name': 'test_param_name1',
-                      'value': 'test_param_value1',
-                      'description': 'test_param_desc1'},
-                     {'name': 'test_param_name1',
-                      'value': 'test_param_value1',
-                      'description': 'test_param_desc1'}],
-                    [],
-                    ['test_app_file1', 'test_app_file2'],
-                    [1])
+            'test application',
+            'test application description',
+            'JOB',
+            True,
+            [{'name': 'test_param_name1',
+              'value': 'test_param_value1',
+              'description': 'test_param_desc1'},
+             {'name': 'test_param_name1',
+              'value': 'test_param_value1',
+              'description': 'test_param_desc1'}],
+            [],
+            ['test_app_file1', 'test_app_file2'],
+            [1])
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
         assert state[0] is False
@@ -537,11 +537,11 @@ class Test_fgAPIServer(unittest.TestCase):
     def test_dbobj_init_infra(self):
         self.banner("Testing fgapiserverdb init_infra")
         result = self.fgapisrv_db.init_infra(
-                    'Test infrastructure',
-                    'Test infrastructure description',
-                    True,
-                    False,
-                    {})
+            'Test infrastructure',
+            'Test infrastructure description',
+            True,
+            False,
+            {})
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
         assert state[0] is False
@@ -582,7 +582,7 @@ class Test_fgAPIServer(unittest.TestCase):
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("42a4770302cbe940f3c7f809ca5675af",
+        self.assertEqual("39966ce9d2fd0e8a009fab43d8cae254",
                          self.md5sum_str(result.data))
 
     def test_get_infrastructures(self):
@@ -611,9 +611,9 @@ class Test_fgAPIServer(unittest.TestCase):
                      'enabled': True}
         self.banner("POST /v1.0/infrastructures")
         result = self.app.post(
-                    '/v1.0/infrastructures',
-                    data=json.dumps(post_data),
-                    content_type="application/json")
+            '/v1.0/infrastructures',
+            data=json.dumps(post_data),
+            content_type="application/json")
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
@@ -622,8 +622,7 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_delete_infrastructure(self):
         self.banner("DELETE /v1.0/infrastructures/1")
-        result = self.app.delete(
-                    '/v1.0/infrastructures/1')
+        result = self.app.delete('/v1.0/infrastructures/1')
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("8ba55904600d405ea07f71e499ca3aa5",

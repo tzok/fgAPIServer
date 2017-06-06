@@ -338,8 +338,8 @@ def authorize_user(current_user, app_id, user, reqroles):
                   "with roles '%s' is %s")
                  % (user_id, reqroles, auth_z))
     if not auth_z:
-        message = "User '%s' does not have requested '%s' role(s)\n"\
-                % (user_name, reqroles)
+        message = ("User '%s' does not have requested '%s' role(s)\n"
+                   % (user_name, reqroles))
     # Check current_user and filter user are different
     if user_name != user:
         logger.debug("AuthUser: User name '%s' differs from user '%s'"
@@ -394,10 +394,9 @@ def load_user(request):
         user_info = fgapisrv_db.get_user_info_by_name(fgapisrv_notokenusr)
         user_id = user_info["id"]
         user_name = user_info["name"]
-        logger.debug(
-              ("LoadUser: Session token disabled; "
-               "behaving has user: '%s' (%s)")
-              % (user_name, user_id))
+        logger.debug(("LoadUser: Session token disabled; "
+                      "behaving has user: '%s' (%s)"
+                      % (user_name, user_id)))
         return User(int(user_info["id"]), user_info["name"])
 
     logger.debug("LoadUser: using token")
@@ -1494,8 +1493,8 @@ def app_id_input(app_id=None):
             if not fgapisrv_db.app_exists(app_id):
                 app_status = 404
                 app_response = {
-                    "message":
-                        "Unable to find application with id: %s" % app_id
+                    "message": ("Unable to find application with id: %s"
+                                % app_id)
                 }
             else:
                 app_status = 200
@@ -1518,23 +1517,24 @@ def app_id_input(app_id=None):
             if not fgapisrv_db.app_exists(app_id):
                 app_state = 404
                 app_response = {
-                    "message":
-                        "Unable to find application with id: %s" % task_id
+                    "message": ("Unable to find application with id: %s"
+                                % task_id)
                 }
             else:
                 # Now process files to upload
                 app_dir = 'apps/%s' % app_id
                 try:
                     os.stat(app_dir)
+                    logger.debug("App dir: '%s' exists" % app_dir)
                 except:
+                    logger.debug("Creating app dir: '%s'" % app_dir)
                     os.makedirs(app_dir)
                 uploaded_files = request.files.getlist('file[]')
-                print "uploading file"
-                print uploaded_files
                 file_list = ()
+                logger.debug("uploading file(s):")
                 for f in uploaded_files:
-                    print "uploading file '%s'" % f
                     filename = secure_filename(f.filename)
+                    logger.debug("%s -> %s" % (filename, app_dir))
                     f.save(os.path.join(app_dir, filename))
                     fgapisrv_db.insert_or_update_app_file(app_id,
                                                           filename,
@@ -1635,8 +1635,10 @@ def infrastructures():
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'POST':
-        auth_state, auth_msg = authorize_user(
-             current_user, None, user, "infra_add")
+        auth_state, auth_msg = authorize_user(current_user,
+                                              None,
+                                              user,
+                                              "infra_add")
         if not auth_state:
             infra_state = 402
             infra_response = {
@@ -1728,26 +1730,23 @@ def infra_id(infra_id=None):
             if not fgapisrv_db.infra_exists(infra_id):
                 infra_status = 404
                 infra_response = {
-                    "message":
-                        "Unable to find infrastructure with id: %s"
-                        % infra_id}
+                    "message": ("Unable to find infrastructure with id: %s"
+                                % infra_id)}
             else:
                 # Get task details
                 infra_record = fgapisrv_db.get_infra_record(infra_id)
-                infra_response = {
-                        "id": infra_record['id'],
-                        "name": infra_record['name'],
-                        "description": infra_record['description'],
-                        "date": infra_record['creation'],
-                        "enabled": infra_record['enabled'],
-                        "virtual": infra_record['virtual'],
-                        "parameters": infra_record['parameters'],
-                        "_links": [
-                            {
-                                "rel": "self",
-                                "href": "/%s/infrastructure/%s" %
-                                        (fgapiver,
-                                         infra_record['id'])}]}
+                infra_response = {"id": infra_record['id'],
+                                  "name": infra_record['name'],
+                                  "description": infra_record['description'],
+                                  "date": infra_record['creation'],
+                                  "enabled": infra_record['enabled'],
+                                  "virtual": infra_record['virtual'],
+                                  "parameters": infra_record['parameters'],
+                                  "_links": [
+                                      {"rel": "self",
+                                       "href": ("/%s/infrastructure/%s"
+                                                % (fgapiver,
+                                                   infra_record['id']))}]}
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
