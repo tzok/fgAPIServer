@@ -79,5 +79,21 @@ echo "Executing: '"$CMD"'"
 eval $CMD > $JSON_OUT
 echo "Output: '"$(cat $JSON_OUT)"'"
 
+# Print how to submit the app
+HEADERS=$HDR_APPJSON" "$HDR_AUTHBRR
+cat >$POST_DATA <<EOF
+{"application":"${APP_ID}", "description":"sayhello ${APP_ID} test run", "arguments": ["this is the argument"]}
+EOF
+CMD="curl $HEADERS -X POST -d '"$(cat $POST_DATA)"' $API_URL/tasks"
+echo ""
+echo "To execute the application with id: $APP_ID, use:"
+echo $CMD
+# Print how to view task info
+HEADERS=$HDR_AUTHBRR
+CMD="curl $HEADERS $API_URL/tasks/<task_id>"
+echo ""
+echo "To view task details use:"
+echo $CMD
+
 rm -f $JSON_OUT
 rm -f $POST_DATA
