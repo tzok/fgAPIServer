@@ -509,7 +509,8 @@ class Test_fgAPIServer(unittest.TestCase):
               'value': 'test_param_value1',
               'description': 'test_param_desc1'}],
             [],
-            ['test_app_file1', 'test_app_file2'],
+            [{'name': 'test_app_file1'},
+             {'name': 'test_app_file2'}],
             [1])
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
