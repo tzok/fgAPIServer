@@ -1713,7 +1713,7 @@ def infra_id(infra_id=None):
     global fgapisrv_db
     global logger
     logger.debug('infrastructures(%s)/%s: %s' % (request.method,
-                                                 app_id,
+                                                 infra_id,
                                                  request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
