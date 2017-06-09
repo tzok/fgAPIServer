@@ -968,7 +968,7 @@ def task_id(task_id=None):
                     "message": "Successfully removed task with id: %s" %
                                task_id}
                 # 204 - NO CONTENT cause no output
-                logger.debug(task_reposne['message'])
+                logger.debug(task_response['message'])
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
@@ -1456,7 +1456,7 @@ def app_id(app_id=None):
                     "message": "Successfully removed application with id: %s" %
                                app_id}
                 # 204 - NO CONTENT cause no output
-                logger.debug(task_reposne['message'])
+                logger.debug(response['message'])
         js = json.dumps(response, indent=fgjson_indent)
         resp = Response(js, status=status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
