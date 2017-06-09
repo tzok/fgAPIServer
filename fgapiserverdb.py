@@ -1538,17 +1538,28 @@ class FGAPIServerDB:
                 '  ,last_change\n'
                 '  ,check_ts\n'
                 '  ,action_info\n'
-                ') values (%s,\n'
-                '          NULL,\n'
-                '         \'GridEngine\',\n'
+                ') select %s,\n'
+                '         NULL,\n'
+                '         (select target\n'
+                '          from as_queue\n'
+                '          where task_id=%s\n'
+                '          order by task_id asc\n'
+                '          limit 1),\n'
                 '         \'CLEAN\',\n'
                 '         \'QUEUED\',\n'
-                '          NULL,\n'
-                '          now(),\n'
-                '          now(),\n'
-                '          now(),\n'
-                '          %s);')
-            sql_data = (task_info['id'], task_info['iosandbox'])
+                '         (select status\n'
+                '          from as_queue\n'
+                '          where task_id=%s\n'
+                '          order by task_id asc\n'
+                '          limit 1),\n'
+                '         now(),\n'
+                '         now(),\n'
+                '         now(),\n'
+                '         %s;')
+            sql_data = (task_info['id'],
+                        task_info['id'],
+                        task_info['id'],
+                        task_info['iosandbox'])
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             sql = (
