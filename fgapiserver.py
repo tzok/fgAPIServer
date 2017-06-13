@@ -953,22 +953,24 @@ def task_id(task_id=None):
                            auth_msg}
         else:
             if not fgapisrv_db.task_exists(task_id, user_id, user):
-                task_status = 404
+                task_state = 404
                 task_response = {
                     "message": "Unable to find task with id: %s" % task_id
                 }
             elif not fgapisrv_db.delete(task_id):
-                task_status = 410
+                task_state = 410
                 task_response = {
                     "message": "Unable to delete task with id: %s" % task_id
                 }
             else:
-                task_status = 204
+                task_state = 204
                 task_response = {
                     "message": "Successfully removed task with id: %s" %
                                task_id}
+                # 204 - NO CONTENT cause no output
+                logger.debug(task_response['message'])
         js = json.dumps(task_response, indent=fgjson_indent)
-        resp = Response(js, status=task_status, mimetype='application/json')
+        resp = Response(js, status=task_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
     elif request.method == 'PATCH':
@@ -1453,6 +1455,8 @@ def app_id(app_id=None):
                 response = {
                     "message": "Successfully removed application with id: %s" %
                                app_id}
+                # 204 - NO CONTENT cause no output
+                logger.debug(response['message'])
         js = json.dumps(response, indent=fgjson_indent)
         resp = Response(js, status=status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
