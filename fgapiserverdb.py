@@ -1040,7 +1040,7 @@ class FGAPIServerDB:
         try:
             # Create the Task IO Sandbox
             iosandbox = '%s/%s' % (self.iosandbbox_dir, str(uuid.uuid1()))
-            os.makedirs(iosandbox)
+            os.makedirs(iosandbox,0770)
             # Insert new Task record
             db = self.connect()
             cursor = db.cursor()
