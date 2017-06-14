@@ -2707,9 +2707,9 @@ class FGAPIServerDB:
         return result
 
     """
-      fgapisrv_db.infra_change(app_id, infra_desc)
-      Change infrastructure values, accordingly to the given
-      infra_desc json containing ALL infrastructure parameters
+      infra_change(infra_id, infra_desc)
+      Change infrastructure values of the given infrastructure id,
+      accordingly to the values contained in infra_desc json
     """
 
     def infra_change(self, infra_id, infra_desc):
@@ -2735,39 +2735,218 @@ class FGAPIServerDB:
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             # Now remove any existing parameter
-            sql = (
-                'delete from infrastructure_parameter\n'
-                'where infra_id=%s;')
-            sql_data = (infra_id,)
-            self.log.debug(sql % sql_data)
-            cursor.execute(sql, sql_data)
-            # Re-insert parameters
-            for param in infra_desc['parameters']:
+            json_params = infra_desc.get('parameters',None)
+            if json_params is not None:
                 sql = (
-                    'insert into infrastructure_parameter\n'
-                    '    (infra_id,\n'
-                    '     param_id,\n'
-                    '     pname,\n'
-                    '     pvalue,\n'
-                    '     pdesc)\n'
-                    '    select %s,\n'
-                    '           if(max(param_id) is NULL,\n'
-                    '              1,max(param_id)+1),\n'
-                    '           %s,\n'
-                    '           %s,\n'
-                    '           %s\n'
-                    '    from infrastructure_parameter\n'
-                    '    where infra_id=%s;')
-                sql_data = (infra_id,
-                            param['name'],
-                            param['value'],
-                            param.get('description', None),
-                            infra_id)
+                    'delete from infrastructure_parameter\n'
+                    'where infra_id=%s;')
+                sql_data = (infra_id,)
                 self.log.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
+                # Re-insert parameters
+                for param in json_params:
+                    sql = (
+                        'insert into infrastructure_parameter\n'
+                        '    (infra_id,\n'
+                        '     param_id,\n'
+                        '     pname,\n'
+                        '     pvalue,\n'
+                        '     pdesc)\n'
+                        '    select %s,\n'
+                        '           if(max(param_id) is NULL,\n'
+                        '              1,max(param_id)+1),\n'
+                        '           %s,\n'
+                        '           %s,\n'
+                        '           %s\n'
+                        '    from infrastructure_parameter\n'
+                        '    where infra_id=%s;')
+                    sql_data = (infra_id,
+                                param['name'],
+                                param['value'],
+                                param.get('description', None),
+                                infra_id)
+                    self.log.debug(sql % sql_data)
+                    cursor.execute(sql, sql_data)
             result = True
             self.query_done(
-                "Infrastructure '%s' successfully changed" % infra_id)
+                "Infrastructure having id: '%s' successfully changed"
+                % infra_id)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return result
+
+
+    """
+      app_change(app_id, app_desc)
+      Change applicaion values of the given application id
+      accordingly to the given app_desc json 
+    """
+
+    def app_change(self, app_id, app_desc):
+        db = None
+        cursor = None
+        result = False
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            # Update infrastructure values
+            sql = (
+                'update application set\n'
+                '    name=%s,\n'
+                '    description=%s,\n'
+                '    outcome=%s,\n'
+                '    enabled=%s\n'
+                'where id=%s;')
+            sql_data = (app_desc['name'],
+                        app_desc['description'],
+                        app_desc['outcome'],
+                        app_desc['enabled'],
+                        app_id)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            # Get a list of existing application files
+            app_files = []
+            sql = (
+                'select file, path\n'
+                'from application_file\n'
+                'where app_id = %s\n'
+                '  and (path is not null or path != \'\');')
+            sql_data = (app_id,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            for app_file in cursor:
+                app_record = {"name": app_file[0],
+                              "path": app_file[1]}
+                app_files += [ app_record ]
+            self.log.debug("Associated files for applciation %s:"
+                           % app_files)
+            # Process 'files'
+            json_files = app_desc.get('files',None)
+            if json_files is not None:
+                # Now remove any existing application file 
+                sql = (
+                    'delete from application_file\n'
+                    'where app_id=%s;')
+                sql_data = (app_id,)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                # Re-insert files
+                for app_file in json_files:
+                    # Try to find path in previous application list
+                    app_file_path = None
+                    for prev_app_file in app_files:
+                        if prev_app_file["name"] == app_file:
+                            app_file_path = prev_app_file["path"]
+                            app_files.remove(prev_app_file)
+                            break
+                    sql = (
+                        'insert into application_file\n'
+                        '    (app_id,\n'
+                        '     file_id,\n'
+                        '     file,\n'
+                        '     path,\n'
+                        '     override)\n'
+                        '    select %s,\n'
+                        '           if(max(file_id) is NULL,\n'
+                        '              1,max(file_id)+1),\n'
+                        '           %s,\n'
+                        '           %s,\n'
+                        '           TRUE\n'
+                        '    from application_file\n'
+                        '    where app_id=%s;')
+                    sql_data = (app_id,
+                                app_file,
+                                app_file_path,
+                                app_id)
+                    self.log.debug(sql % sql_data)
+                    cursor.execute(sql, sql_data)
+            # Process 'input_files'
+            json_input_files = app_desc.get('input_files',None)
+            if json_input_files is not None:
+                # Re-insert files with input_files statement
+                for app_file in json_input_files:
+                    # Try to locate the file in previous application list
+                    for prev_app_file in app_files:
+                        if prev_app_file["name"] == app_file["name"]\
+                           and prev_app_file["path"] == app_file["path"]:
+                            app_files.remove(prev_app_file)
+                            break
+                    sql = (
+                        'insert into application_file\n'
+                        '    (app_id,\n'
+                        '     file_id,\n'
+                        '     file,\n'
+                        '     path,\n'
+                        '     override)\n'
+                        '    select %s,\n'
+                        '           if(max(file_id) is NULL,\n'
+                        '              1,max(file_id)+1),\n'
+                        '           %s,\n'
+                        '           %s,\n'
+                        '           %s\n'
+                        '    from application_file\n'
+                        '    where app_id=%s;')
+                    sql_data = (app_id,
+                                app_file["name"],
+                                app_file["path"],
+                                app_file["override"],
+                                app_id)
+                    self.log.debug(sql % sql_data)
+                    cursor.execute(sql, sql_data)
+                # Delete parameters
+                sql = (
+                    'delete from application_parameter\n'
+                    'where app_id=%s;')
+                sql_data = (app_id,)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+            # Process parameters
+            json_params = app_desc.get('parameters',None)
+            if json_params is not None:
+                # Re-insert parameters
+                for app_param in json_params:
+                    sql = (
+                        'insert into application_parameter\n'
+                        '    (app_id,\n'
+                        '     param_id,\n'
+                        '     pname,\n'
+                        '     pvalue,\n'
+                        '     pdesc)\n'
+                        '    select %s,\n'
+                        '           if(max(param_id) is NULL,\n'
+                        '              1,max(param_id)+1),\n'
+                        '           %s,\n'
+                        '           %s,\n'
+                        '           %s\n'
+                        '    from application_parameter\n'
+                        '    where app_id=%s;')
+                    sql_data = (app_id,
+                                app_param["name"],
+                                app_param["value"],
+                                app_param.get("description",None),
+                                app_id)
+                    self.log.debug(sql % sql_data)
+                    cursor.execute(sql, sql_data)
+            # Infrastructures are ignored at the moment
+            # for infra in app_desc['infrastructure']:
+            #    pass
+            # Remove from the filesystem the list of remaining files
+            for prev_app_file in app_files:
+                prev_app_file_path = ("%s/%s" % (prev_app_file["path"],
+                                                prev_app_file["name"]))
+                try: 
+                    os.remove(prev_app_file_path)
+                    self.log.debug("Successfully removed file: '%s'" 
+                                   % prev_app_file_path),
+                except OSError:
+                    self.log.error("Unable to remove file: '%s'"
+                                   % prev_app_file_path) 
+            result = True
+            self.query_done(
+                "Application having id '%s' successfully changed"
+                % app_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:

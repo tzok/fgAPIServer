@@ -1386,6 +1386,7 @@ def applications():
     methods=[
         'GET',
         'DELETE',
+        'PUT',
         'POST'])
 @login_required
 def app_id(app_id=None):
@@ -1425,17 +1426,12 @@ def app_id(app_id=None):
                     }
                 else:
                     status = 200
-        # Display task details
-        js = json.dumps(response, indent=fgjson_indent)
-        resp = Response(js, status=status, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
     elif request.method == 'DELETE':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_delete")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            status = 402
+            response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
@@ -1457,18 +1453,48 @@ def app_id(app_id=None):
                                app_id}
                 # 204 - NO CONTENT cause no output
                 logger.debug(response['message'])
-        js = json.dumps(response, indent=fgjson_indent)
-        resp = Response(js, status=status, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
     elif request.method == 'POST':
-        task_response = {
+        statis = 404
+        response = {
             "message": "Not supported method"
         }
-        js = json.dumps(task_response, indent=fgjson_indent)
-        resp = Response(js, status=404, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
+    elif request.method == 'PUT':
+        auth_state, auth_msg = authorize_user(
+            current_user, app_id, user, "app_change")
+        if not auth_state:
+            status = 402
+            response = {
+                "message": "Not authorized to perform this request:\n%s" %
+                           auth_msg}
+        else:
+            app_desc = request.get_json()
+            if app_desc.get("id", None) is not None\
+               and int(app_desc['id']) != int(app_id):
+                status = 403
+                response = {
+                    "message": "JSON application id %s is different than "
+                               "URL application id: %s" % (app_desc['id'],
+                                                           app_id)}
+            elif not fgapisrv_db.app_exists(app_id):
+                status = 404
+                response = {
+                    "message": "Unable to find application with id: %s" %
+                               app_id}
+            elif not fgapisrv_db.app_change(app_id, app_desc):
+                status = 410
+                response = {
+                    "message": ("Unable to change application with id: %s; "
+                                "reason: '%s'"
+                                % (app_id, fgapisrv_db.get_state()[1]))}
+            else:
+                status = 200
+                response = {
+                    "message": "Successfully changed application with id: %s" %
+                               app_id}
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
 
 
 @app.route('/%s/applications/<app_id>/input' % fgapiver,
@@ -1821,8 +1847,9 @@ def infra_id(infra_id=None):
             elif not fgapisrv_db.infra_change(infra_id, infra_desc):
                 status = 400
                 response = {
-                    "message": "Unable to change infrastructure id: %s" %
-                               infra_id}
+                    "message": ("Unable to change application with id: %s; "
+                                "reason: '%s'"
+                                % (app_id, fgapisrv_db.get_state()[1]))}
             else:
                 status = 201
                 response = {
