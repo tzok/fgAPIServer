@@ -2574,8 +2574,8 @@ class FGAPIServerDB:
     """
       infra_delete - delete infrastructure with a given infra_id
                      and/or app_id
-                     app_orphan flag, then true allow to delete  the
-                     infrastructure when it is used by applications
+                     app_orphan flag, when true allow to delete  the
+                     infrastructure even if it is used by applications
     """
 
     def infra_delete(self, infra_id, app_id, app_orhpan=False):
@@ -2583,6 +2583,7 @@ class FGAPIServerDB:
         db = None
         cursor = None
         result = False
+        app_orphans = 0
         try:
             db = self.connect()
             cursor = db.cursor()
@@ -2594,10 +2595,10 @@ class FGAPIServerDB:
                     '    ,infrastructure i\n'
                     'where i.app_id=a.id\n'
                     '  and i.id = %s;')
-            sql_data = (infra_id,)
-            self.log.debug(sql % sql_data)
-            cursor.execute(sql, sql_data)
-            app_orphans = int(cursor.fetchone()[0])
+                sql_data = (infra_id,)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                app_orphans = int(cursor.fetchone()[0])
             if app_orphans > 0:
                 self.err_msg = ('Infrastructure having id: \'%s\' '
                                 'is actually used by one or more '
@@ -2699,6 +2700,74 @@ class FGAPIServerDB:
                 result = True
             self.query_done(
                 "Infrastructure '%s' successfully deleted" % infra_id)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return result
+
+    """
+      fgapisrv_db.infra_change(app_id, infra_desc)
+      Change infrastructure values, accordingly to the given
+      infra_desc json containing ALL infrastructure parameters
+    """
+
+    def infra_change(self, infra_id, infra_desc):
+        db = None
+        cursor = None
+        result = False
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            # Update infrastructure values
+            sql = (
+                'update infrastructure set\n'
+                '    name=%s,\n'
+                '    description=%s,\n'
+                '    enabled=%s,\n'
+                '    vinfra=%s\n'
+                'where id=%s;')
+            sql_data = (infra_desc['name'],
+                        infra_desc['description'],
+                        infra_desc['enabled'],
+                        infra_desc['virtual'],
+                        infra_id)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            # Now remove any existing parameter
+            sql = (
+                'delete from infrastructure_parameter\n'
+                'where infra_id=%s;')
+            sql_data = (infra_id,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            # Re-insert parameters
+            for param in infra_desc['parameters']:
+                sql = (
+                    'insert into infrastructure_parameter\n'
+                    '    (infra_id,\n'
+                    '     param_id,\n'
+                    '     pname,\n'
+                    '     pvalue,\n'
+                    '     pdesc)\n'
+                    '    select %s,\n'
+                    '           if(max(param_id) is NULL,\n'
+                    '              1,max(param_id)+1),\n'
+                    '           %s,\n'
+                    '           %s,\n'
+                    '           %s\n'
+                    '    from infrastructure_parameter\n'
+                    '    where infra_id=%s;')
+                sql_data = (infra_id,
+                            param['name'],
+                            param['value'],
+                            param.get('description', None),
+                            infra_id)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+            result = True
+            self.query_done(
+                "Infrastructure '%s' successfully changed" % infra_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
