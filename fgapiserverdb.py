@@ -2895,6 +2895,9 @@ class FGAPIServerDB:
                                 app_id)
                     self.log.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
+            # Process parameters
+            json_params = app_desc.get('parameters',None)
+            if json_params is not None:
                 # Delete parameters
                 sql = (
                     'delete from application_parameter\n'
@@ -2902,9 +2905,6 @@ class FGAPIServerDB:
                 sql_data = (app_id,)
                 self.log.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
-            # Process parameters
-            json_params = app_desc.get('parameters',None)
-            if json_params is not None:
                 # Re-insert parameters
                 for app_param in json_params:
                     sql = (
