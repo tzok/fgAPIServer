@@ -2735,7 +2735,7 @@ class FGAPIServerDB:
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             # Now remove any existing parameter
-            json_params = infra_desc.get('parameters',None)
+            json_params = infra_desc.get('parameters', None)
             if json_params is not None:
                 sql = (
                     'delete from infrastructure_parameter\n'
@@ -2777,11 +2777,10 @@ class FGAPIServerDB:
             self.close_db(db, cursor, True)
         return result
 
-
     """
       app_change(app_id, app_desc)
       Change applicaion values of the given application id
-      accordingly to the given app_desc json 
+      accordingly to the given app_desc json
     """
 
     def app_change(self, app_id, app_desc):
@@ -2819,13 +2818,13 @@ class FGAPIServerDB:
             for app_file in cursor:
                 app_record = {"name": app_file[0],
                               "path": app_file[1]}
-                app_files += [ app_record ]
+                app_files += [app_record]
             self.log.debug("Associated files for applciation %s:"
                            % app_files)
             # Process 'files'
-            json_files = app_desc.get('files',None)
+            json_files = app_desc.get('files', None)
             if json_files is not None:
-                # Now remove any existing application file 
+                # Now remove any existing application file
                 sql = (
                     'delete from application_file\n'
                     'where app_id=%s;')
@@ -2863,7 +2862,7 @@ class FGAPIServerDB:
                     self.log.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
             # Process 'input_files'
-            json_input_files = app_desc.get('input_files',None)
+            json_input_files = app_desc.get('input_files', None)
             if json_input_files is not None:
                 # Re-insert files with input_files statement
                 for app_file in json_input_files:
@@ -2896,7 +2895,7 @@ class FGAPIServerDB:
                     self.log.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
             # Process parameters
-            json_params = app_desc.get('parameters',None)
+            json_params = app_desc.get('parameters', None)
             if json_params is not None:
                 # Delete parameters
                 sql = (
@@ -2925,24 +2924,147 @@ class FGAPIServerDB:
                     sql_data = (app_id,
                                 app_param["name"],
                                 app_param["value"],
-                                app_param.get("description",None),
+                                app_param.get("description", None),
                                 app_id)
                     self.log.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
             # Infrastructures are ignored at the moment
             # for infra in app_desc['infrastructure']:
             #    pass
+            # Process 'infrastructures'
+            json_infras = app_desc.get('infrastructures', None)
+            if json_infras is not None:
+                # Get the list of current infrastructure ids
+                app_infras = []
+                sql = ('select id from infrastructure where app_id=%s;')
+                sql_data = (app_id,)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                for qrec in cursor:
+                    app_infras += [qrec[0]]
+                # Process json infrastructures
+                for infra in json_infras:
+                    if isinstance(infra, dict):
+                        # Infrastructure is explicitly given
+                        self.log.error("Explicit infrastructure description "
+                                       "is not yet supported")
+                    else:
+                        # Check if received infra id exists
+                        infra_found = False
+                        for prev_infra in app_infras:
+                            if prev_infra == infra:
+                                infra_found = True
+                                app_infras.remove(infra)
+                                break
+                        if infra_found is not True:
+                            # Add the new infrastructure id
+                            # Two cases; unassigned infra or already assigned
+                            # infrastructure
+                            sql = (
+                                'select count(*)=1\n'
+                                'from infrastructure\n'
+                                'where app_id=0 and id=%s;')
+                            sql_data = (infra,)
+                            self.log.debug(sql % sql_data)
+                            cursor.execute(sql, sql_data)
+                            unassign_state = bool(cursor.fetchone()[0])
+                            if unassign_state is True:
+                                # Unassigned infrastructures need an update
+                                self.log.debug(
+                                    "Infrastructure %s is not yet assigned"
+                                    % infra)
+                                sql = (
+                                    'update infrastructure\n'
+                                    'set app_id = %s\n'
+                                    'where id = %s and app_id = 0;')
+                                sql_data = (app_id, infra)
+                            else:
+                                # Assigned infrastructures can be added
+                                self.log.debug(
+                                    "Infrastructure %s is already assigned"
+                                    % infra)
+                                sql = (
+                                    'insert into infrastructure\n'
+                                    '    (id,\n'
+                                    '     app_id,\n'
+                                    '     name,\n'
+                                    '     description,\n'
+                                    '     creation,\n'
+                                    '     enabled,\n'
+                                    '     vinfra)\n'
+                                    'select %s,\n'
+                                    '       %s,\n'
+                                    '       (select name\n'
+                                    '        from infrastructure\n'
+                                    '        where id = %s\n'
+                                    '        limit 1),\n'
+                                    '       (select description\n'
+                                    '        from infrastructure\n'
+                                    '        where id = %s\n'
+                                    '        limit 1),\n'
+                                    '       now(),\n'
+                                    '       TRUE,\n'
+                                    '       (select vinfra\n'
+                                    '        from infrastructure\n'
+                                    '        where id = %s\n'
+                                    '        limit 1);')
+                                sql_data = (infra,
+                                            app_id,
+                                            infra,
+                                            infra,
+                                            infra)
+                            # Execute the SQL statement
+                            self.log.debug(sql % sql_data)
+                            cursor.execute(sql, sql_data)
+                        else:
+                            self.log.debug("Infrastructure '%s' already "
+                                           "exists in application '%s'"
+                                           % (infra, app_id))
+                # Remove remaining infrastructures no more specified only
+                # if the infrastructure is assinged only to this application
+                for infra in app_infras:
+                    sql = ('select count(*)=1\n'
+                           'from infrastructure\n'
+                           'where id=%s;')
+                    sql_data = (infra,)
+                    self.log.debug(sql % sql_data)
+                    cursor.execute(sql, sql_data)
+                    del_infra = bool(cursor.fetchone()[0])
+                    if del_infra is True:
+                        # Infrastructure will be not removed but placed in
+                        # unassigned status (app_id == 0)
+                        self.log.debug("Infrastructure %s is assigned only "
+                                       "to application %s" % (infra, app_id))
+                        sql = ('update infrastructure\n'
+                               'set app_id = 0\n'
+                               'where id=%s\n'
+                               '  and app_id=%s;')
+                        sql_data = (infra,
+                                    app_id)
+                        self.log.debug(sql % sql_data)
+                        cursor.execute(sql, sql_data)
+                    else:
+                        self.log.debug("Infrastructure %s is not only "
+                                       "assigned to application %s"
+                                       % (infra, app_id))
+                        sql = ('delete from infrastructure\n'
+                               'where id=%s\n'
+                               '  and app_id=%s;')
+                        sql_data = (infra,
+                                    app_id)
+                        self.log.debug(sql % sql_data)
+                        cursor.execute(sql, sql_data)
             # Remove from the filesystem the list of remaining files
             for prev_app_file in app_files:
                 prev_app_file_path = ("%s/%s" % (prev_app_file["path"],
-                                                prev_app_file["name"]))
-                try: 
+                                                 prev_app_file["name"]))
+                try:
                     os.remove(prev_app_file_path)
-                    self.log.debug("Successfully removed file: '%s'" 
+                    self.log.debug("Successfully removed file: '%s'"
                                    % prev_app_file_path),
                 except OSError:
                     self.log.error("Unable to remove file: '%s'"
-                                   % prev_app_file_path) 
+                                   % prev_app_file_path)
             result = True
             self.query_done(
                 "Application having id '%s' successfully changed"
