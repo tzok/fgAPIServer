@@ -1993,8 +1993,7 @@ class FGAPIServerDB:
                    '      ,%s                              -- outcome\n'
                    '      ,now()                           -- creation\n'
                    '      ,%s                              -- enabled\n'
-                   'from application;\n'
-                   )
+                   'from application;')
             sql_data = (name, description, outcome, enabled)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -2928,9 +2927,6 @@ class FGAPIServerDB:
                                 app_id)
                     self.log.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
-            # Infrastructures are ignored at the moment
-            # for infra in app_desc['infrastructure']:
-            #    pass
             # Process 'infrastructures'
             json_infras = app_desc.get('infrastructures', None)
             if json_infras is not None:
@@ -2947,7 +2943,58 @@ class FGAPIServerDB:
                     if isinstance(infra, dict):
                         # Infrastructure is explicitly given
                         self.log.error("Explicit infrastructure description "
-                                       "is not yet supported")
+                                       "inserting infrastructure: %s" % infra)
+                        sql = ('insert into infrastructure (id\n'
+                               '                           ,app_id\n'
+                               '                           ,name\n'
+                               '                           ,description\n'
+                               '                           ,creation\n'
+                               '                           ,enabled\n'
+                               '                           ,vinfra\n'
+                               '                           )\n'
+                               'select if(max(id) is NULL,1,max(id)+1)\n'
+                               '      ,%s\n'
+                               '      ,%s\n'
+                               '      ,%s\n'
+                               '      ,now()\n'
+                               '      ,%s\n'
+                               '      ,%s\n'
+                               'from infrastructure;')
+                        sql_data = (app_id,
+                                    infra['name'],
+                                    infra['description'],
+                                    infra['enabled'],
+                                    infra['virtual'])
+                        self.log.debug(sql % sql_data)
+                        cursor.execute(sql, sql_data)
+                        # Get inserted infrastructure_id
+                        sql = ('select max(id) from infrastructure')
+                        sql_data = ()
+                        self.log.debug(sql % sql_data)
+                        cursor.execute(sql)
+                        new_infra_id = cursor.fetchone()[0]
+                        for param in infra['parameters']:
+                            sql = ('insert into infrastructure_parameter\n'
+                                   '     (infra_id\n'
+                                   '     ,param_id\n'
+                                   '     ,pname\n'
+                                   '     ,pvalue\n'
+                                   '     ,pdesc)\n'
+                                   'select %s\n'
+                                   '      ,if(max(param_id) is NULL,\n'
+                                   '          1,max(param_id)+1) \n'
+                                   '      ,%s\n'
+                                   '      ,%s\n'
+                                   '      ,%s\n'
+                                   'from infrastructure_parameter\n'
+                                   'where infra_id = %s;')
+                            sql_data = (new_infra_id,
+                                        param['name'],
+                                        param['value'],
+                                        param.get('description', None),
+                                        new_infra_id)
+                            self.log.debug(sql % sql_data)
+                            cursor.execute(sql, sql_data)
                     else:
                         # Check if received infra id exists
                         infra_found = False

@@ -575,7 +575,7 @@ queries = [
                '      ,%s                              -- outcome\n'
                '      ,now()                           -- creation\n'
                '      ,%s                              -- enabled\n'
-               'from application;\n'),
+               'from application;'),
      'result': []},
     {'query': ('insert into application_parameter (app_id\n'
                '                                  ,param_id\n'
