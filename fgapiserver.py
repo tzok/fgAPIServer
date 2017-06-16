@@ -1053,8 +1053,8 @@ def task_id(task_id=None):
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    elif (request.method == 'PUT'
-          or request.method == 'POST'):
+    elif (request.method == 'PUT' or
+          request.method == 'POST'):
         status = 405
         task_response = {
             "message": "This method is not allowed for this endpoint"
