@@ -3113,6 +3113,16 @@ class FGAPIServerDB:
                 except OSError:
                     self.log.error("Unable to remove file: '%s'"
                                    % prev_app_file_path)
+                # Unregister file from application_file
+                sql = ('delete from application_file\n'
+                       'where app_id = %s\n'
+                       '  and file= %s\n'
+                       '  and path = %s;')
+                sql_data = (app_id,
+                            prev_app_file["name"],
+                            prev_app_file["path"])
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
             result = True
             self.query_done(
                 "Application having id '%s' successfully changed"
