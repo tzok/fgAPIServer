@@ -896,6 +896,7 @@ def tasks():
     fgapiver,
     methods=[
         'GET',
+        'PUT',
         'POST',
         'DELETE',
         'PATCH'])
@@ -1052,9 +1053,11 @@ def task_id(task_id=None):
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    elif request.method == 'POST':
+    elif (request.method == 'PUT' or
+          request.method == 'POST'):
+        status = 405
         task_response = {
-            "message": "Not supported method"
+            "message": "This method is not allowed for this endpoint"
         }
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=404, mimetype='application/json')
@@ -1067,7 +1070,9 @@ def task_id(task_id=None):
 # POST - specify input files
 
 
-@app.route('/%s/tasks/<task_id>/input' % fgapiver, methods=['GET', 'POST'])
+@app.route('/%s/tasks/<task_id>/input' % fgapiver,
+           methods=['GET',
+                    'POST'])
 @login_required
 def task_id_input(task_id=None):
     global fgapisrv_db
@@ -1224,7 +1229,10 @@ def file():
 # POST - Create a new task; it only prepares the task for execution
 
 
-@app.route('/%s/applications' % fgapiver, methods=['GET', 'POST'])
+@app.route('/%s/applications' % fgapiver,
+           methods=['GET',
+                    'PUT',
+                    'POST'])
 @login_required
 def applications():
     global fgapisrv_db
@@ -1304,6 +1312,11 @@ def applications():
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
+    elif request.method == 'PUT':
+        state = 405
+        response = {
+            "message": "This method is not allowed for this endpoint"
+        }
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_install")
@@ -1381,11 +1394,11 @@ def applications():
 
 
 @app.route(
-    '/%s/applications/<app_id>' %
-    fgapiver,
+    '/%s/applications/<app_id>' % fgapiver,
     methods=[
         'GET',
         'DELETE',
+        'PUT',
         'POST'])
 @login_required
 def app_id(app_id=None):
@@ -1417,7 +1430,7 @@ def app_id(app_id=None):
                 response = fgapisrv_db.get_app_record(app_id)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
-                    # Couldn't get TaskRecord
+                    # Couldn't get AppRecord
                     # Prepare for 404 not found
                     status = 404
                     response = {
@@ -1425,17 +1438,12 @@ def app_id(app_id=None):
                     }
                 else:
                     status = 200
-        # Display task details
-        js = json.dumps(response, indent=fgjson_indent)
-        resp = Response(js, status=status, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
     elif request.method == 'DELETE':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_delete")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            status = 402
+            response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
@@ -1457,18 +1465,48 @@ def app_id(app_id=None):
                                app_id}
                 # 204 - NO CONTENT cause no output
                 logger.debug(response['message'])
-        js = json.dumps(response, indent=fgjson_indent)
-        resp = Response(js, status=status, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
     elif request.method == 'POST':
-        task_response = {
+        statis = 404
+        response = {
             "message": "Not supported method"
         }
-        js = json.dumps(task_response, indent=fgjson_indent)
-        resp = Response(js, status=404, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
+    elif request.method == 'PUT':
+        auth_state, auth_msg = authorize_user(
+            current_user, app_id, user, "app_change")
+        if not auth_state:
+            status = 402
+            response = {
+                "message": "Not authorized to perform this request:\n%s" %
+                           auth_msg}
+        else:
+            app_desc = request.get_json()
+            if app_desc.get("id", None) is not None\
+               and int(app_desc['id']) != int(app_id):
+                status = 403
+                response = {
+                    "message": "JSON application id %s is different than "
+                               "URL application id: %s" % (app_desc['id'],
+                                                           app_id)}
+            elif not fgapisrv_db.app_exists(app_id):
+                status = 404
+                response = {
+                    "message": "Unable to find application with id: %s" %
+                               app_id}
+            elif not fgapisrv_db.app_change(app_id, app_desc):
+                status = 410
+                response = {
+                    "message": ("Unable to change application with id: %s; "
+                                "reason: '%s'"
+                                % (app_id, fgapisrv_db.get_state()[1]))}
+            else:
+                status = 200
+                response = {
+                    "message": "Successfully changed application with id: %s" %
+                               app_id}
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
 
 
 @app.route('/%s/applications/<app_id>/input' % fgapiver,
@@ -1559,7 +1597,10 @@ def app_id_input(app_id=None):
 #
 
 
-@app.route('/%s/infrastructures' % fgapiver, methods=['GET', 'POST'])
+@app.route('/%s/infrastructures' % fgapiver,
+           methods=['GET',
+                    'PUT',
+                    'POST'])
 @login_required
 def infrastructures():
     global fgapisrv_db
@@ -1638,6 +1679,11 @@ def infrastructures():
         resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
+    elif request.method == 'PUT':
+        infra_state = 405
+        infra_response = {
+            "message": "This method is not allowed for this endpoint"
+        }
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(current_user,
                                               None,
@@ -1669,7 +1715,7 @@ def infrastructures():
                 # Error initializing infrastructure
                 # Prepare for 410 error
                 infra_state = 410
-                infraresponse = {
+                infra_response = {
                     "message": init_state[1]
                 }
             else:
@@ -1698,7 +1744,6 @@ def infrastructures():
                                       'rel="input", </v1.0/tasks/%s>; '
                                       'rel="self"' % (task_id, task_id)))
         return resp
-        pass
 
 # This is an informative call
 # GET  - shows details
@@ -1711,7 +1756,8 @@ def infrastructures():
     methods=[
         'GET',
         'DELETE',
-        'POST'])
+        'POST',
+        'PUT'])
 @login_required
 def infra_id(infra_id=None):
     global fgapisrv_db
@@ -1726,49 +1772,49 @@ def infra_id(infra_id=None):
         auth_state, auth_msg = authorize_user(
             current_user, None, user, "infra_view")
         if not auth_state:
-            infra_status = 402
-            infra_response = {
+            status = 402
+            response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
             if not fgapisrv_db.infra_exists(infra_id):
-                infra_status = 404
-                infra_response = {
+                status = 404
+                response = {
                     "message": ("Unable to find infrastructure with id: %s"
                                 % infra_id)}
             else:
                 # Get task details
                 infra_record = fgapisrv_db.get_infra_record(infra_id)
-                infra_response = {"id": infra_record['id'],
-                                  "name": infra_record['name'],
-                                  "description": infra_record['description'],
-                                  "date": infra_record['creation'],
-                                  "enabled": infra_record['enabled'],
-                                  "virtual": infra_record['virtual'],
-                                  "parameters": infra_record['parameters'],
-                                  "_links": [
-                                      {"rel": "self",
-                                       "href": ("/%s/infrastructure/%s"
-                                                % (fgapiver,
-                                                   infra_record['id']))}]}
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
                     # Prepare for 404 not found
-                    infra_status = 404
-                    infra_response = {
+                    status = 404
+                    response = {
                         "message": db_state[1]
                     }
                 else:
-                    infra_status = 200
+                    status = 200
+                    response = {"id": infra_record['id'],
+                                "name": infra_record['name'],
+                                "description": infra_record['description'],
+                                "date": infra_record['creation'],
+                                "enabled": infra_record['enabled'],
+                                "virtual": infra_record['virtual'],
+                                "parameters": infra_record['parameters'],
+                                "_links": [
+                                    {"rel": "self",
+                                     "href": ("/%s/infrastructure/%s"
+                                              % (fgapiver,
+                                                 infra_record['id']))}]}
     elif request.method == 'DELETE':
         app_id = request.values.get('app_id', None)
         app_orphan = request.values.get('app_orphan', None)
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "infra_delete")
         if not auth_state:
-            task_state = 402
-            task_response = {
+            status = 402
+            response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
@@ -1789,17 +1835,48 @@ def infra_id(infra_id=None):
                     "message":
                     "Successfully removed infrastructure with id: %s" %
                     infra_id}
-        js = json.dumps(response, indent=fgjson_indent)
-        resp = Response(js, status=status, mimetype='application/json')
-        resp.headers['Content-type'] = 'application/json'
-        return resp
     elif request.method == 'POST':
         infra_response = {
             "message": "Not supported method"
         }
         infra_state = 404
-    js = json.dumps(infra_response, indent=fgjson_indent)
-    resp = Response(js, status=infra_status, mimetype='application/json')
+    elif request.method == 'PUT':
+        app_id = request.values.get('app_id', None)
+        auth_state, auth_msg = authorize_user(
+            current_user, app_id, user, "infra_change")
+        if not auth_state:
+            status = 402
+            response = {
+                "message": "Not authorized to perform this request:\n%s" %
+                           auth_msg}
+        else:
+            infra_desc = request.get_json()
+            if infra_desc.get("id", None) is not None\
+               and int(infra_desc['id']) != int(infra_id):
+                status = 403
+                response = {
+                    "message": "JSON infrastructure id %s is different than "
+                               "URL infrastructure id: %s" % (infra_desc['id'],
+                                                              infra_id)}
+            elif not fgapisrv_db.infra_exists(infra_id):
+                status = 404
+                response = {
+                    "message": "Unable to find infrastructure with id: %s" %
+                               infra_id}
+            elif not fgapisrv_db.infra_change(infra_id, infra_desc):
+                status = 400
+                response = {
+                    "message": ("Unable to change application with id: %s; "
+                                "reason: '%s'"
+                                % (app_id, fgapisrv_db.get_state()[1]))}
+            else:
+                status = 200
+                response = {
+                    "message":
+                    "Infrastructure changed correctly"
+                }
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     return resp
 

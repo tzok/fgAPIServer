@@ -575,7 +575,7 @@ queries = [
                '      ,%s                              -- outcome\n'
                '      ,now()                           -- creation\n'
                '      ,%s                              -- enabled\n'
-               'from application;\n'),
+               'from application;'),
      'result': []},
     {'query': ('insert into application_parameter (app_id\n'
                '                                  ,param_id\n'
@@ -681,6 +681,140 @@ queries = [
      'result': [[1], ]},
     {'query': 'select name from fg_user where id = %s;',
      'result': [['test_user', ], ]},
+    {'query': ('insert into as_queue (\n'
+               '   task_id\n'
+               '  ,target_id\n'
+               '  ,target\n'
+               '  ,action\n'
+               '  ,status\n'
+               '  ,target_status\n'
+               '  ,creation\n'
+               '  ,last_change\n'
+               '  ,check_ts\n'
+               '  ,action_info\n'
+               ') select %s,\n'
+               '         NULL,\n'
+               '         (select target\n'
+               '          from as_queue\n'
+               '          where task_id=%s\n'
+               '          order by task_id asc\n'
+               '          limit 1),\n'
+               '         \'CLEAN\',\n'
+               '         \'QUEUED\',\n'
+               '         (select status\n'
+               '          from as_queue\n'
+               '          where task_id=%s\n'
+               '          order by task_id asc\n'
+               '          limit 1),\n'
+               '         now(),\n'
+               '         now(),\n'
+               '         now(),\n'
+               '         %s;'),
+     'result': None},
+    {'query': ('update infrastructure set\n'
+               '    name=%s,\n'
+               '    description=%s,\n'
+               '    enabled=%s,\n'
+               '    vinfra=%s\n'
+               'where id=%s;'),
+     'result': None},
+    {'query': ('insert into infrastructure_parameter\n'
+               '    (infra_id,\n'
+               '     param_id,\n'
+               '     pname,\n'
+               '     pvalue,\n'
+               '     pdesc)\n'
+               '    select %s,\n'
+               '           if(max(param_id) is NULL,\n'
+               '              1,max(param_id)+1),\n'
+               '           %s,\n'
+               '           %s,\n'
+               '           %s\n'
+               '    from infrastructure_parameter\n'
+               '    where infra_id=%s;'),
+     'result': None},
+    {'query': ('update application set\n'
+               '    name=%s,\n'
+               '    description=%s,\n'
+               '    outcome=%s,\n'
+               '    enabled=%s\n'
+               'where id=%s;'),
+     'result': None},
+    {'query': ('select file, path\n'
+               'from application_file\n'
+               'where app_id = %s\n'
+               '  and (path is not null or path != \'\');'),
+     'result': [['test', 'test/path'], ]},
+    {'query': ('insert into application_parameter\n'
+               '    (app_id,\n'
+               '     param_id,\n'
+               '     pname,\n'
+               '     pvalue,\n'
+               '     pdesc)\n'
+               '    select %s,\n'
+               '           if(max(param_id) is NULL,\n'
+               '              1,max(param_id)+1),\n'
+               '           %s,\n'
+               '           %s,\n'
+               '           %s\n'
+               '    from application_parameter\n'
+               '    where app_id=%s;'),
+     'result': None},
+    {'query': ('delete from application_file\n'
+               'where app_id=%s;'),
+     'result': None},
+    {'query': ('insert into application_file\n'
+               '    (app_id,\n'
+               '     file_id,\n'
+               '     file,\n'
+               '     path,\n'
+               '     override)\n'
+               '    select %s,\n'
+               '           if(max(file_id) is NULL,\n'
+               '              1,max(file_id)+1),\n'
+               '           %s,\n'
+               '           %s,\n'
+               '           TRUE\n'
+               '    from application_file\n'
+               '    where app_id=%s;'),
+     'result': None},
+    {'query': ('delete from application_parameter\n'
+               'where app_id=%s;'),
+     'result': None},
+    {'query': ('insert into application_parameter\n'
+               '    (app_id,\n'
+               '     param_id,\n'
+               '     pname,\n'
+               '     pvalue,\n'
+               '     pdesc)\n'
+               '    select %s,\n'
+               '           if(max(param_id) is NULL,\n'
+               '              1,max(param_id)+1),\n'
+               '           %s,\n'
+               '           %s,\n'
+               '           %s\n'
+               '    from application_parameter\n'
+               '    where app_id=%s;'),
+     'result': None},
+    {'query': ('select id from infrastructure where app_id=%s;'),
+     'result': [[1], ]},
+    {'query': ('select count(*)=1\n'
+               'from infrastructure\n'
+               'where app_id=0 and id=%s;'),
+     'result': [[1], ]},
+    {'query': ('update infrastructure\n'
+               'set app_id = %s\n'
+               'where id = %s and app_id = 0;'),
+     'result': None},
+    {'query': ('select count(*)=1\n'
+               'from infrastructure\n'
+               'where id=%s;'),
+     'result': [[1], ]},
+    {'query': ('update infrastructure\n'
+               'set app_id = 0\n'
+               'where id=%s\n'
+               '  and app_id=%s;'),
+     'result': None},
     {'query': None,
      'result': None},
 ]

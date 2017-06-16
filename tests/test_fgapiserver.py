@@ -548,6 +548,51 @@ class Test_fgAPIServer(unittest.TestCase):
         assert state[0] is False
         assert result == '1'
 
+    def test_dbobj_infra_change(self):
+        self.banner("Testing fgapiserverdb infra_change")
+        infra_desc = {"id": 1,
+                      "name": "Infra test (changed)",
+                      "enabled": False,
+                      "virtual": True,
+                      "description": "ansshifnra (changed)",
+                      "parameters": [{"name": "jobservice",
+                                      "value": "ssh://fgtest",
+                                      "description": "fgtest ssh hots"}]}
+        result = self.fgapisrv_db.infra_change(1, infra_desc)
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        assert result is True
+
+    def test_dbobj_app_change(self):
+        self.banner("Testing fgapiserverdb app_change")
+        app_desc = {
+            "files": ["tosca_template.yaml",
+                      "tosca_test.sh"],
+            "name": "hostname@toscaIDC",
+            "parameters": [{"name": "target_executor",
+                            "value": "ToscaIDC",
+                            "description": ""},
+                           {"name": "jobdesc_executable",
+                            "value": "tosca_test.sh",
+                            "description": "unused"},
+                           {"name": "jobdesc_output",
+                            "value": "stdout.txt",
+                            "description": "unused"},
+                           {"name": "jobdesc_error",
+                            "value": "stderr.txt",
+                            "description": "unused"}],
+            "outcome": "JOB",
+            "enabled": True,
+            "id": "1",
+            "infrastructures": [4],
+            "description": "hostname tester application on toscaIDC"}
+        result = self.fgapisrv_db.app_change(1, app_desc)
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        assert result is True
+
     #
     # mklogtoken
     #
