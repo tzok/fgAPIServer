@@ -896,6 +896,7 @@ def tasks():
     fgapiver,
     methods=[
         'GET',
+        'PUT',
         'POST',
         'DELETE',
         'PATCH'])
@@ -1052,9 +1053,11 @@ def task_id(task_id=None):
         resp = Response(js, status=task_status, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    elif request.method == 'POST':
+    elif (request.method == 'PUT'
+          or request.method == 'POST'):
+        status = 405
         task_response = {
-            "message": "Not supported method"
+            "message": "This method is not allowed for this endpoint"
         }
         js = json.dumps(task_response, indent=fgjson_indent)
         resp = Response(js, status=404, mimetype='application/json')
@@ -1067,7 +1070,9 @@ def task_id(task_id=None):
 # POST - specify input files
 
 
-@app.route('/%s/tasks/<task_id>/input' % fgapiver, methods=['GET', 'POST'])
+@app.route('/%s/tasks/<task_id>/input' % fgapiver,
+            methods=['GET',
+                     'POST'])
 @login_required
 def task_id_input(task_id=None):
     global fgapisrv_db
@@ -1307,8 +1312,12 @@ def applications():
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    elif (request.method == 'POST'
-          or request.method == 'PUT'):
+    elif request.method == 'PUT':
+        state = 405
+        response = {
+            "message": "This method is not allowed for this endpoint"
+        }
+    elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_install")
         if not auth_state:
@@ -1421,7 +1430,7 @@ def app_id(app_id=None):
                 response = fgapisrv_db.get_app_record(app_id)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
-                    # Couldn't get TaskRecord
+                    # Couldn't get AppRecord
                     # Prepare for 404 not found
                     status = 404
                     response = {
@@ -1670,8 +1679,12 @@ def infrastructures():
         resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    elif (request.method == 'POST'
-          or request.method == 'PUT'):
+    elif request.method == 'PUT':
+        infra_state = 405
+        infra_response = {
+            "message": "This method is not allowed for this endpoint"
+        }
+    elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(current_user,
                                               None,
                                               user,
@@ -1731,7 +1744,6 @@ def infrastructures():
                                       'rel="input", </v1.0/tasks/%s>; '
                                       'rel="self"' % (task_id, task_id)))
         return resp
-        pass
 
 # This is an informative call
 # GET  - shows details
