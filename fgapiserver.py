@@ -1071,8 +1071,8 @@ def task_id(task_id=None):
 
 
 @app.route('/%s/tasks/<task_id>/input' % fgapiver,
-            methods=['GET',
-                     'POST'])
+           methods=['GET',
+                    'POST'])
 @login_required
 def task_id_input(task_id=None):
     global fgapisrv_db
