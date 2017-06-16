@@ -1851,7 +1851,7 @@ def infra_id(infra_id=None):
                                 "reason: '%s'"
                                 % (app_id, fgapisrv_db.get_state()[1]))}
             else:
-                status = 201
+                status = 200
                 response = {
                     "message":
                     "Infrastructure changed correctly"
