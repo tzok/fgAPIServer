@@ -2997,6 +2997,7 @@ class FGAPIServerDB:
                             cursor.execute(sql, sql_data)
                     else:
                         # Check if received infra id exists
+                        infra = int(infra)
                         infra_found = False
                         for prev_infra in app_infras:
                             if prev_infra == infra:
