@@ -1224,7 +1224,10 @@ def file():
 # POST - Create a new task; it only prepares the task for execution
 
 
-@app.route('/%s/applications' % fgapiver, methods=['GET', 'POST'])
+@app.route('/%s/applications' % fgapiver,
+           methods=['GET',
+                    'PUT',
+                    'POST'])
 @login_required
 def applications():
     global fgapisrv_db
@@ -1304,7 +1307,8 @@ def applications():
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    elif request.method == 'POST':
+    elif (request.method == 'POST'
+          or request.method == 'PUT'):
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_install")
         if not auth_state:
@@ -1381,8 +1385,7 @@ def applications():
 
 
 @app.route(
-    '/%s/applications/<app_id>' %
-    fgapiver,
+    '/%s/applications/<app_id>' % fgapiver,
     methods=[
         'GET',
         'DELETE',
@@ -1585,7 +1588,10 @@ def app_id_input(app_id=None):
 #
 
 
-@app.route('/%s/infrastructures' % fgapiver, methods=['GET', 'POST'])
+@app.route('/%s/infrastructures' % fgapiver,
+           methods=['GET',
+                    'PUT',
+                    'POST'])
 @login_required
 def infrastructures():
     global fgapisrv_db
@@ -1664,7 +1670,8 @@ def infrastructures():
         resp = Response(js, status=infra_state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
         return resp
-    elif request.method == 'POST':
+    elif (request.method == 'POST'
+          or request.method == 'PUT'):
         auth_state, auth_msg = authorize_user(current_user,
                                               None,
                                               user,
