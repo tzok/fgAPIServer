@@ -82,7 +82,7 @@ echo "Output: '"$(cat $JSON_OUT)"'"
 # Print how to submit the app
 HEADERS=$HDR_APPJSON" "$HDR_AUTHBRR
 cat >$POST_DATA <<EOF
-{"application":"${APP_ID}", "description":"sayhello ${APP_ID} test run", "arguments": ["this is the argument"]}
+{"application":"${APP_ID}", "description":"sayhello ${APP_ID} test run", "arguments": ["this is the argument"], "output_files": [{"name": "sayhello.data"}]}
 EOF
 CMD="curl $HEADERS -X POST -d '"$(cat $POST_DATA)"' $API_URL/tasks"
 echo ""
