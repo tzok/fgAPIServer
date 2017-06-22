@@ -954,6 +954,13 @@ def task_id(task_id=None):
                         "message": db_state[1]
                     }
                 else:
+                    # Add links_
+                    task_response['_links'] = [
+                        {
+                            "rel": "input",
+                            "href": "/%s/tasks/%s/input" %
+                                    (fgapiver,
+                                     task_id)}, ]
                     task_state = 200
         # Display task details
         js = json.dumps(task_response, indent=fgjson_indent)
@@ -1321,6 +1328,9 @@ def applications():
                                 app_record['infrastructures'],
                                 "_links": [{"rel": "self",
                                             "href": "/%s/application/%s"
+                                                    % (fgapiver, app_id)},
+                                           {"rel": "self",
+                                            "href": "/%s/application/%s/input"
                                                     % (fgapiver, app_id)}]
                             },
                         ]
@@ -1390,20 +1400,19 @@ def applications():
                     "parameters": app_record['parameters'],
                     "files": app_record['files'],
                     "infrastructures": app_record['infrastructures'],
-                    "_links": [
-                        {
-                            "rel": "self",
-                            "href": "/%s/application/%s" %
-                                    (fgapiver,
-                                     app_id)}]}
+                    "_links": [{"rel": "self",
+                                "href": "/%s/application/%s/input"
+                                        % (fgapiver, app_id)}, ]}
         js = json.dumps(response, indent=fgjson_indent)
         resp = Response(js, status=state, mimetype='application/json')
         resp.headers['Content-type'] = 'application/json'
-        if state == 200:
-            resp.headers.add('Location', '/v1.0/tasks/%s' % task_id)
-            resp.headers.add('Link', ('</v1.0/tasks/%s/input>; '
-                                      'rel="input", </v1.0/tasks/%s>; '
-                                      'rel="self"' % (task_id, task_id)))
+        if state == 200 or state == 201:
+            resp.headers.add('Location',
+                             '/%s/applications/%s' % (fgapiver, app_id))
+            resp.headers.add('Link', ('</%s/applications/%s/input>; '
+                                      'rel="input", </%s/tasks/%s>; '
+                                      'rel="self"' % (fgapiver, task_id,
+                                                      fgapiver, task_id)))
         return resp
 
 
@@ -1456,6 +1465,10 @@ def app_id(app_id=None):
                         "message": db_state[1]
                     }
                 else:
+                    response['_links'] = [
+                        {"rel": "self",
+                         "href": "/%s/application/%s/input"
+                                 % (fgapiver, app_id)}, ]
                     status = 200
     elif request.method == 'DELETE':
         auth_state, auth_msg = authorize_user(
