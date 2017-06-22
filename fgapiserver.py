@@ -1276,6 +1276,9 @@ def applications():
             # Show the whole task list
             # call to get tasks
             app_list = fgapisrv_db.get_app_list()
+            # Remove special app_id = 0 (Unassigned infrastructure)
+            if 0 in app_list:
+                app_list.remove(0)
             db_state = fgapisrv_db.get_state()
             if db_state[0] != 0:
                 # DBError getting TaskList
