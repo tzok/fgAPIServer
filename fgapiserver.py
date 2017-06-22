@@ -411,7 +411,23 @@ def load_user(request):
             logger.debug("LoadUser: (PTV)")
             token_fields = token.split()
             if token_fields[0] == "Bearer":
-                token = token_fields[1]
+                try:
+                    token = token_fields[1]
+                except IndexError:
+                    logger.debug("Passed empty Bearer token")
+                    return None
+            elif token_fields[0] == "Task":
+                # Taks token management
+                # Not available
+                try:
+                    token = token_fields[1]
+                except IndexError:
+                    logger.debug("Passed empty Task token")
+                    return None
+                logger.debug("Task token not yet implemented")
+                return None
+            else:
+                token = token_fields[0]
             logger.debug("LoadUser: token field is '%s'" % token)
             ptv = FGAPIServerPTV(endpoint=fgapisrv_ptvendpoint,
                                  tv_user=fgapisrv_ptvuser,
