@@ -69,7 +69,7 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual('test', user.get_name())
 
     def test_paginate_reposnse(self):
-        self.banner("paginate_response(txt,'2','3')")
+        self.banner("paginate_response(txt,'2','3',[])")
         response = ['111111111111111111111111111\n',
                     '222222222222222222222222222\n',
                     '333333333333333333333333333\n',
@@ -82,10 +82,14 @@ class Test_fgAPIServer(unittest.TestCase):
                     '000000000000000000000000000\n',
                     'AAAAAAAAAAAAAAAAAAAAAAAAAAA\n',
                     'BBBBBBBBBBBBBBBBBBBBBBBBBBB\n', ]
-        expected_page = ['444444444444444444444444444\n',
-                         '555555555555555555555555555\n',
-                         '666666666666666666666666666\n', ]
-        received_page = fgapiserver.paginate_response(response, '2', '3')
+        expected_page = (['444444444444444444444444444\n',
+                          '555555555555555555555555555\n',
+                          '666666666666666666666666666\n'],
+                         [{'href': '[]?page=1&per_page=3', 'rel': 'prev'},
+                          {'href': '[]?page=2&per_page=3', 'rel': 'self'},
+                          {'href': '[]?page=3&per_page=3', 'rel': 'next'},
+                          {'href': '[]?page=4&per_page=3', 'rel': 'next'}])
+        received_page = fgapiserver.paginate_response(response, '2', '3', [])
         self.assertEqual(expected_page, received_page)
 
     def test_checkDbVer(self):
