@@ -1,0 +1,36 @@
+<html>
+<title>PTV presence</title>
+<head>
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<div class="container theme-showcase" role="main">
+<div class="jumbotron">
+<h1>PTV presence</h1>
+<p>This test verifies that baseline PTV service is up and running calling <span class="badge">/get-token</span> endpoint using <b>GET</b> method</p>
+</div>
+<table class="table table-bordered">
+<tr><td>API call</td><td><pre>(GET) /get-token</pre></td></tr>
+<tr><td>Command</td><td><pre>curl -u 'tokenver_user:tokenver_pass' http://localhost:8889/get-token</pre></td></tr>
+<tr><td>Return code</td><td><pre>0</pre></td></tr>
+<tr><td>Output</td><td><pre>{
+    "_links": [
+        {
+            "href": "/get-token", 
+            "rel": "self"
+        }
+    ], 
+    "error": "Unhandled method: 'GET'"
+}</pre></td></tr>
+<tr><td>Error</td><td><pre>  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   147  100   147    0     0  12191      0 --:--:-- --:--:-- --:--:-- 13363</pre></td></tr>
+</table>
+<div class="page-header"><h1>Notes</h1></div>
+<div class="well">
+<p>You can go back to the <a href="index.html">tests</a> page</p>
+</div>
+</body>
+</html>
