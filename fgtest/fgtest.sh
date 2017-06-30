@@ -322,7 +322,7 @@ fgtest_report() {
 </div>
 <table class="table table-bordered">
 <tr><td>API call</td><td><pre>$TEST_APICALL</pre></td></tr>
-<tr><td>Command</td><td style="word-wrap: break-word"><pre>${TEST_CMD_CLEAN}</pre></td></tr>
+<tr><td>Command</td><td><pre style="white-space: normal">${TEST_CMD_CLEAN}</pre></td></tr>
 <tr><td>Curl return code</td><td><pre>${TEST_RES}</pre></td></tr>
 <tr><td>HTTP return code</td><td><pre>${TEST_HTTPRETCODE}</pre></td></tr>
 <tr><td>Output</td><td><pre>${TEST_OUT}</pre></td></tr>
