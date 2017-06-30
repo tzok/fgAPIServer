@@ -296,7 +296,7 @@ EOF
 #  TEST_RES - The curl return code (curl must have -f optrion)
 #  TEST_HTTPRETCODE - The HTTP/s request return code 
 fgtest_report() {
-    TEST_CMD_CLEAN=$(echo $CMD | sed s/'-w\ "\\n%{http_code}"'// | sed s/-f\ //)
+    TEST_CMD_CLEAN=$(echo $TEST_CMD | sed s/'-w\ "\\n%{http_code}"'// | sed s/-f\ //)
     TEST_OUT=$(cat $FGTEST_OUT)
     TEST_ERR=$(cat $FGTEST_ERR)
     if [ $TEST_RES -eq 0 ]; then
@@ -322,7 +322,7 @@ fgtest_report() {
 </div>
 <table class="table table-bordered">
 <tr><td>API call</td><td><pre>$TEST_APICALL</pre></td></tr>
-<tr><td>Command</td><td><pre>${TEST_CMD_CLEAN}</pre></td></tr>
+<tr><td>Command</td><td style="word-wrap: break-word"><pre>${TEST_CMD_CLEAN}</pre></td></tr>
 <tr><td>Curl return code</td><td><pre>${TEST_RES}</pre></td></tr>
 <tr><td>HTTP return code</td><td><pre>${TEST_HTTPRETCODE}</pre></td></tr>
 <tr><td>Output</td><td><pre>${TEST_OUT}</pre></td></tr>
