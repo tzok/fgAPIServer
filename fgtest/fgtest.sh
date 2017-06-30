@@ -108,9 +108,11 @@ fgtest_ptv() {
 This test verifies that baseline PTV service is up and running calling \
 <span class=\"badge\">/get-token</span> endpoint using <b>GET</b> method"
     TEST_APICALL="(GET) /get-token"
-    TEST_CMD="curl -u '"$PTV_USER":"$PTV_PASS"' $PTV_ENDPOINT/get-token"
+    TEST_CMD="curl -w \"\n%{http_code}\" -u '"$PTV_USER":"$PTV_PASS"' $PTV_ENDPOINT/get-token"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
     TEST_RES=$?
     TEST_CHK=$(cat $FGTEST_OUT | jq .error | xargs echo)
     echo "$TEST_CHK"
@@ -133,10 +135,12 @@ fgtest_fg() {
 This test verifies that baseline FutureGateway endpoint is up and running calling \
 <span class=\"badge\">/</span> endpoint and using <b>GET</b> method"
     TEST_APICALL="(GET) /"
-    TEST_CMD="curl -f $FG_ENDPOINT/"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_ENDPOINT/"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
     TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
     fgtest_report
     if [ $TEST_RES -eq 0 ]; then
         echo "Test: $TEST_PKG executed successfully"
@@ -171,10 +175,12 @@ This test create a new infrastructure calling \
 EOF
     FG_HEADERS=$FG_HEAD_AUTH" "$FG_HEAD_JSON
     TEST_JSON_DATA=$(cat $NEW_INFRA_JSON)
-    TEST_CMD="curl -f $FG_HEADERS -X POST -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/infrastructures"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X POST -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/infrastructures"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
     TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
     rm -f $NEW_INFRA_JSON
     TEST_INFRA_ID=$(cat $FGTEST_OUT | jq .id | xargs echo)
     fgtest_report
@@ -197,10 +203,12 @@ This test uses <span class=\"badge\">/infrastructures</span> API call to view \
 all defined infrastructures using <b>GET</b> method"
     TEST_APICALL="(GET) /infrastructures"
     FG_HEADERS=$FG_HEAD_AUTH
-    TEST_CMD="curl -f $FG_HEADERS $FG_ENDPOINT/infrastructures"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/infrastructures"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
     TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
     fgtest_report
     if [ $TEST_RES -eq 0 ]; then
         echo "Test: $TEST_PKG executed successfully"
@@ -219,12 +227,56 @@ fgtest_viewinfra() {
     TEST_DESC="\
 This test uses <span class=\"badge\">/infrastructures</span> API call to view the last \
 inserted  infrastructure having id: '${TEST_INFRA_ID}' and using <b>GET</b> method"
-    TEST_APICALL="(GET) /infrastructures"
+    TEST_APICALL="(GET) /infrastructures/$TEST_INFRA_ID"
     FG_HEADERS=$FG_HEAD_AUTH
-    TEST_CMD="curl -f $FG_HEADERS $FG_ENDPOINT/infrastructures/$TEST_INFRA_ID"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/infrastructures/$TEST_INFRA_ID"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
     TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    if [ $TEST_RES -eq 0 ]; then
+        echo "Test: $TEST_PKG executed successfully"
+    else
+        echo "Test: $TEST_PKG failed to execute"
+        return 1
+    fi
+    return 0
+}
+
+# Modify last inserted infrastructure
+fgtest_modinfra() {
+    TEST_PKG="Modify infrastructure"
+    TEST_TITLE="Infrastructure modify"
+    TEST_SHDESC="infra_modify"
+    TEST_DESC="\
+This test modify the new inserted infrastructure having id: '${TEST_INFRA_ID}' calling \
+<span class=\"badge\">/infrastructures</span> endpoint and using <b>PUT</b> method"
+    TEST_APICALL="(PUT) /infrastructures/$TEST_INFRA_ID"
+    MOD_INFRA_JSON=$(mktemp)
+    cat >$MOD_INFRA_JSON <<EOF
+{ "id": ${TEST_INFRA_ID},
+  "name": "(modified) SSH Test infrastructure",
+  "parameters": [ { "name": "jobservice", 
+                    "value": "(modified) ssh://localhost" },
+                  { "name": "username",
+                    "value": "(modified) ${FGTEST_USR}" },
+                  { "name": "password",
+                    "value": "(modified) ${FGTEST_PAS}" } ],
+  "description": "(modified) SSH Test infrastructure for fgtest",
+  "enabled": false,
+  "virtual": true }
+EOF
+    FG_HEADERS="$FG_HEAD_AUTH $FG_HEAD_JSON"
+    TEST_JSON_DATA=$(cat $MOD_INFRA_JSON)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X PUT -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/infrastructures/$TEST_INFRA_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    rm -f $NEW_INFRA_JSON
     fgtest_report
     if [ $TEST_RES -eq 0 ]; then
         echo "Test: $TEST_PKG executed successfully"
@@ -239,9 +291,12 @@ inserted  infrastructure having id: '${TEST_INFRA_ID}' and using <b>GET</b> meth
 #  TEST_TITLE - Title of the test
 #  TEST_SHDESC - Short description of the test (used to generate html file)
 #  TEST_DESC - Description of the test
-#  $FGTEST_OUT - File containing the text output of tested command
-#  $FGTEST_ERR - File containing the text error of tested command
+#  FGTEST_OUT - File containing the text output of tested command
+#  FGTEST_ERR - File containing the text error of tested command
+#  TEST_RES - The curl return code (curl must have -f optrion)
+#  TEST_HTTPRETCODE - The HTTP/s request return code 
 fgtest_report() {
+    TEST_CMD_CLEAN=$(echo $CMD | sed s/'-w\ "\\n%{http_code}"'// | sed s/-f\ //)
     TEST_OUT=$(cat $FGTEST_OUT)
     TEST_ERR=$(cat $FGTEST_ERR)
     if [ $TEST_RES -eq 0 ]; then
@@ -267,8 +322,9 @@ fgtest_report() {
 </div>
 <table class="table table-bordered">
 <tr><td>API call</td><td><pre>$TEST_APICALL</pre></td></tr>
-<tr><td>Command</td><td><pre>${TEST_CMD}</pre></td></tr>
-<tr><td>Return code</td><td><pre>${TEST_RES}</pre></td></tr>
+<tr><td>Command</td><td><pre>${TEST_CMD_CLEAN}</pre></td></tr>
+<tr><td>Curl return code</td><td><pre>${TEST_RES}</pre></td></tr>
+<tr><td>HTTP return code</td><td><pre>${TEST_HTTPRETCODE}</pre></td></tr>
 <tr><td>Output</td><td><pre>${TEST_OUT}</pre></td></tr>
 <tr><td>Error</td><td><pre>${TEST_ERR}</pre></td></tr>
 </table>
@@ -300,7 +356,8 @@ fgtest_ptv &&
 fgtest_fg &&
 fgtest_newinfra &&
 fgtest_viewinfras &&
-fgtest_viewinfra || echo "Error while perfomring test package: $TEST_PKG"
+fgtest_viewinfra &&
+fgtest_modinfra || echo "Error while perfomring test package: $TEST_PKG"
 
 # Close the test environment
 fgtest_close
