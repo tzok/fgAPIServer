@@ -122,13 +122,7 @@ This test verifies that baseline PTV service is up and running calling \
     TEST_CHK=$(cat $FGTEST_OUT | jq .error | xargs echo)
     echo "$TEST_CHK"
     fgtest_report
-    if [ "$TEST_CHK" = "Unhandled method: 'GET'" ]; then
-        echo "PTV service replied successfully"
-    else
-        echo "PTV service seems to be down"
-        return 1
-    fi
-    return 0
+    return $? 
 }
 
 # Test FutureGateway presence
@@ -147,13 +141,7 @@ This test verifies that baseline FutureGateway endpoint is up and running callin
     TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
     sed -i '$ d' $FGTEST_OUT
     fgtest_report
-    if [ $TEST_RES -eq 0 ]; then
-        echo "Test: $TEST_PKG executed successfully"
-    else
-        echo "Test: $TEST_PKG failed to execute"
-        return 1
-    fi
-    return 0
+    return $? 
 }
 
 # Setup the SSH infrastructure using the fgtest user
@@ -189,13 +177,7 @@ EOF
     rm -f $NEW_INFRA_JSON
     TEST_INFRA_ID=$(cat $FGTEST_OUT | jq .id | xargs echo)
     fgtest_report
-    if [ $TEST_RES -eq 0 ]; then
-        echo "Test: $TEST_PKG executed successfully"
-    else
-        echo "Test: $TEST_PKG failed to execute"
-        return 1
-    fi
-    return 0
+    return $? 
 }
 
 # View all infrastructures
@@ -215,13 +197,7 @@ all defined infrastructures using <b>GET</b> method"
     TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
     sed -i '$ d' $FGTEST_OUT
     fgtest_report
-    if [ $TEST_RES -eq 0 ]; then
-        echo "Test: $TEST_PKG executed successfully"
-    else
-        echo "Test: $TEST_PKG failed to execute"
-        return 1
-    fi
-    return 0
+    return $? 
 }
 
 # View last inserted infrastructure
@@ -241,13 +217,7 @@ inserted  infrastructure having id: '${TEST_INFRA_ID}' and using <b>GET</b> meth
     TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
     sed -i '$ d' $FGTEST_OUT
     fgtest_report
-    if [ $TEST_RES -eq 0 ]; then
-        echo "Test: $TEST_PKG executed successfully"
-    else
-        echo "Test: $TEST_PKG failed to execute"
-        return 1
-    fi
-    return 0
+    return $? 
 }
 
 # Modify last inserted infrastructure
@@ -283,13 +253,28 @@ EOF
     sed -i '$ d' $FGTEST_OUT
     rm -f $NEW_INFRA_JSON
     fgtest_report
-    if [ $TEST_RES -eq 0 ]; then
-        echo "Test: $TEST_PKG executed successfully"
-    else
-        echo "Test: $TEST_PKG failed to execute"
-        return 1
-    fi
-    return 0
+    return $?
+}
+
+# Delete last inserted infrastructure
+fgtest_delinfra() {
+    TEST_PKG="Delete infrastructure"
+    TEST_TITLE="Infrastructure delete"
+    TEST_SHDESC="infra_delete"
+    TEST_DESC="\
+This test delete the new inserted infrastructure having id: '${TEST_INFRA_ID}' calling \
+<span class=\"badge\">/infrastructures</span> endpoint and using <b>DELETE</b> method"
+    TEST_APICALL="(DELETE) /infrastructures/$TEST_INFRA_ID"
+    FG_HEADERS="$FG_HEAD_AUTH"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X DELETE $FG_ENDPOINT/infrastructures/$TEST_INFRA_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    rm -f $NEW_INFRA_JSON
+    fgtest_report
+    return $?
 }
 
 # Prepares a test report using the following:
@@ -342,6 +327,13 @@ fgtest_report() {
 </html>
 EOF
     sed -i "/<!-- Test list -->/a ${TEST_ROW}" $REPORT_HOMEDIR/$REPORT_INDEX
+    if [ $TEST_RES -eq 0 ]; then
+        echo "Test: $TEST_PKG executed successfully"
+    else
+        echo "Test: $TEST_PKG failed to execute"
+        return 1
+    fi
+    return 0
 }
 
 # Generate PDF files
@@ -402,6 +394,7 @@ fgtest_newinfra &&
 fgtest_viewinfras &&
 fgtest_viewinfra &&
 fgtest_modinfra &&
+fgtest_delinfra &&
 fgtest_mkpdf || echo "Error while perfomring test package: $TEST_PKG"
 
 # Close the test environment

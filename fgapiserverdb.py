@@ -2593,6 +2593,7 @@ class FGAPIServerDB:
                     'from application a\n'
                     '    ,infrastructure i\n'
                     'where i.app_id=a.id\n'
+                    '  and a.id != 0'
                     '  and i.id = %s;')
                 sql_data = (infra_id,)
                 self.log.debug(sql % sql_data)
