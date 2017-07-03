@@ -18,11 +18,16 @@ FGTEST_UPW=.$FGTEST_USR.passwd
 REPORT_HOMEDIR=www
 REPORT_HOME=fgtest
 REPORT_INDEX=index.html
+REPORT_PDFDIR=pdf
+REPORT_MKDPF=1
+REPORT_PDFALL=$REPORT_PDFDIR/report.pdf
 
 # Initialize all fgtest resources
 fgtest_init() {
+    FGTEST_LIST=$(mktemp)
     FGTEST_OUT=$(mktemp)
     FGTEST_ERR=$(mktemp)
+    echo $REPORT_HOMEDIR/$REPORT_INDEX >> $FGTEST_LIST
     echo "Generating test index page: $REPORT_HOMEDIR/$REPORT_INDEX" 
     cat >$REPORT_HOMEDIR/$REPORT_INDEX <<EOF
 <html>
@@ -296,6 +301,7 @@ EOF
 #  TEST_RES - The curl return code (curl must have -f optrion)
 #  TEST_HTTPRETCODE - The HTTP/s request return code 
 fgtest_report() {
+    echo $REPORT_HOMEDIR/${TEST_SHDESC}.html >> $FGTEST_LIST
     TEST_CMD_CLEAN=$(echo $TEST_CMD | sed s/'-w\ "\\n%{http_code}"'// | sed s/-f\ //)
     TEST_OUT=$(cat $FGTEST_OUT)
     TEST_ERR=$(cat $FGTEST_ERR)
@@ -338,9 +344,47 @@ EOF
     sed -i "/<!-- Test list -->/a ${TEST_ROW}" $REPORT_HOMEDIR/$REPORT_INDEX
 }
 
+# Generate PDF files
+fgtest_mkpdf() {
+    TEST_PKG="Generating PDF files from generated html files"
+    wkhtmltopdf --help >/dev/null 2>/dev/null
+    CHK_HTML2PDF=$?
+    if [ $CHK_HTML2PDF -ne 0 ]; then
+        echo "Failed while checking wkhtmltopdf existence"
+        return 1
+    fi
+    xvfb-run --help >/dev/null 2>/dev/null
+    CHK_XVFB=$?
+    CHK_HTML2PDF=$?
+    if [ $CHK_HTML2PDF -ne 0 ]; then
+        echo "Failed while checking xvfb-run existence"
+        return 1
+    fi   
+    if [ $REPORT_MKDPF -ne 0 ]; then
+       rm -rf $REPORT_PDFDIR
+       mkdir -p $REPORT_PDFDIR
+       PDF_LIST=""
+       while read html_file; do
+           HTML_FILE=$html_file
+           PDF_FILE=$(echo $html_file | sed s/.html/.pdf/ | sed s/$REPORT_HOMEDIR/$REPORT_PDFDIR/)
+           CMD="xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf $HTML_FILE $PDF_FILE"
+           eval $CMD
+           RES=$?
+           if [ $RES -ne 0 ]; then
+               echo "Failed executing command: $CMD"
+               return 1
+           fi
+           PDF_LIST=$PDF_LIST" "$PDF_FILE
+       done < $FGTEST_LIST
+       CMD=$(pdftk $PDF_LIST cat output $REPORT_PDFALL)
+       echo $CMD
+    fi
+    return 0
+}
+
 # Close all opened resources before to exit
 fgtest_close() {
-    rm -f $FGTEST_OUT $FGTEST_ERR
+    rm -f $FGTEST_OUT $FGTEST_ERR $FGTEST_LIST
 }
 
 #
@@ -357,7 +401,8 @@ fgtest_fg &&
 fgtest_newinfra &&
 fgtest_viewinfras &&
 fgtest_viewinfra &&
-fgtest_modinfra || echo "Error while perfomring test package: $TEST_PKG"
+fgtest_modinfra &&
+fgtest_mkpdf || echo "Error while perfomring test package: $TEST_PKG"
 
 # Close the test environment
 fgtest_close

@@ -30,7 +30,13 @@ EOF
 After inserting the new httpd endpoint; restart apache
 
 ## Pre-requisites
-    jquery
+    wkhtmltopdf:
+```
+      apt-get install pdftk
+      apt-get install xvfb
+      apt-get install wkhtmltopdf
+```
+    jquery:
 ```
       # wget https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js -O www/js/jquery.min.js
 ```
