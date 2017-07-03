@@ -59,6 +59,10 @@ fgtest_init() {
 EOF
 }
 
+###
+### Testing FutureGateway baseline environment
+###
+
 # Verify and create the fgtest user
 # This is a pre-requisite and no report is foreseen for this test
 fgtest_user() {
@@ -144,6 +148,10 @@ This test verifies that baseline FutureGateway endpoint is up and running callin
     return $? 
 }
 
+###
+### Testing FutureGateway infrastructures/ endpoint related calls
+###
+
 # Setup the SSH infrastructure using the fgtest user
 fgtest_newinfra() {
     TEST_PKG="Create infrastructure"
@@ -226,7 +234,7 @@ fgtest_modinfra() {
     TEST_TITLE="Infrastructure modify"
     TEST_SHDESC="infra_modify"
     TEST_DESC="\
-This test modify the new inserted infrastructure having id: '${TEST_INFRA_ID}' calling \
+This test modifies the new inserted infrastructure having id: '${TEST_INFRA_ID}' calling \
 <span class=\"badge\">/infrastructures</span> endpoint and using <b>PUT</b> method"
     TEST_APICALL="(PUT) /infrastructures/$TEST_INFRA_ID"
     MOD_INFRA_JSON=$(mktemp)
@@ -276,6 +284,212 @@ This test delete the new inserted infrastructure having id: '${TEST_INFRA_ID}' c
     fgtest_report
     return $?
 }
+
+###
+### Testing FutureGateway applications/ endpoint related calls
+###
+fgtest_newapp() {
+    TEST_PKG="Create application"
+    TEST_TITLE="Application create"
+    TEST_SHDESC="app_create"
+    TEST_DESC="\
+This test create a new application calling \
+<span class=\"badge\">/applications</span> endpoint and using <b>POST</b> method"
+    TEST_APICALL="(POST) /applications"
+    # The same infrastructure created during infrastructures/
+    # tests will be re-created here
+    NEW_INFRA_JSON=$(mktemp)
+    cat >$NEW_INFRA_JSON <<EOF
+{ "name": "SSH Test infrastructure",
+  "parameters": [ { "name": "jobservice", 
+                    "value": "ssh://localhost" },
+                  { "name": "username",
+                    "value": "${FGTEST_USR}" },
+                  { "name": "password",
+                    "value": "${FGTEST_PAS}" } ],
+  "description": "SSH Test infrastructure for fgtest",
+  "enabled": true,
+  "virtual": false }
+EOF
+    FG_HEADERS=$FG_HEAD_AUTH" "$FG_HEAD_JSON
+    TEST_JSON_DATA=$(cat $NEW_INFRA_JSON)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X POST -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/infrastructures"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    # Check that infrastructure has been created succesffully
+    if [ $TEST_RES -ne 0 ]; then
+        echo "Error test infrastructure for application isntallation"
+        return 1
+    fi
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    TEST_INFRA_ID=$(cat $FGTEST_OUT | jq .id | xargs echo)
+    rm -f $NEW_INFRA_JSON
+    # Now the infrastructure for the new application is available
+    NEW_APP_JSON=$(mktemp)
+    cat >$NEW_INFRA_JSON <<EOF
+{
+        "infrastructures": [${TEST_INFRA_ID}],
+        "parameters": [{
+                "name": "target_executor",
+                "value": "GridEngine",
+                "description": "Target executor name"
+        }, {
+                "name": "jobdesc_executable",
+                "value": "/bin/hostname",
+                "description": "Command to execute"
+        }, {
+                "name": "jobdesc_output",
+                "value": "stdout.txt",
+                "description": "Standard output"
+        }, {
+                "name": "jobdesc_error",
+                "value": "stderr.txt",
+                "description": "Standard error"
+        }],
+        "enabled": true,
+        "name": "Tester application",
+        "description": "FutureGateway tester application"
+}
+EOF
+    FG_HEADERS=$FG_HEAD_AUTH" "$FG_HEAD_JSON
+    TEST_JSON_DATA=$(cat $NEW_INFRA_JSON)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X POST -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/applications"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    TEST_APP_ID=$(cat $FGTEST_OUT | jq .id | xargs echo)
+    rm -f $NEW_INFRA_JSON
+    fgtest_report
+    return $?
+}
+
+# View all applications
+fgtest_viewapps() {
+    TEST_PKG="View applications"
+    TEST_TITLE="Application view all"
+    TEST_SHDESC="app_viewall"
+    TEST_DESC="\
+This test uses <span class=\"badge\">/applications</span> API call to view \
+all defined applications using <b>GET</b> method"
+    TEST_APICALL="(GET) /applications"
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/applications"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
+
+# View last inserted application
+fgtest_viewapp() {
+    TEST_PKG="View application"
+    TEST_TITLE="Application view"
+    TEST_SHDESC="app_view"
+    TEST_DESC="\
+This test uses <span class=\"badge\">/applications</span> API call to view the last \
+inserted  application having id: '${TEST_APP_ID}' and using <b>GET</b> method"
+    TEST_APICALL="(GET) /applications/$TEST_APP_ID"
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/applications/$TEST_APP_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
+
+# Modify last inserted application 
+fgtest_modapp() {
+    TEST_PKG="Modify application"
+    TEST_TITLE="Application modify"
+    TEST_SHDESC="app_modify"
+    TEST_DESC="\
+This test modifies the new inserted application having id: '${TEST_APP_ID}' calling \
+<span class=\"badge\">/applications</span> endpoint and using <b>PUT</b> method"
+    TEST_APICALL="(PUT) /applications/$TEST_APP_ID"
+    MOD_APP_JSON=$(mktemp)
+    cat >$MOD_APP_JSON <<EOF
+{
+    "files": [], 
+    "name": "(modified) Tester application", 
+    "parameters": [
+        {
+            "name": "(modified) target_executor", 
+            "value": "(modified) GridEngine", 
+            "description": "(modified) Target executor name"
+        }, 
+        {
+            "name": "(modified) jobdesc_executable", 
+            "value": "(modified) /bin/hostname", 
+            "description": "(modified) Command to execute"
+        }, 
+        {
+            "name": "(modified) jobdesc_output", 
+            "value": "(modified) stdout.txt", 
+            "description": "(modified) Standard output"
+        }, 
+        {
+            "name": "(modified) jobdesc_error", 
+            "value": "(modified) stderr.txt", 
+            "description": "(modified) Standard error"
+        }
+    ], 
+    "outcome": "RES", 
+    "enabled": false, 
+    "id": "${TEST_APP_ID}", 
+    "infrastructures": [
+        43
+    ], 
+    "description": "(modified) FutureGateway tester application"
+}
+EOF
+    FG_HEADERS="$FG_HEAD_AUTH $FG_HEAD_JSON"
+    TEST_JSON_DATA=$(cat $MOD_APP_JSON)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X PUT -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/applications/$TEST_APP_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    rm -f $NEW_APP_JSON
+    fgtest_report
+    return $?
+}
+
+# Delete last inserted application
+fgtest_delapp() {
+    TEST_PKG="Delete application"
+    TEST_TITLE="Application delete"
+    TEST_SHDESC="app_delete"
+    TEST_DESC="\
+This test delete the new inserted application having id: '${TEST_APP_ID}' calling \
+<span class=\"badge\">/applications</span> endpoint and using <b>DELETE</b> method"
+    TEST_APICALL="(DELETE) /applications/$TEST_APP_ID"
+    FG_HEADERS="$FG_HEAD_AUTH"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X DELETE $FG_ENDPOINT/applications/$TEST_APP_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    rm -f $NEW_INFRA_JSON
+    fgtest_report
+    return $?
+}
+
+###
+### Testing FutureGateway tasks/ endpoint related calls
+###
+
 
 # Prepares a test report using the following:
 #  TEST_TITLE - Title of the test
@@ -395,7 +609,14 @@ fgtest_viewinfras &&
 fgtest_viewinfra &&
 fgtest_modinfra &&
 fgtest_delinfra &&
-fgtest_mkpdf || echo "Error while perfomring test package: $TEST_PKG"
+fgtest_newapp &&
+fgtest_viewapps &&
+fgtest_viewapp &&
+fgtest_modapp &&
+fgtest_delapp || echo "Error while perfomring test package: $TEST_PKG"
+
+# Generate PDF reports
+fgtest_mkpdf
 
 # Close the test environment
 fgtest_close

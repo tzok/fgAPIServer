@@ -2281,6 +2281,10 @@ class FGAPIServerDB:
             #    id (infra_id in parameters); a check is
             #    necessary here ...
             #
+            sql = ('delete from fg_group_apps where app_id=%s;')
+            sql_data = (app_id,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
             sql = (
                 'delete from infrastructure_parameter\n'
                 'where infra_id in (select id \n'
