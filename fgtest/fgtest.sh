@@ -104,6 +104,7 @@ EOF
       echo "SSH connection test to $FGTEST_USR@localhost failed"
       return 1
     fi
+    FGTEST_PAS=$(cat $FGTEST_UPW)
     echo "SSH connection test to $FGTEST_USR@localhost passed"
     return 0
 }
@@ -337,7 +338,7 @@ EOF
                 "description": "Target executor name"
         }, {
                 "name": "jobdesc_executable",
-                "value": "/bin/hostname",
+                "value": "cp input.txt ouput.txt && hostname | tee -a output.txt",
                 "description": "Command to execute"
         }, {
                 "name": "jobdesc_output",
@@ -429,7 +430,7 @@ This test modifies the new inserted application having id: '${TEST_APP_ID}' call
         }, 
         {
             "name": "(modified) jobdesc_executable", 
-            "value": "(modified) /bin/hostname", 
+            "value": "(modified) cp input.txt ouput.txt && hostname | tee -a output.txt", 
             "description": "(modified) Command to execute"
         }, 
         {
@@ -488,6 +489,169 @@ This test delete the new inserted application having id: '${TEST_APP_ID}' callin
 
 ###
 ### Testing FutureGateway tasks/ endpoint related calls
+###
+fgtest_newtask() {
+    TEST_PKG="Create task"
+    TEST_TITLE="Task create"
+    TEST_SHDESC="task_create"
+    TEST_DESC="\
+This test creates a new task calling \
+<span class=\"badge\">/tasks</span> endpoint and using <b>POST</b> method"
+    TEST_APICALL="(POST) /tasks"
+    # The same application created during applications/
+    # tests will be re-created here
+    NEW_APP_JSON=$(mktemp)
+    cat >$NEW_INFRA_JSON <<EOF
+{   
+        "infrastructures": [${TEST_INFRA_ID}],
+        "parameters": [{
+                "name": "target_executor",
+                "value": "GridEngine",
+                "description": "Target executor name"
+        }, {
+                "name": "jobdesc_executable",
+                "value": "cp input.txt ouput.txt && hostname | tee -a output.txt",
+                "description": "Command to execute"
+        }, {
+                "name": "jobdesc_output",
+                "value": "stdout.txt",
+                "description": "Standard output"
+        }, {
+                "name": "jobdesc_error",
+                "value": "stderr.txt",
+                "description": "Standard error"
+        }],
+        "enabled": true,
+        "name": "Tester application",
+        "description": "FutureGateway tester application"
+}
+EOF
+    FG_HEADERS=$FG_HEAD_AUTH" "$FG_HEAD_JSON
+    TEST_JSON_DATA=$(cat $NEW_INFRA_JSON)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X POST -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/applications"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    # Check that infrastructure has been created succesffully
+    if [ $TEST_RES -ne 0 ]; then
+        echo "Error test application for task creation"
+        return 1
+    fi
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    TEST_APP_ID=$(cat $FGTEST_OUT | jq .id | xargs echo)
+    rm -f $NEW_APP_JSON
+    # Now the infrastructure for the new application is available
+    NEW_TASK_JSON=$(mktemp)
+    cat >$NEW_TASK_JSON <<EOF
+{"application":"${TEST_APP_ID}",
+ "description":"tester application run",
+ "arguments": [],
+ "input_files": [{"name": "input.txt"}],
+ "output_files": [{"name": "output.txt"}]}
+EOF
+    FG_HEADERS=$FG_HEAD_AUTH" "$FG_HEAD_JSON
+    TEST_JSON_DATA=$(cat $NEW_TASK_JSON)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X POST -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/tasks"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    TEST_TASK_ID=$(cat $FGTEST_OUT | jq .id | xargs echo)
+    rm -f $NEW_TASK_JSON
+    fgtest_report
+    return $?
+}
+
+# View all tasks
+fgtest_viewtasks() {
+    TEST_PKG="View tasks"
+    TEST_TITLE="Tasks view all"
+    TEST_SHDESC="task_viewall"
+    TEST_DESC="\
+This test uses <span class=\"badge\">/tasks</span> API call to view \
+all defined tasks using <b>GET</b> method"
+    TEST_APICALL="(GET) /tasks"
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
+
+# View task
+fgtest_viewtask() {
+    TEST_PKG="View task"
+    TEST_TITLE="Task view"
+    TEST_SHDESC="task_view"
+    TEST_DESC="\
+This test uses <span class=\"badge\">/tasks/id</span> API call to view the last \
+inserted  task having id: '${TEST_TASK_ID}' and using <b>GET</b> method"
+    TEST_APICALL="(GET) /tasks/$TEST_TASK_ID"
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
+
+# View task input
+fgtest_viewtaskinp() {
+    TEST_PKG="View task input files"
+    TEST_TITLE="Task view input"
+    TEST_SHDESC="task_viewinp"
+    TEST_DESC="\
+This test uses <span class=\"badge\">/tasks/input</span> API call to view input files\
+of the last inserted  task having id: '${TEST_TASK_ID}' and using <b>GET</b> method"
+    TEST_APICALL="(GET) /tasks/$TEST_TASK_ID/input"
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID/input"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
+
+# Send task input files
+fgtest_taskinpfile() {
+    TEST_PKG="Send task input file"
+    TEST_TITLE="Task input file"
+    TEST_SHDESC="task_sendinpfile"
+    TEST_DESC="\
+This test sends an input file to an existing task having id: ${TEST_TASK_ID} \
+<span class=\"badge\">/tasks/input</span> endpoint and using <b>POST</b> method"
+    TEST_APICALL="(POST) /tasks/task_id/input"
+    APP_INPUT_FILE=input.txt
+    echo "This is the input file for tester application" > $APP_INPUT_FILE
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -F \"file[]=@$APP_INPUT_FILE\" '"$TEST_JSON_DATA"' $FG_ENDPOINT/tasks/$TEST_TASK_ID/input"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    # rm -f $APP_INPUT_FILE # This will be removed later
+    fgtest_report
+    return $?
+}
+
+# Download input file
+
+
+###
+### Report
 ###
 
 
@@ -613,7 +777,12 @@ fgtest_newapp &&
 fgtest_viewapps &&
 fgtest_viewapp &&
 fgtest_modapp &&
-fgtest_delapp || echo "Error while perfomring test package: $TEST_PKG"
+fgtest_delapp &&
+fgtest_newtask &&
+fgtest_viewtasks &&
+fgtest_viewtask &&
+fgtest_viewtaskinp &&
+fgtest_taskinpfile || echo "Error while perfomring test package: $TEST_PKG"
 
 # Generate PDF reports
 fgtest_mkpdf
