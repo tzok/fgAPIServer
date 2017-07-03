@@ -51,7 +51,7 @@ fgtest_init() {
 </table>
 <div class="page-header"><h1>Notes</h1></div>
 <div class="well">
-<p>This test can only operate on the FutureGateway baseline installations</p>
+<p>This test can only operate correctly on the FutureGateway baseline installations</p>
 </div>
 </div>
 </body>
@@ -636,7 +636,7 @@ This test sends an input file to an existing task having id: ${TEST_TASK_ID} \
     APP_INPUT_FILE=input.txt
     echo "This is the input file for tester application" > $APP_INPUT_FILE
     FG_HEADERS=$FG_HEAD_AUTH
-    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -F \"file[]=@$APP_INPUT_FILE\" '"$TEST_JSON_DATA"' $FG_ENDPOINT/tasks/$TEST_TASK_ID/input"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -F \"file[]=@$APP_INPUT_FILE\" $FG_ENDPOINT/tasks/$TEST_TASK_ID/input"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
     TEST_RES=$?
