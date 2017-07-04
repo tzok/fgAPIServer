@@ -701,6 +701,56 @@ This test download an input file of an existing task having id: ${TEST_TASK_ID} 
     return $?
 }
 
+# Set runtime data
+fgtest_runtimedataset() {
+    TEST_PKG="Set Task runtime data"
+    TEST_TITLE="Task runtime data set"
+    TEST_SHDESC="task_runtimedataset"
+    TEST_DESC="\
+This test create runtime data for task having id: $TEST_TASK_ID calling \
+<span class=\"badge\">/tasks/id</span> endpoint and using <b>PATCH</b> method"
+    TEST_APICALL="(PATCH) /tasks/id"
+    RUNTIMEDATA_JSON=$(mktemp)
+    cat >$RUNTIMEDATA_JSON <<EOF
+{ "runtime_data" : [ { "data_name":  "test_data_field"
+                      ,"data_value": "test_data_value"
+                      ,"data_desc": "test data for tester application"}]}
+EOF
+    FG_HEADERS=$FG_HEAD_AUTH" "$FG_HEAD_JSON
+    TEST_JSON_DATA=$(cat $RUNTIMEDATA_JSON)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X PATCH -d '"$TEST_JSON_DATA"' $FG_ENDPOINT/tasks/$TEST_TASK_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    rm -f $RUNTIMEDATA_JSON
+    TEST_INFRA_ID=$(cat $FGTEST_OUT | jq .id | xargs echo)
+    fgtest_report
+    return $?
+}
+
+# Retrieve runtime data
+fgtest_runtimedataget() {
+    TEST_PKG="Get Task runtime data"
+    TEST_TITLE="Task runtime data get"
+    TEST_SHDESC="task_runtimedataget"
+    TEST_DESC="\
+This test uses <span class=\"badge\">/tasks/id</span> API call to view the last \
+inserted  task having id: '${TEST_TASK_ID}' and using <b>GET</b> method\
+Inside the task information the new inserted runtime_data field should be present"
+    TEST_APICALL="(GET) /tasks/$TEST_TASK_ID"
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
+
 # Download output file
 fgtest_dwnldoutfile() {
     TEST_PKG="Download task output file"
@@ -757,6 +807,26 @@ This test download an output file of an existing task having id: ${TEST_TASK_ID}
     return $?
 }
 
+fgtest_deletetask() {
+    TEST_PKG="Delete task"
+    TEST_TITLE="Task delete"
+    TEST_SHDESC="task_delete"
+    TEST_DESC="\
+This test delete the new created task having id: '${TEST_TASK_ID}' calling \
+<span class=\"badge\">/tasks/id</span> endpoint and using <b>DELETE</b> method"
+    TEST_APICALL="(DELETE) /tasks/$TEST_TASK_ID"
+    FG_HEADERS="$FG_HEAD_AUTH"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X DELETE $FG_ENDPOINT/tasks/$TEST_TASK_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    rm -f $NEW_INFRA_JSON
+    fgtest_report
+    return $?
+}
+
 ###
 ### Report
 ###
@@ -773,13 +843,19 @@ This test download an output file of an existing task having id: ${TEST_TASK_ID}
 fgtest_report() {
     echo $REPORT_HOMEDIR/${TEST_SHDESC}.html >> $FGTEST_LIST
     TEST_CMD_CLEAN=$(echo $TEST_CMD | sed s/'-w\ "\\n%{http_code}"'// | sed s/-f\ //)
-    TEST_OUT=$(cat $FGTEST_OUT)
-    TEST_ERR=$(cat $FGTEST_ERR)
-    if [ $TEST_RES -eq 0 ]; then
-        TEST_RES_OUT="<span class=\"label label-success\">Passed</span>"
-    else
+    if [ $TEST_RES -ne 0 ]; then
+        # The -f option of curl used inside fgtest_* funcion does not allow to
+        # to see the outut recevided by executed statement. In order to see
+        # the output of errored tests the curl command have to be re-executed
+        echo "Re-executing: '"$TEST_CMD"'"
+        eval "$TEST_CMD_CLEAN" >$FGTEST_OUT 2>/dev/null
+        TEST_ERR=$(cat $FGTEST_ERR)
         TEST_RES_OUT="<span class=\"label label-danger\">Failed</p>"
+    else
+        TEST_ERR=""
+        TEST_RES_OUT="<span class=\"label label-success\">Passed</span>"        
     fi
+    TEST_OUT=$(cat $FGTEST_OUT)
     BACK_LINK="<a href=\"${REPORT_INDEX}\">tests</a>"
     TEST_ROW="<tr><td><a href=\"${TEST_SHDESC}.html\">${TEST_TITLE}</a></td><td>${TEST_RES_OUT}</td><td>${TEST_DESC}</td></tr>"
     cat >$REPORT_HOMEDIR/${TEST_SHDESC}.html <<EOF
@@ -892,7 +968,10 @@ fgtest_viewtask &&
 fgtest_viewtaskinp &&
 fgtest_taskinpfile &&
 fgtest_dwnldinpfile &&
-fgtest_dwnldoutfile || echo "Error while perfomring test package: $TEST_PKG"
+fgtest_runtimedataset &&
+fgtest_runtimedataget &&
+fgtest_dwnldoutfile &&
+fgtest_deletetask || echo "Error while perfomring test package: $TEST_PKG"
 
 # Generate PDF reports
 fgtest_mkpdf
