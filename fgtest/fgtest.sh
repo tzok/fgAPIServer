@@ -7,6 +7,9 @@ FG_TEST_TOKEN="TEST_TOKEN"
 FG_HEAD_AUTH="-H \"Authorization: Bearer $FG_TEST_TOKEN\""
 FG_HEAD_JSON="-H \"Content-type: application/json\""
 
+ASD_ENDPOINT=http://localhost:8080
+ASD_MAINPAGE=APIServerDaemon/
+
 PTV_ENDPOINT=http://localhost:8889
 PTV_USER=tokenver_user
 PTV_PASS=tokenver_pass
@@ -147,6 +150,25 @@ This test verifies that baseline FutureGateway endpoint is up and running callin
     sed -i '$ d' $FGTEST_OUT
     fgtest_report
     return $? 
+}
+
+# Test APIServerDaemon presence
+fgtest_asd() {
+    TEST_PKG="FutureGateway APIServerDaemon"
+    TEST_TITLE="ASD endpoint"
+    TEST_SHDESC="asd_endpoint"
+    TEST_DESC="\
+This test verifies that baseline FutureGateway APIServerDaemon is up and running calling \
+<span class=\"badge\">/$ASD_MAINPAGE</span> address"
+    TEST_APICALL="(GET) /$ASD_MAINPAGE"
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $ASD_ENDPOINT/$ASD_MAINPAGE"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
 }
 
 ###
@@ -768,6 +790,7 @@ fgtest_init
 fgtest_user &&
 fgtest_ptv &&
 fgtest_fg &&
+fgtest_asd &&
 fgtest_newinfra &&
 fgtest_viewinfras &&
 fgtest_viewinfra &&
