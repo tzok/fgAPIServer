@@ -36,6 +36,8 @@ fgtest_init() {
 <html>
 <title>FutureGateway test report</title>
 <head>
+  <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="images/favicon.ico" type="image/x-icon">
   <link href="css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -43,7 +45,10 @@ fgtest_init() {
 <script src="js/bootstrap.min.js"></script>
 <div class="container theme-showcase" role="main">
 <div class="jumbotron">
-<h1>FutureGateway test report</h1>
+<table><tbody><tr>
+<td><img src="images/fglogo.png" width="50%"/></td>
+<td><h1>FutureGateway test report</h1></td>
+</tbody></tr></table>
 <p>This is the main page for tests executed on top of a baseline FutureGateway installation</p>
 </div>
 <table class="table table-bordered">
@@ -862,6 +867,8 @@ fgtest_report() {
 <html>
 <title>${TEST_TITLE}</title>
 <head>
+  <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="images/favicon.ico" type="image/x-icon">
   <link href="css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -869,7 +876,10 @@ fgtest_report() {
 <script src="js/bootstrap.min.js"></script>
 <div class="container theme-showcase" role="main">
 <div class="jumbotron">
-<h1>${TEST_TITLE}</h1>
+<table><tbody><tr>
+<td><img src="images/fglogo.png" width="50%"/></td>
+<td><h1>${TEST_TITLE}</h1></td>
+</tbody></tr></table>
 <p>${TEST_DESC}</p>
 </div>
 <table class="table table-bordered">
