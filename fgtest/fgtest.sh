@@ -670,7 +670,92 @@ This test sends an input file to an existing task having id: ${TEST_TASK_ID} \
 }
 
 # Download input file
+fgtest_dwnldinpfile() {
+    TEST_PKG="Download task input file"
+    TEST_TITLE="Task download input file"
+    TEST_SHDESC="task_dnwldinpfile"
+    TEST_DESC="\
+This test download an input file of an existing task having id: ${TEST_TASK_ID} \
+<span class=\"badge\">/file?path=...</span> endpoint and using <b>GET</b> method"
+    TEST_APICALL="(GET) /file?path=..."
+    # First retrieve the file endpoint from task JSON
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    if [ $TEST_RES -ne 0 ]; then
+        echo "Failed getting info for task: $TEST_TASK_ID"
+        return 1
+    fi
+    sed -i '$ d' $FGTEST_OUT
+    APP_INPUT_FGPATH=$(cat $FGTEST_OUT | jq .input_files | grep url | awk -F":" '{print $2}' | xargs echo | sed s/,//)
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS \"$FG_ENDPOINT/$APP_INPUT_FGPATH\""
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
 
+# Download output file
+fgtest_dwnldoutfile() {
+    TEST_PKG="Download task output file"
+    TEST_TITLE="Task download output file"
+    TEST_SHDESC="task_dnwldoutfile"
+    TEST_DESC="\
+This test download an output file of an existing task having id: ${TEST_TASK_ID} \
+<span class=\"badge\">/file?path=...</span> endpoint and using <b>GET</b> method"
+    TEST_APICALL="(GET) /file?path=..."
+    # First wait for task execution termination
+    FG_HEADERS=$FG_HEAD_AUTH
+    rm -f $APP_INPUT_FILE # Now it is possible to remove input file
+    for i in $(seq 1 60); do
+        TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID"
+         echo "Executing: '"$TEST_CMD"'"
+         eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+         TEST_RES=$?
+         if [ $TEST_RES -ne 0 ]; then
+             echo "Failed getting info for task: $TEST_TASK_ID"
+             return 1
+         fi
+         sed -i '$ d' $FGTEST_OUT
+         TEST_TASK_STATUS=$(cat $FGTEST_OUT | jq '.status' | xargs echo)
+         case $TEST_TASK_STATUS in
+             DONE)
+                 echo "Task reached DONE status"
+                 break
+                 ;;
+             ABORTED) 
+                 echo "Task aborted"
+                 return 1
+                 ;;
+             *)
+                 printf "Status is $TEST_TASK_STATUS waiting ... "
+         esac
+         sleep 30
+         echo "done"
+    done
+    if [ "$TEST_TASK_STATUS" != "DONE" ]; then
+        echo "Test task did not reched DONE status in time"
+        echo "Please verify your environment and re-execute"
+        echo "the test"
+        return 1
+    fi
+    # Now retrieve the output file endpoint from task JSON
+    APP_OUTPUT_FGPATH=$(cat $FGTEST_OUT | jq '.output_files' | grep url | grep output.txt | awk -F":" '{print $2}' | xargs echo)
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS \"$FG_ENDPOINT/$APP_OUTPUT_FGPATH\""
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
 
 ###
 ### Report
@@ -805,7 +890,9 @@ fgtest_newtask &&
 fgtest_viewtasks &&
 fgtest_viewtask &&
 fgtest_viewtaskinp &&
-fgtest_taskinpfile || echo "Error while perfomring test package: $TEST_PKG"
+fgtest_taskinpfile &&
+fgtest_dwnldinpfile &&
+fgtest_dwnldoutfile || echo "Error while perfomring test package: $TEST_PKG"
 
 # Generate PDF reports
 fgtest_mkpdf

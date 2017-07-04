@@ -48,6 +48,7 @@ After inserting the new httpd endpoint; restart apache
       # ln -s ../../bootstrap-3.3.7-dist/css/bootstrap-theme.min.css bootstrap-theme.min.css
       # ln -s ../../bootstrap-3.3.7-dist/css/bootstrap-theme.min.css.map bootstrap-theme.min.css.map
       # ln -s ../../bootstrap-3.3.7-dist/css/bootstrap.min.css bootstrap.min.css
+      # ln -s ../../bootstrap-3.3.7-dist/css/bootstrap.min.css.map bootstrap.min.css.map
       # cd ../fonts
       # ln -s ../../bootstrap-3.3.7-dist/fonts/ fonts
       # cd ../js
