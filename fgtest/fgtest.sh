@@ -84,7 +84,7 @@ fgtest_user() {
         echo "$FGTEST_USR:$FGTEST_PWD" | chpasswd
         echo "Test user $FGTEST_USR has been created"
         echo "SSH keyscanning"
-        ssh-keyscan localhost
+        ssh-keyscan -H localhost >> ~/.ssh/known_hosts
         echo "Test user password is: $FGTEST_PWD"
         echo $FGTEST_PWD > $FGTEST_UPW
     else
@@ -942,7 +942,7 @@ fgtest_mkpdf() {
        done < $FGTEST_LIST
        CMD=$(pdftk $PDF_LIST cat output $REPORT_PDFALL)
        eval $CMD
-       ln -s ../$REPORT_PDFALL $REPORT_HOMEDIR/fgtest_report.pdf
+       [ -h $REPORT_HOMEDIR/fgtest_report.pdf ] || ln -s ../$REPORT_PDFALL $REPORT_HOMEDIR/fgtest_report.pdf 
        PDF_ROW="<p>You can download a PDF version of this report clicking <a href=\"fgtest_report.pdf\">here</a></p>"
        sed -i "/<!-- PDF report -->/a ${PDF_ROW}" $REPORT_HOMEDIR/$REPORT_INDEX
     fi
