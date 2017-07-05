@@ -59,7 +59,8 @@ fgtest_init() {
 </table>
 <div class="page-header"><h1>Notes</h1></div>
 <div class="well">
-<p>This test can only operate correctly on the FutureGateway baseline installations</p>
+<p>This test better operates on fresh FutureGateway baseline installations</p>
+<!-- PDF report -->
 </div>
 </div>
 </body>
@@ -940,7 +941,10 @@ fgtest_mkpdf() {
            PDF_LIST=$PDF_LIST" "$PDF_FILE
        done < $FGTEST_LIST
        CMD=$(pdftk $PDF_LIST cat output $REPORT_PDFALL)
-       echo $CMD
+       eval $CMD
+       ln -s ../$REPORT_PDFALL $REPORT_HOMEDIR/fgtest_report.pdf
+       PDF_ROW="<p>You can download a PDF version of this report clicking <a href=\"fgtest_report.pdf\">here</a></p>"
+       sed -i "/<!-- PDF report -->/a ${PDF_ROW}" $REPORT_HOMEDIR/$REPORT_INDEX
     fi
     return 0
 }
