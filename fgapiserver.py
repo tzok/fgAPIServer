@@ -1026,7 +1026,7 @@ def task_id(task_id=None):
                     "message": "Successfully removed task with id: %s" %
                                task_id}
                 # 204 - NO CONTENT cause no output
-                logger.debug(task_response['message'])
+                logger.debug(response['message'])
     elif request.method == 'PATCH':
         # PATCH on tasks accepts status change or on runtime_data
         params = request.get_json()
