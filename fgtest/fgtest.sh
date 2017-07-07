@@ -84,7 +84,7 @@ fgtest_user() {
         echo "$FGTEST_USR:$FGTEST_PWD" | chpasswd
         echo "Test user $FGTEST_USR has been created"
         echo "SSH keyscanning"
-        ssh-keyscan -H localhost >> ~/.ssh/known_hosts
+        ssh-keyscan -H localhost >> /root/.ssh/known_hosts
         echo "Test user password is: $FGTEST_PWD"
         echo $FGTEST_PWD > $FGTEST_UPW
     else
