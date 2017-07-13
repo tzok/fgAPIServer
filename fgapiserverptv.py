@@ -115,12 +115,13 @@ class FGAPIServerPTV:
         self.log.debug("Connecting PTV service: '%s'" % self.portal_endpoint)
 
         token_info = {}
-        post_data = "token=%s" % token
+        post_data = {'token': token}
         try:
-            response = requests.post(self.portal_endpoint+"?"+post_data,
+            response = requests.post(self.portal_endpoint,
                                      auth=requests.auth.HTTPBasicAuth(
                                          self.portal_tv_user,
                                          self.portal_tv_pass),
+                                     data=post_data
                                      verify=False)
             token_info = response.json()
             response.close()
