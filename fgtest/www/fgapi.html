@@ -1,0 +1,236 @@
+<!--
+  This is a simple HTML page that demonstrate the use of 'fg_apis.js'
+  This jacascript contains function calls that help developers to deal
+  with FutureGateway APIs.
+  The 'fg_apis.js' requires jquery v>3.0 to operate correctly; it also
+  needs a js configuration file named 'fg_config.js' it contains the 
+  variable 'fg_info' containing information about the API Server
+  front-end module to contact.
+
+  Riccardo Bruno <riccardo.bruno@ct.infn.it>
+-->
+<html>
+<title>FutureGateway test APIs</title>
+<head>
+  <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/fg_config.js"></script>
+<script src="js/fg_apis.js"></script>
+<script>
+    // Credentials used for SSH connection
+    var ssh_host = "ssh://localhost"
+    var ssh_user = "fgtest_test";
+    var ssh_pass = "N9lHmocm";
+
+    // This helper function updates the infrastructure list control
+    // from the result of infra_list call
+    function update_infra_list() {
+        if (api_return_code == 200) {
+            console.log("Rebuilding infrastructure list");
+            $('#infra_id_lst').empty();
+            $(api_result['infrastructures']).each(function(idx,obj){ 
+                console.log(idx+"-"+obj['description']);
+                $('#infra_id_lst').append('<option value="' + obj['id'] +
+                                          '">' + obj['description'] + '</option>');
+            });
+        }
+    }
+
+    // This helper function updates the application list control
+    // from the result of app_list call
+    function update_app_list() {
+        if (api_return_code == 200) {
+            console.log("Rebuilding application list");
+            $('#app_id_lst').empty();
+            $(api_result['applications']).each(function(idx,obj){ 
+                console.log(idx+"-"+obj['description']);
+                $('#app_id_lst').append('<option value="' + obj['id'] +
+                                          '">' + obj['description'] + '</option>');
+            });
+        }
+    }
+
+    // Helper function that initializes all available control lists: ifnras, apps, tasks
+    function init_lists() {
+        console.log("Updating infastructure list");
+        infra_list();
+        update_infra_list();
+        console.log("Updating application list");
+        app_list();
+        update_app_list();
+    }
+
+    $( document ).ready(function() {
+        // Almost all test feedback are available in the browser console
+        console.log( "document loaded" );
+        init_lists();
+
+        //
+        // Infrastructures
+        //
+
+        // New infrastructure button
+        $('#infra_new_btn').on('click', function(event) {
+            console.log("New infrastructure");
+            infra_json_data = {
+                "name": "SSH Test infrastructure",
+                "parameters": [{"name": "jobservice",
+                                "value": ssh_host},
+                               {"name": "username",
+                                "value": ssh_user},
+                               {"name": "password",
+                                "value": ssh_pass}],
+                "description": "SSH Test infrastructure for fgtest",
+                "enabled": true,
+                "virtual": false
+            };
+            infra_create(infra_json_data);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Updating infastructure list");
+            infra_list();
+            update_infra_list();
+        });
+        // Infrastructures list
+        $('#infra_list_btn').on('click',function(event) {
+            console.log('List infrastuctures');
+            infra_list();
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            update_infra_list();
+        });
+        // Infrastructure delete
+        $('#infra_del_btn').on('click',function(event) {
+            var infra_id = $('#infra_id_lst').val();
+            console.log("Delete infrastucture having id: '" + infra_id + "'");
+            infra_delete(infra_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Update the infrastructure list");
+            infra_list();
+            update_infra_list();
+        });
+        // Show given infrastructure id
+        $('#infra_show_btn').on('click',function(event) {
+            var infra_id = $('#infra_id_lst').val();
+            console.log("Show infrastructure having id '" + infra_id + "'");
+            infra_show(infra_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+        });
+
+        //
+        // Applications
+        //
+
+        // New application button
+        $('#app_new_btn').on('click', function(event) {
+            console.log("New application");
+            var infra_id = $('#infra_id_lst').val();
+            console.log("Installing new application using infrastructure id '" + infra_id + "'");
+            app_json_data = { 
+                "infrastructures": [ infra_id ],
+                "parameters": [{"name": "target_executor",
+                                "value": "GridEngine",
+                                "description": "Target executor name" },
+                               {"name": "jobdesc_executable",
+                                "value": "cp input.txt ouput.txt && hostname | tee -a output.txt",
+                                "description": "Command to execute" },
+                               {"name": "jobdesc_output",
+                                "value": "stdout.txt",
+                                "description": "Standard output" },
+                               {"name": "jobdesc_error",
+                                "value": "stderr.txt",
+                                "description": "Standard error" }],
+                "enabled": true,
+                "name": "Tester application",
+                "description": "FutureGateway tester application" 
+            };
+            app_create(app_json_data);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Updating application list");
+            app_list();
+            update_app_list();
+        });
+
+        // Application delete
+        $('#app_del_btn').on('click',function(event) {
+            var app_id = $('#app_id_lst').val();
+            console.log("Delete application having id: '" + app_id + "'");
+            app_delete(app_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Update the application list");
+            app_list();
+            update_app_list();
+        });
+
+        // Show given application id
+        $('#app_show_btn').on('click',function(event) {
+            var app_id = $('#app_id_lst').val();
+            console.log("Show application having id '" + app_id + "'");
+            app_show(app_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+        });
+
+        //
+        // Tasks
+        //
+
+
+
+    });
+</script>
+<div class="container theme-showcase" role="main">
+  <div class="jumbotron">
+    <table><tbody><tr>
+    <td><img src="images/fglogo.png" width="50%"/></td>
+    <td><h1>FutureGateway test API javascript</h1></td>
+    </tbody></tr></table>
+    <p>This is the main page testing the fg_apis.js javascript </p>
+  </div>
+  <div class="page-header"><h1>API Calls</h1></div>
+  <!--
+      Below buttons to execute each fg_api function call
+   -->
+   <p><h2>Infrastructures</h2>
+     <ul>
+       <li>List infrastuctures <button id="infra_list_btn" type="button" class="btn btn-primary">exec</button></li>
+       <li>Execute the action on the selected infrastructure 
+         <select class="form-control" id="infra_id_lst">
+           <option value="1">Baseline SSH test infrastructure</option>
+         </select>
+         <button id="infra_show_btn" type="button" class="btn btn-primary">Show</button></li>
+         <button id="infra_del_btn" type="button" class="btn btn-danger">Delete</button></li>
+       <li>Create new infrastucture <button id="infra_new_btn" type="button" class="btn btn-primary">exec</button></li>
+     </ul>
+   </p>
+
+   <p><h2>Applications</h2>
+     <ul>
+       <li>List applications <button id="app_list_btn" type="button" class="btn btn-primary">exec</button></li>
+       <li>Execute the action on the selected application
+         <select class="form-control" id="app_id_lst">
+           <option value="1">Baseline SSH test app</option>
+         </select>
+         <button id="app_show_btn" type="button" class="btn btn-primary">Show</button></li>
+         <button id="app_del_btn" type="button" class="btn btn-danger">Delete</button></li>
+       <li>Create new application <button id="app_new_btn" type="button" class="btn btn-primary">exec</button></li>
+     </ul>
+   </p>
+
+   <p><h2>Tasks</h2>
+     <ul>
+       <li></li>
+     </ul>
+   </p>
+</div>
+</body>
+</html>
