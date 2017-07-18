@@ -7,9 +7,11 @@
 // Variable that stores information about the fgAPIServer front-end; this is
 // normally contained in the js file fg_config.js
 //var fg_info = {
-//    apiserver_url: 'http://<fghost>[:<fgport>][/endpoint]/<fg_version>',
-//    token = <the current valid token>
+//    apiserver_url: 'http://<fghost>[:<fgport>][/endpoint]/<fg_version>'
 //};
+
+// generic variable for debugging purposes
+var debug_obj = null;
 
 // api_result variable contains the json output of last called API (if any)
 var api_result = null;
@@ -216,3 +218,37 @@ function app_delete(app_id) {
     });
 }
 
+// app_files - Uploads a set of input files to the given appliction id
+//             files refers to a form input control such as:
+//                 <input id="app_files" type="file" ... 
+//             and files variable filled with:
+//                 var files = document.getElementById('app_files').files;
+function app_files(app_id, files) {
+    var data = new FormData();
+    $.each(files, function(key, value) {
+        data.append('file[]', value);
+    });
+    $.ajax({
+        url: fg_info.apiserver_url + '/applications/' + app_id + '/input',
+        headers: {
+            "Authorization":"Bearer " + fg_info.token,
+        },
+        type: 'POST',
+        data: data,
+        dataType: 'json',
+        contentType: false,
+        processData: false,
+        async: false
+    }).fail(function(xhr, statusText, err) {
+        api_return_code = xhr.status;
+        api_result = {
+            'message': 'Failed to send files to application id '
+                     + app_id + '(' + api_return_code + ')'
+        };
+        console.log('fail: ' + xhr.status + '-' + statusText + '-' + err );
+    }).success(function(data, statusText, xhr) {
+        api_return_code = xhr.status;
+        api_result = data;
+        console.log("success:" + api_return_code);
+    });
+}

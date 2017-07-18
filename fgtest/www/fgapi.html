@@ -22,6 +22,7 @@
 <script src="js/fg_config.js"></script>
 <script src="js/fg_apis.js"></script>
 <script>
+    var dbgobj=null;
     // Credentials used for SSH connection
     var ssh_host = "ssh://localhost"
     var ssh_user = "fgtest_test";
@@ -180,11 +181,20 @@
             console.log("Whatch API call result whatching variable 'api_result'");
         });
 
+        // Upload application files
+        $('#app_files_btn').on('click',function(event) {
+          var app_id = $('#app_id_lst').val();
+          var files = document.getElementById('app_files_ctrl').files; 
+          dbgobj=files;
+          console.log("Uploading file(s) for application having id '" + app_id + "'");
+          app_files(app_id, files);
+          console.log("API return code: " + api_return_code);
+          console.log("Whatch API call result whatching variable 'api_result'");
+        });
+
         //
         // Tasks
         //
-
-
 
     });
 </script>
@@ -222,7 +232,12 @@
          </select>
          <button id="app_show_btn" type="button" class="btn btn-primary">Show</button></li>
          <button id="app_del_btn" type="button" class="btn btn-danger">Delete</button></li>
-       <li>Create new application <button id="app_new_btn" type="button" class="btn btn-primary">exec</button></li>
+       <li>Create new application <button id="app_new_btn" type="button" class="btn btn-primary">exec</button>
+         <form id="app_files_form" enctype="multipart/form-data">
+           <input id="app_files_ctrl" name="file[]" type="file" multiple/>
+           <input id="app_files_btn" type="button" value="Upload" />
+         </form>
+       </li>
      </ul>
    </p>
 
