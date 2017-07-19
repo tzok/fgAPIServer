@@ -252,3 +252,28 @@ function app_files(app_id, files) {
         console.log("success:" + api_return_code);
     });
 }
+
+// task_list - Function that lists all available tasks 
+function task_list() {
+    $.ajax({
+        url:  fg_info.apiserver_url+'/tasks',
+        headers: {
+            "Authorization":"Bearer " + fg_info.token,
+        },
+        type: "GET",
+        cache: false,
+        dataType: "json",
+        async: false
+    }).fail(function(xhr, statusText, err) {
+        api_return_code = xhr.status;
+        api_result = {
+            'message': 'Failed to list tasks (' + api_return_code + ')'
+        };
+        console.log("failed:" + xhr.status + '-' + statusText + '-' + err );
+    }).success(function(data, statusText, xhr) {
+        api_return_code = xhr.status;
+        api_result = data;
+        console.log("success:" + api_return_code);
+    });
+}
+

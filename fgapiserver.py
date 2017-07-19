@@ -841,8 +841,8 @@ def tasks():
                     response = {
                         "message": db_state[1]
                     }
+                    break
                 else:
-                    state = 200
                     task_array += [{
                         "id": task_record['id'],
                         "application": task_record['application'],
@@ -865,13 +865,14 @@ def tasks():
                              }
                         ]},
                     ]
-                    paged_tasks, paged_links = paginate_response(
-                        task_array,
-                        page,
-                        per_page,
-                        request.url)
-                    response = {"tasks": paged_tasks,
-                                "_links": paged_links}
+            state = 200;
+            paged_tasks, paged_links = paginate_response(
+                 task_array,
+                 page,
+                 per_page,
+                 request.url)
+            response = {"tasks": paged_tasks,
+                        "_links": paged_links}
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")
