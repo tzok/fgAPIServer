@@ -1040,7 +1040,8 @@ class FGAPIServerDB:
         try:
             # Create the Task IO Sandbox
             iosandbox = '%s/%s' % (self.iosandbbox_dir, str(uuid.uuid1()))
-            os.makedirs(iosandbox, 0770)
+            os.makedirs(iosandbox)
+            os.chmod(iosandbox, 0770)
             # Insert new Task record
             db = self.connect()
             cursor = db.cursor()
@@ -1188,7 +1189,11 @@ class FGAPIServerDB:
             # or no files are specified in the application_file table for this
             # app_id
             if self.is_overridden_sandbox(app_id):
-                self.submit_task(task_id)
+                if not self.submit_task(task_id):
+                    self.log.debug("Unable to submit taks: '%s'"
+                                   % self.err_msg);
+            else:
+                self.log.debug("Task %s needs to finalize its input sandbox")
 
         return task_id
 

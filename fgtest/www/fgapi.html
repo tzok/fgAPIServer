@@ -88,16 +88,18 @@
 
         // New infrastructure button
         $('#infra_new_btn').on('click', function(event) {
+            var infra_name = $('#infra_new_name').val();
+            var infra_desc = $('#infra_new_desc').val();
             console.log("New infrastructure");
             infra_json_data = {
-                "name": "SSH Test infrastructure",
+                "name": infra_name,
                 "parameters": [{"name": "jobservice",
                                 "value": ssh_host},
                                {"name": "username",
                                 "value": ssh_user},
                                {"name": "password",
                                 "value": ssh_pass}],
-                "description": "SSH Test infrastructure for fgtest",
+                "description": infra_desc,
                 "enabled": true,
                 "virtual": false
             };
@@ -152,6 +154,8 @@
         $('#app_new_btn').on('click', function(event) {
             console.log("New application");
             var infra_id = $('#infra_id_lst').val();
+            var app_name = $('#app_new_name').val();
+            var app_desc = $('#app_new_desc').val();
             console.log("Installing new application using infrastructure id '" + infra_id + "'");
             app_json_data = { 
                 "infrastructures": [ infra_id ],
@@ -168,8 +172,8 @@
                                 "value": "stderr.txt",
                                 "description": "Standard error" }],
                 "enabled": true,
-                "name": "Tester application",
-                "description": "FutureGateway tester application" 
+                "name": app_name,
+                "description": app_desc
             };
             app_create(app_json_data);
             console.log("API return code: " + api_return_code);
@@ -220,6 +224,43 @@
             console.log("Whatch API call result whatching variable 'api_result'");
             update_list('tasks');
         });
+        // Task creation (new application run) 
+        $('#task_new_btn').on('click',function(event) {
+          var app_id = $('#app_id_lst').val();
+          var run_desc = $('#task_new_desc').val();
+          task_json_data = {
+              "application": app_id,
+              "description": "" + run_desc
+              //"arguments": [],
+              //"input_files": [],
+              //"output_files": []
+          };
+          task_create(task_json_data);
+          console.log("API return code: " + api_return_code);
+          console.log("Whatch API call result whatching variable 'api_result'");
+          console.log("Updating task list");
+          task_list();
+          update_list('tasks');  
+        });
+        // Task delete
+        $('#task_del_btn').on('click',function(event) {
+            var task_id = $('#task_id_lst').val();
+            console.log("Delete task having id: '" + task_id + "'");
+            task_delete(task_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Update the application list");
+            task_list();
+            update_list('tasks');
+        });
+        // Show given task id
+        $('#task_show_btn').on('click',function(event) {
+            var task_id = $('#task_id_lst').val();
+            console.log("Show task having id '" + task_id + "'");
+            task_show(task_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+        });
 
     });
 </script>
@@ -238,32 +279,44 @@
    <p><h2>Infrastructures</h2>
      <ul>
        <li>List infrastuctures <button id="infra_list_btn" type="button" class="btn btn-primary">exec</button></li>
-       <li>Execute the action on the selected infrastructure 
+       <li>Infrastructures list 
          <select class="form-control" id="infra_id_lst">
            <option value="1">Baseline SSH test infrastructure</option>
          </select>
-         <button id="infra_show_btn" type="button" class="btn btn-primary">Show</button>
+         Get details of selected infrastructure
+         <button id="infra_show_btn" type="button" class="btn btn-primary">Show</button></br>
+         Delete selected infrastructure
          <button id="infra_del_btn" type="button" class="btn btn-danger">Delete</button>
        </li>
-       <li>Create new infrastucture <button id="infra_new_btn" type="button" class="btn btn-primary">exec</button></li>
+       <li>Create new infrastucture; using fgtest infrastructure parameters</br>
+         Name: <input id="infra_new_name" type="text"/></br>
+         Description: <input id="infra_new_desc" type="text"/> 
+         <button id="infra_new_btn" type="button" class="btn btn-primary">Exec</button>
+       </li>
      </ul>
    </p>
 
    <p><h2>Applications</h2>
      <ul>
        <li>List applications <button id="app_list_btn" type="button" class="btn btn-primary">exec</button></li>
-       <li>Execute the action on the selected application
+       <li>Applications list
          <select class="form-control" id="app_id_lst">
            <option value="1">Baseline SSH test app</option>
          </select>
-         <button id="app_show_btn" type="button" class="btn btn-primary">Show</button>
-         <button id="app_del_btn" type="button" class="btn btn-danger">Delete</button>
-       </li>
-       <li>Create new application <button id="app_new_btn" type="button" class="btn btn-primary">exec</button>
+         Get details of selected application
+         <button id="app_show_btn" type="button" class="btn btn-primary">Show</button></br>
+         Delete selected application
+         <button id="app_del_btn" type="button" class="btn btn-danger">Delete</button></br>
+         Upload files to associate at the selected application
          <form id="app_files_form" enctype="multipart/form-data">
            <input id="app_files_ctrl" name="file[]" type="file" multiple/>
-           <input id="app_files_btn" type="button" value="Upload" />
          </form>
+         <button id="app_files_btn" type="button" class="btn btn-danger">Upload</button>
+       </li>
+       <li>Create new application; using infrastructure selected above</br>
+         Name: <input id="app_new_name" type="text"/></br>
+         Description: <input id="app_new_desc" type="text"/>
+         <button id="app_new_btn" type="button" class="btn btn-danger">Exec</button>
        </li>
      </ul>
    </p>
@@ -271,13 +324,19 @@
    <p><h2>Tasks</h2>
      <ul>
        <li>List tasks <button id="task_list_btn" type="button" class="btn btn-primary">exec</button></li>
-       <li>Execute the action on the selected task 
+       <li>Tasks list 
          <select class="form-control" id="task_id_lst">
            <option value="1">Baseline task</option>
          </select>
-         <button id="task_show_btn" type="button" class="btn btn-primary">Show</button>
+         Get details of selected task
+         <button id="task_show_btn" type="button" class="btn btn-primary">Show</button></br>
+         Delete selected task
          <button id="task_del_btn" type="button" class="btn btn-danger">Delete</button>
-       </li> 
+       </li>
+       <li>Create new task; using application selected above</br>
+         Description: <input id="task_new_desc" type="text"/>
+         <button id="task_new_btn" type="button" class="btn btn-primary">exec</button>
+       </li>
      </ul>
    </p>
 </div>

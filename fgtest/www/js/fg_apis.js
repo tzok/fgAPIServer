@@ -208,7 +208,7 @@ function app_delete(app_id) {
         api_return_code = xhr.status;
         api_result = {
             'message': 'Failed to delete infrastructure having id '
-                     + infra_id + '(' + api_return_code + ')'
+                     + app_id + '(' + api_return_code + ')'
         };
         console.log('fail: ' + xhr.status + '-' + statusText + '-' + err );
     }).success(function(data, statusText, xhr) {
@@ -277,3 +277,78 @@ function task_list() {
     });
 }
 
+// task_create - Function that creates a new task using FG APIs
+function task_create(task_json_data) {
+    $.ajax({
+        url:  fg_info.apiserver_url+'/tasks',
+        headers: {
+            "Authorization":"Bearer " + fg_info.token,
+        },
+        type: "POST",
+        cache: false,
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify(task_json_data),
+        async: false
+    }).fail(function(xhr, statusText, err) {
+        api_return_code = xhr.status;
+        api_result = {
+            'message': 'Failed to create task (' + api_return_code + ')'
+        };
+        console.log('fail: ' + xhr.status + '-' + statusText + '-' + err );
+    }).success(function(data, statusText, xhr) {
+        api_return_code = xhr.status;
+        api_result = data;
+        console.log("success:" + api_return_code);
+    });
+}
+
+// task_show - Function that shows the given task id
+function task_show(task_id) {
+    $.ajax({
+        url:  fg_info.apiserver_url + '/tasks/' + task_id,
+        headers: {
+            "Authorization":"Bearer " + fg_info.token,
+        },
+        type: "GET",
+        cache: false,
+        dataType: "json",
+        async: false
+    }).fail(function(xhr, statusText, err) {
+        api_return_code = xhr.status;
+        api_result = {
+            'message': 'Failed to show task having id '
+                     + task_id + '(' + api_return_code + ')'
+        };
+        console.log('fail: ' + xhr.status + '-' + statusText + '-' + err );
+    }).success(function(data, statusText, xhr) {
+        api_return_code = xhr.status;
+        api_result = data;
+        console.log("success:" + api_return_code);
+    });
+}
+
+// task_delete - Function that delete the given task id
+function task_delete(task_id) {
+    $.ajax({
+        url:  fg_info.apiserver_url + '/tasks/' + task_id,
+        headers: {
+            "Authorization":"Bearer " + fg_info.token,
+        },
+        type: "DELETE",
+        cache: false,
+        dataType: "json",
+        async: false
+    }).fail(function(xhr, statusText, err) {
+        api_return_code = xhr.status;
+        api_result = {
+            'message': 'Failed to delete infrastructure having id '
+                     + task_id + '(' + api_return_code + ')'
+        };
+        console.log('fail: ' + xhr.status + '-' + statusText + '-' + err );
+    }).success(function(data, statusText, xhr) {
+        api_return_code = xhr.status;
+        api_result = data;
+        console.log("success:" + api_return_code);
+    });
+}
