@@ -118,6 +118,32 @@ function infra_delete(infra_id) {
     });
 }
 
+// infra_update - Function that updates a given infrastructure using FG APIs
+function infra_update(infra_json_data) {
+    $.ajax({
+        url:  fg_info.apiserver_url+'/infrastructures/' + infra_json_data['id'],
+        headers: {
+            "Authorization":"Bearer " + fg_info.token,
+        },
+        type: "PUT",
+        cache: false,
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+        data: JSON.stringify(infra_json_data),
+        async: false
+    }).fail(function(xhr, statusText, err) {
+        api_return_code = xhr.status;
+        api_result = {
+            'message': 'Failed to update infrastructure (' + api_return_code + ')'
+        };
+        console.log('fail: ' + xhr.status + '-' + statusText + '-' + err );
+    }).success(function(data, statusText, xhr) {
+        api_return_code = xhr.status;
+        api_result = data;
+        console.log("success:" + api_return_code);
+    });
+}
+
 // app_list - Function that lists all available applications 
 function app_list() {
     $.ajax({

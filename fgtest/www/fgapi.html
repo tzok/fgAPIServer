@@ -60,7 +60,100 @@
                                      '">' + obj['description'] + '</option>');
                 });
             }
+            update_details(list_type);
         }
+    }
+
+    // Helper function that updates the detailed view of:
+    // Infrastructures, Applications and tasks
+    function update_details(list_type) {
+        if(list_type == 'applications') {
+            var app_id = $('#app_id_lst').val();
+            app_show(app_id);
+            if(2 == api_return_code/100) {
+            }
+        } else if(list_type == 'infrastructures') {
+            var infra_id = $('#infra_id_lst').val();
+            infra_show(infra_id);
+            if(2 == api_return_code/100) {
+                infra_details = 
+                    '<table id="infra_tab">' +
+                    '<tr><td>date</td><td>' + 
+                    '<input id="infra_show_date" type="text" value="' + api_result['date'] + '"/></td><td></td></tr>' +
+                    '<tr><td>name</td><td>' + 
+                    '<input id="infra_show_name" type="text" value="' + api_result['name'] + '"/></td><td></td></tr>' +
+                    '<tr><td>description</td><td>' + 
+                    '<input id="infra_show_desc" type="text" value="' + api_result['description'] + '"/></td><td></td></tr>' +
+                    '<tr><td>virtual</td><td>' + 
+                    '<input id="infra_show_virt" type="text" value="' + api_result['virtual'] + '"/></td><td></td></tr>' +
+                    '<tr><td>enabled</td><td>' + 
+                    '<input id="infra_show_enabled" type="text" value="' + api_result['enabled'] + '"/></td><td></td></tr>';
+                infra_params =
+                    '<tr><td>Parameters: </td><td></td><td></td></tr>' +
+                    '<tr><td>P.Name</td><td>P.Value</td><td>P.Description</td></tr>';
+                api_result['parameters'].forEach(function(obj) {
+                    var pname=obj['name'];
+                    var pvalue=obj['value'];
+                    var pdesc=(null==obj['description'])?'':obj['description'];
+                    infra_params +=
+                        '<tr>' +
+                        '<td><input id="infra_pname" type="text" value="' + pname + '"/></td>' +
+                        '<td><input id="infra_pname" type="text" value="' + pvalue + '"/></td>' +
+                        '<td><input id="infra_pname" type="text" value="' + pdesc + '"/></td>' +
+                        '</tr>';
+                });
+                infra_details += infra_params + '</table>';
+                $('#infra_details').html(infra_details);
+            }
+        } else if(list_type == 'tasks') {
+            var task_id = $('#task_id_lst').val();
+            task_show(task_id);
+            if(2 == api_return_code/100) {
+            }
+        } else {
+            console.log('Unsupported list type: ' + list_type);
+        }
+    }
+
+    // json_extract - Extracts json data from a given details table:
+    // Infrastructure, Application, Task
+    function json_extract(list_type) {
+        var json_data = {};
+        var json_params = [];
+        var parameter_row = false;
+        if(list_type == 'infrastructures') {
+            $('#infra_tab').each(function(){
+                $(this).find('tr').each(function(){
+		    var tab_row = $(this);
+                    var cols = tab_row.find('td');
+                    if(cols[0].innerHTML == 'Parameters: ')
+                        parameter_row = true; 
+                    else if(cols[0].innerHTML != 'P.Name' && !parameter_row) {
+                        console.log(cols[0].innerHTML+'-'+cols.find('input')[0].value);
+                        var pname = cols[0].innerHTML;
+                        var pvalue = cols.find('input')[0].value;
+                        json_data[pname] = pvalue;
+                    } else if(cols[0].innerHTML != 'P.Name') {
+                        var inputs = cols.find('input');
+                        var pname = inputs[0].value;
+                        var pvalue = inputs[1].value;
+                        var pdesc = inputs[2].value;
+                        param_record = {
+                            'name': pname,
+                            'value': pvalue,
+                            'description': null==pdesc?'':pdesc,
+                        };
+                        json_params.push(param_record);
+                    }
+                });
+            });
+            json_data['parameters'] = json_params;
+        } else if(list_type == 'applications') {
+        } else if(list_type == 'tasks') {
+        } else {
+            console.log('Unsupported list type: ' + list_type);
+        }
+        return json_data;
     }
 
     // Helper function that initializes all available control lists: 
@@ -80,6 +173,13 @@
     $( document ).ready(function() {
         // Almost all test feedback are available in the browser console
         console.log( "document loaded" );
+        
+        // Show config
+        $('#fg_endpoint').html(
+            '<ul><li>FutureGateway endpoint: ' + fg_info.apiserver_url + '</li></ul>'
+        );
+
+        // Initialize lists
         init_lists();
 
         //
@@ -136,6 +236,18 @@
             infra_show(infra_id);
             console.log("API return code: " + api_return_code);
             console.log("Whatch API call result whatching variable 'api_result'");
+        });
+        // Change infra id lsit
+        $('#infra_id_lst').on('change',function(event) {
+             update_details('infrastructures');
+        });
+        // Update infrastructure settings
+        $('#infra_update_btn').on('click',function(event) {
+            var infra_id = $('#infra_id_lst').val();
+            console.log("Update infrastructure having id '" + infra_id + "'");
+            infra_json_data = json_extract('infrastructures');
+            infra_json_data['id'] = infra_id;
+            infra_update(infra_json_data);
         });
 
         //
@@ -205,7 +317,6 @@
         $('#app_files_btn').on('click',function(event) {
           var app_id = $('#app_id_lst').val();
           var files = document.getElementById('app_files_ctrl').files; 
-          dbgobj=files;
           console.log("Uploading file(s) for application having id '" + app_id + "'");
           app_files(app_id, files);
           console.log("API return code: " + api_return_code);
@@ -270,9 +381,19 @@
     <td><img src="images/fglogo.png" width="50%"/></td>
     <td><h1>FutureGateway test API javascript</h1></td>
     </tbody></tr></table>
-    <p>This is the main page testing the fg_apis.js javascript </p>
   </div>
   <div class="page-header"><h1>API Calls</h1></div>
+  <p>This is the main page testing the fg_apis.js javascript. The principal aim of this code is to provide a set of high level function calls hiding most of the technical details in calling FutureGateway REST APIs.</br>
+    In order to get the full feedback from the fg_apis.js code, this page should be opened enabling the Browser' web inspector, showing the log console and sometime interacting with it. Most of the fg_apis.js javascript functions return two variables:
+   <ul><li>api_result - That normally contains the json data returned by the called API function</li>
+       <li>api_return_code - A variable containing the return code of the REST API</li>
+   </ul>
+    Once interacting with the web page controls, the user can whatch the content of these variables using the browser' console.
+  </p>
+  <p>This test makes use of the following futuregateway setup:
+    <div id="fg_endpoint"></div>
+    </ul>
+  </p> 
   <!--
       Below buttons to execute each fg_api function call
    -->
@@ -283,15 +404,19 @@
          <select class="form-control" id="infra_id_lst">
            <option value="1">Baseline SSH test infrastructure</option>
          </select>
-         Get details of selected infrastructure
+         Details
+         <div id="infra_details"></div>
+         Get details of selected infrastructure (whatch variable api_result)
          <button id="infra_show_btn" type="button" class="btn btn-primary">Show</button></br>
+         Update details of selected infrastructure using values above
+         <button id="infra_update_btn" type="button" class="btn btn-danger">Update</button></br>
          Delete selected infrastructure
          <button id="infra_del_btn" type="button" class="btn btn-danger">Delete</button>
        </li>
        <li>Create new infrastucture; using fgtest infrastructure parameters</br>
          Name: <input id="infra_new_name" type="text"/></br>
          Description: <input id="infra_new_desc" type="text"/> 
-         <button id="infra_new_btn" type="button" class="btn btn-primary">Exec</button>
+         <button id="infra_new_btn" type="button" class="btn btn-danger">Exec</button>
        </li>
      </ul>
    </p>
@@ -303,7 +428,7 @@
          <select class="form-control" id="app_id_lst">
            <option value="1">Baseline SSH test app</option>
          </select>
-         Get details of selected application
+         Get details of selected application (whatch variable api_result)
          <button id="app_show_btn" type="button" class="btn btn-primary">Show</button></br>
          Delete selected application
          <button id="app_del_btn" type="button" class="btn btn-danger">Delete</button></br>
@@ -335,7 +460,7 @@
        </li>
        <li>Create new task; using application selected above</br>
          Description: <input id="task_new_desc" type="text"/>
-         <button id="task_new_btn" type="button" class="btn btn-primary">exec</button>
+         <button id="task_new_btn" type="button" class="btn btn-danger">exec</button>
        </li>
      </ul>
    </p>
