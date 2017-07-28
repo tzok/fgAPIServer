@@ -1191,7 +1191,7 @@ class FGAPIServerDB:
             if self.is_overridden_sandbox(app_id):
                 if not self.submit_task(task_id):
                     self.log.debug("Unable to submit taks: '%s'"
-                                   % self.err_msg);
+                                   % self.err_msg)
             else:
                 self.log.debug("Task %s needs to finalize its input sandbox")
 
@@ -1933,7 +1933,7 @@ class FGAPIServerDB:
                 # Downloadable application files
                 # Add url field in case the path exists
                 if ifile[1] is not None and len(ifile[1]) > 0:
-                    ifile_entry['url'] ='file?%s' % urllib.urlencode(
+                    ifile_entry['url'] = 'file?%s' % urllib.urlencode(
                         {"path": ifile[1],
                          "name": ifile[0]})
                 app_ifiles += [ifile_entry, ]

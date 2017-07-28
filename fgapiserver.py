@@ -865,12 +865,12 @@ def tasks():
                              }
                         ]},
                     ]
-            state = 200;
+            state = 200
             paged_tasks, paged_links = paginate_response(
-                 task_array,
-                 page,
-                 per_page,
-                 request.url)
+                task_array,
+                page,
+                per_page,
+                request.url)
             response = {"tasks": paged_tasks,
                         "_links": paged_links}
     elif request.method == 'POST':
@@ -1243,7 +1243,7 @@ def file():
     if task_id is not None:
         app_id = get_task_app_id(task_id)
     else:
-        app_id = fgapisrv_db.get_file_app_id(file_path,file_name)
+        app_id = fgapisrv_db.get_file_app_id(file_path, file_name)
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")
