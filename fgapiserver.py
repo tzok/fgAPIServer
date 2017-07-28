@@ -1240,7 +1240,10 @@ def file():
     file_path = request.values.get('path', None)
     file_name = request.values.get('name', None)
     task_id = fgapisrv_db.get_file_task_id(file_name, file_path)
-    app_id = get_task_app_id(task_id)
+    if task_id is not None:
+        app_id = get_task_app_id(task_id)
+    else:
+        app_id = fgapisrv_db.get_file_app_id(file_path,file_name)
     if request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")

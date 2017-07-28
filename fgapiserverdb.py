@@ -1702,6 +1702,7 @@ class FGAPIServerDB:
 
     """
       get_file_task_id - Get the task id related to the given file and path
+                         or null if no task is found with the given input
     """
 
     def get_file_task_id(self, file_name, file_path):
@@ -1715,7 +1716,9 @@ class FGAPIServerDB:
                    'where file=%s and path=%s\n'
                    'union all\n'
                    'select task_id from task_input_file\n'
-                   'where file=%s and path=%s;')
+                   'where file=%s and path=%s\n'
+                   'union all\n'
+                   'select null;')
             sql_data = (file_name, file_path, file_name, file_path)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1730,6 +1733,36 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, False)
         return task_id
+
+    """
+      get_file_app_id - Starting from path and filename get the corresponding
+                        application id
+    """
+    def get_file_app_id(self, file_name, file_path):
+        db = None
+        cursor = None
+        task_id = None
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('select app_id from application_file\n'
+                   'where file=%s and path=%s\n'
+                   'union all\n'
+                   'select null;')
+            sql_data = (file_name, file_path)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            app_id = cursor.fetchone()[0]
+            self.query_done(
+                ("app_id for file name '%s' "
+                 "having path '%s' is: '%s'" % (file_name,
+                                                file_path,
+                                                app_id)))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, False)
+        finally:
+            self.close_db(db, cursor, False)
+        return app_id
 
     """
       status_change - Add a task status change command in as_queue
@@ -1897,6 +1930,12 @@ class FGAPIServerDB:
                     "path": ifile[1],
                     "override": bool(ifile[2])
                 }
+                # Downloadable application files
+                # Add url field in case the path exists
+                if ifile[1] is not None and len(ifile[1]) > 0:
+                    ifile_entry['url'] ='file?%s' % urllib.urlencode(
+                        {"path": ifile[1],
+                         "name": ifile[0]})
                 app_ifiles += [ifile_entry, ]
             # Application infrastructures
             app_infras = self.get_infra_list(app_id)
