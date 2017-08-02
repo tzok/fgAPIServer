@@ -1247,7 +1247,7 @@ def file():
     if request.method == 'GET':
         if app_id is None:
             auth_state = False
-            auth_msg = 'Unexisting file: %s/%s' % (file_path,file_name)
+            auth_msg = 'Unexisting file: %s/%s' % (file_path, file_name)
         else:
             auth_state, auth_msg = authorize_user(
                 current_user, app_id, user, "app_run")

@@ -174,7 +174,9 @@ queries = [
                'where file=%s and path=%s\n'
                'union all\n'
                'select task_id from task_input_file\n'
-               'where file=%s and path=%s;'),
+               'where file=%s and path=%s\n'
+               'union all\n'
+               'select null;'),
      'result': ['1']},
     {'query': ('select id        \n'
                '      ,name      \n'
@@ -300,6 +302,7 @@ queries = [
                'from application a\n'
                '    ,infrastructure i\n'
                'where i.app_id=a.id\n'
+               '  and a.id != 0\n'
                '  and i.id = %s;'),
      'result': ['0']},
     {'query': ('select if(count(*)>0,uuid(),NULL) acctoken \n'
