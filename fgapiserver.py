@@ -1245,12 +1245,16 @@ def file():
     else:
         app_id = fgapisrv_db.get_file_app_id(file_path, file_name)
     if request.method == 'GET':
-        auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_run")
+        if app_id is None:
+            auth_state = False
+            auth_msg = 'Unexisting file: %s/%s' % (file_path,file_name)
+        else:
+            auth_state, auth_msg = authorize_user(
+                current_user, app_id, user, "app_run")
         if not auth_state:
             task_state = 402
             file_response = {
-                "message": "Not authorized to perform this request:\n%s" %
+                "message": "Not authorized to perform this request: %s" %
                            auth_msg}
         else:
             try:
