@@ -1738,7 +1738,7 @@ class FGAPIServerDB:
       get_file_app_id - Starting from path and filename get the corresponding
                         application id
     """
-    def get_file_app_id(self, file_name, file_path):
+    def get_file_app_id(self, file_path, file_name):
         db = None
         cursor = None
         task_id = None
