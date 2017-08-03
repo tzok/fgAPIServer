@@ -178,6 +178,11 @@ queries = [
                'union all\n'
                'select null;'),
      'result': ['1']},
+    {'query': ('select app_id from application_file\n'
+               'where file=%s and path=%s\n'
+               'union all\n'
+               'select null;'),
+     'result': ['1']},
     {'query': ('select id        \n'
                '      ,name      \n'
                '      ,password  \n'
