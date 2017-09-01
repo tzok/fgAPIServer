@@ -358,6 +358,7 @@ def create_failed():
         ]
     }, 200
 
+
 def create_badreq():
     return {
         "code": 400,
@@ -367,6 +368,7 @@ def create_badreq():
                     "input provided for <x> and no default value provided in "
                     "the definition")
     }, 400
+
 
 def create_complete():
     return {
