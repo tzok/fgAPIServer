@@ -310,8 +310,7 @@ def create_inprogress():
                          "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/template")
             }
         ]
-    }
-    return response
+    }, 201
 
 
 def create_failed():
@@ -357,8 +356,17 @@ def create_failed():
                          "756ed6b2-ed63-4992-a8f8-8d5d8045ae02/template")
             }
         ]
-    }
+    }, 200
 
+def create_badreq():
+    return {
+        "code": 400,
+        "title": "Bad Request",
+        "message": ("Failed to replace input function on "
+                    "<node_templates[...][...][X]>, caused by: No "
+                    "input provided for <x> and no default value provided in "
+                    "the definition")
+    }, 400
 
 def create_complete():
     return {
@@ -388,7 +396,7 @@ def create_complete():
                          "1bff4c04-e8b7-43be-8846-a39df1664433/template")
             }
         ]
-    }
+    }, 200
 
 
 def check_input():
@@ -432,10 +440,9 @@ def orchestrator_deployments_get(uuid):
     if request.method == 'GET':
         print "endpoint: /orchestrator/deployments/%s (GET)" % uuid
         print "token: %s" % token
-        dep_status = 200
-        # response = create_inprogress()
-        response = create_complete()
-        # response = create_failed()
+        response, dep_status = create_complete()
+        #response, dep_status = create_inprogress()
+        #response, dep_status = create_failed()
     elif request.method == 'DELETE':
         print "endpoint: /orchestrator/deployments/%s (DELETE)" % uuid
         dep_status = 404
@@ -458,8 +465,12 @@ def orchestrator_deployments():
     elif request.method == 'POST':
         print "endpoint: /orchestrator/deployments (POST)"
         print "token: %s" % token
-        dep_status = 201
-        response = create_inprogress()
+        # Enable below lines for successful deployment
+        response, dep_status = create_inprogress()
+        print "Returned create in progress: '%s' (%s)" % (response, dep_status)
+        # Enable below lnes for failed request due to bad request
+        #response, dep_status = create_badreq()
+        #print "Returned bad request: '%s' (%s)" % (response, dep_status)
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=dep_status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
