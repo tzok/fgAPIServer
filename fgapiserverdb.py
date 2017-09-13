@@ -1776,26 +1776,31 @@ class FGAPIServerDB:
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('insert into as_queue (task_id,'
-                   '                      action,'
-                   '                      status,'
-                   '                      target,'
-                   '                      target_status,'
-                   '                      creation,'
-                   '                      last_change,'
-                   '                      check_ts)'
-                   'values (%s,'
-                   '        "STATUSCH",'
-                   '        "QUEUED",'
-                   '        (select target '
-                   '         from as_queue '
-                   '         where task_id=%s '
-                   '         and action="SUBMIT"),'
-                   '         %s,'
-                   '         now(),'
-                   '         now(),'
-                   '         now());')
-            sql_data = (task_id, task_id, new_status)
+            sql = ('insert into as_queue (task_id,\n'
+                   '                      action,\n'
+                   '                      status,\n'
+                   '                      target,\n'
+                   '                      target_status,\n'
+                   '                      creation,\n'
+                   '                      last_change,\n'
+                   '                      check_ts,\n'
+                   '                      action_info\n)'
+                   'select %s,\n'
+                   '       "STATUSCH",\n'
+                   '       "QUEUED",\n'
+                   '       (select target\n'
+                   '        from as_queue\n'
+                   '        where task_id=%s\n'
+                   '          and action="SUBMIT"),\n'
+                   '       %s,\n'
+                   '       now(),\n'
+                   '       now(),\n'
+                   '       now(),\n'
+                   '       (select action_info\n'
+                   '        from as_queue\n'
+                   '        where task_id=%s\n'
+                   '          and action=\'SUBMIT\');')
+            sql_data = (task_id, task_id, new_status, task_id)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             result = True
