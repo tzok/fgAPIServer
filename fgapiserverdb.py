@@ -1772,6 +1772,7 @@ class FGAPIServerDB:
     def status_change(self, task_id, new_status):
         db = None
         cursor = None
+        result = False
         try:
             db = self.connect()
             cursor = db.cursor()
@@ -1797,6 +1798,7 @@ class FGAPIServerDB:
             sql_data = (task_id, task_id, new_status)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
+            result = True
             self.query_done(
                 ("Status change for task '%s' "
                  "successfully changed to '%s'" % (task_id, new_status)))
@@ -1804,7 +1806,8 @@ class FGAPIServerDB:
             self.catch_db_error(e, db, True)
         finally:
             self.close_db(db, cursor, True)
-        return
+        return result
+
 #
 # Application
 #
