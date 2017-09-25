@@ -1231,21 +1231,25 @@ def task_id_input(task_id=None):
 # of the task acrivity
 
 
-@app.route('/%s/callback/<task_id>' % fgapiver, methods=['GET', ])
+@app.route('/%s/callback/<task_id>' % fgapiver, methods=['GET', 'POST'])
 def task_callback(task_id=None):
     global fgapisrv_db
     global logger
     logger.debug('callback(%s)/%s: %s' % (request.method,
                                           task_id,
                                           request.values.to_dict()))
-    if request.method == 'GET':
+    if request.method == 'POST':
+        # Getting values
+        callback_info = request.get_json()
+        logger.debug("Callback info for task_id: %s - '%s'"
+                     % (task_id, callback_info))
         # 204 - NO CONTENT cause no output
         state = 204
-        fgapisrv_db.serve_callback(task_id, request.values.to_dict())
+        fgapisrv_db.serve_callback(task_id, callback_info)
         response = {"message": "Callback for taks: %s" % task_id}
     else:
         state = 404
-        response = {"message": "Method not allowed"}
+        response = {"message": "Method '%s' is not allowed" % request.method}
     logger.debug(response['message'])
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
