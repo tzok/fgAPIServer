@@ -1813,6 +1813,72 @@ class FGAPIServerDB:
             self.close_db(db, cursor, True)
         return result
 
+    """
+      serve_callback - Process an incoming callback call for a given task_id
+    """
+    def serve_callback(self, task_id, info):
+        # Retrieve task info
+        task_info = self.get_task_info(task_id)
+        # Create a file containing callback_info
+        # Callback info filename will be stored in action_info dir
+        # and the file name will be: callback.task_id
+        try:
+            callback_filename = '%s/callback.%s' % (task_info['action_info'],
+                                                    task_id)
+            callback_f = open(callback_filename,'wb')
+            callback_f.write(info)
+        except IOError as xxx_todo_changeme:
+            (errno, strerror) = xxx_todo_changeme.args
+            self.err_flag = True
+            self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
+        finally:
+            if callback_f is not None:
+                callback_f.close()
+        # Add a queue recod informing the EI
+        db = None
+        cursor = None
+        count = 0
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('insert into as_queue (task_id\n'
+                   '                     ,target_id\n'
+                   '                     ,target\n'
+                   '                     ,action\n'
+                   '                     ,status\n'
+                   '                     ,target_status\n'
+                   '                     ,retry\n'
+                   '                     ,creation\n'
+                   '                     ,last_change\n'
+                   '                     ,check_ts\n'
+                   '                     ,action_info)\n'
+                   'values (%s\n,'
+                   '        %s\n,'
+                   '        \'CALLBACK\',\n'
+                   '        \'DONE\',\n'
+                   '        %s,\n'
+                   '        %s,\n'
+                   '        now(),\n'
+                   '        now(),\n'
+                   '        now(),\n'
+                   '        %s);')
+            sql_data = (task_id,
+                        task_info['target_id'],
+                        task_info['target'],
+                        task_info['target_status'],
+                        task_info['retry'],
+                        task_info['action_info'])
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            self.query_done(
+                ("Callback for task '%s' successfully queued; info file: '%s'"
+                 % (task_id, callback_filename)))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return
+
 #
 # Application
 #

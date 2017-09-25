@@ -1226,6 +1226,36 @@ def task_id_input(task_id=None):
     header_links(request, resp, response)
     return resp
 
+# Callback mechanism for takss
+# Some infrastructures provide a callback mechanism describing the status 
+# of the task acrivity
+
+
+@app.route('/%s/callback/<task_id>' % fgapiver, methods=['GET', ])
+def task_callback(task_id=None):
+    global fgapisrv_db
+    global logger
+    logger.debug('callback(%s)/%s: %s' % (request.method,
+                                          task_id,
+                                          request.values.to_dict()))
+    if request.method == 'GET':
+        # 204 - NO CONTENT cause no output
+        state = 204
+        fgapisrv_db.serve_callback(task_id, request.values.to_dict())
+        response = {"message": "Callback for taks: %s" % task_id}
+    else:
+        state = 404
+        response = {"message": "Method not allowed"}
+    logger.debug(response['message'])
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=state, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    header_links(request, resp, response)
+    return resp
+
+
+# File download endpoint
+
 
 @app.route('/%s/file' % fgapiver, methods=['GET', ])
 @login_required
