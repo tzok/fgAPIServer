@@ -1227,7 +1227,7 @@ def task_id_input(task_id=None):
     return resp
 
 # Callback mechanism for takss
-# Some infrastructures provide a callback mechanism describing the status 
+# Some infrastructures provide a callback mechanism describing the status
 # of the task acrivity
 
 

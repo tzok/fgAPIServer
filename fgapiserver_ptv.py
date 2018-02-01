@@ -443,8 +443,8 @@ def orchestrator_deployments_get(uuid):
         print "endpoint: /orchestrator/deployments/%s (GET)" % uuid
         print "token: %s" % token
         response, dep_status = create_complete()
-        #response, dep_status = create_inprogress()
-        #response, dep_status = create_failed()
+        # response, dep_status = create_inprogress()
+        # response, dep_status = create_failed()
     elif request.method == 'DELETE':
         print "endpoint: /orchestrator/deployments/%s (DELETE)" % uuid
         dep_status = 404
@@ -471,8 +471,8 @@ def orchestrator_deployments():
         response, dep_status = create_inprogress()
         print "Returned create in progress: '%s' (%s)" % (response, dep_status)
         # Enable below lnes for failed request due to bad request
-        #response, dep_status = create_badreq()
-        #print "Returned bad request: '%s' (%s)" % (response, dep_status)
+        # response, dep_status = create_badreq()
+        # print "Returned bad request: '%s' (%s)" % (response, dep_status)
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=dep_status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
