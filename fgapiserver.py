@@ -841,8 +841,8 @@ def tasks():
                     response = {
                         "message": db_state[1]
                     }
+                    break
                 else:
-                    state = 200
                     task_array += [{
                         "id": task_record['id'],
                         "application": task_record['application'],
@@ -865,13 +865,14 @@ def tasks():
                              }
                         ]},
                     ]
-                    paged_tasks, paged_links = paginate_response(
-                        task_array,
-                        page,
-                        per_page,
-                        request.url)
-                    response = {"tasks": paged_tasks,
-                                "_links": paged_links}
+            state = 200
+            paged_tasks, paged_links = paginate_response(
+                task_array,
+                page,
+                per_page,
+                request.url)
+            response = {"tasks": paged_tasks,
+                        "_links": paged_links}
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_run")
@@ -1225,6 +1226,40 @@ def task_id_input(task_id=None):
     header_links(request, resp, response)
     return resp
 
+# Callback mechanism for takss
+# Some infrastructures provide a callback mechanism describing the status
+# of the task acrivity
+
+
+@app.route('/%s/callback/<task_id>' % fgapiver, methods=['GET', 'POST'])
+def task_callback(task_id=None):
+    global fgapisrv_db
+    global logger
+    logger.debug('callback(%s)/%s: %s' % (request.method,
+                                          task_id,
+                                          request.values.to_dict()))
+    if request.method == 'POST':
+        # Getting values
+        callback_info = request.get_json()
+        logger.debug("Callback info for task_id: %s - '%s'"
+                     % (task_id, callback_info))
+        # 204 - NO CONTENT cause no output
+        state = 204
+        fgapisrv_db.serve_callback(task_id, callback_info)
+        response = {"message": "Callback for taks: %s" % task_id}
+    else:
+        state = 404
+        response = {"message": "Method '%s' is not allowed" % request.method}
+    logger.debug(response['message'])
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=state, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    header_links(request, resp, response)
+    return resp
+
+
+# File download endpoint
+
 
 @app.route('/%s/file' % fgapiver, methods=['GET', ])
 @login_required
@@ -1239,14 +1274,21 @@ def file():
     file_path = request.values.get('path', None)
     file_name = request.values.get('name', None)
     task_id = fgapisrv_db.get_file_task_id(file_name, file_path)
-    app_id = get_task_app_id(task_id)
+    if task_id is not None:
+        app_id = get_task_app_id(task_id)
+    else:
+        app_id = fgapisrv_db.get_file_app_id(file_path, file_name)
     if request.method == 'GET':
-        auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_run")
+        if app_id is None:
+            auth_state = False
+            auth_msg = 'Unexisting file: %s/%s' % (file_path, file_name)
+        else:
+            auth_state, auth_msg = authorize_user(
+                current_user, app_id, user, "app_run")
         if not auth_state:
             task_state = 402
             file_response = {
-                "message": "Not authorized to perform this request:\n%s" %
+                "message": "Not authorized to perform this request: %s" %
                            auth_msg}
         else:
             try:

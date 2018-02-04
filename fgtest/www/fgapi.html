@@ -1,0 +1,469 @@
+<!--
+  This is a simple HTML page that demonstrate the use of 'fg_apis.js'
+  containing functions and data structures to help developers dealing
+  with FutureGateway APIs.
+  The 'fg_apis.js' requires jquery v>1.1.0 to operate correctly; it
+  also needs a js configuration file named 'fg_config.js' it contains 
+  the variable 'fg_info' containing information about the API Server
+  front-end to contact.
+
+  Riccardo Bruno <riccardo.bruno@ct.infn.it>
+-->
+<html>
+<title>FutureGateway test APIs</title>
+<head>
+  <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/fg_config.js"></script>
+<script src="js/fg_apis.js"></script>
+<script>
+    var dbgobj=null;
+    // Credentials used for SSH connection
+    var ssh_host = "ssh://localhost"
+    var ssh_user = "fgtest_test";
+    var ssh_pass = "N9lHmocm";
+
+    // Helper function that updates the given list control taking
+    // data from FG API results. Supported lists are:
+    // Infrastructures, applications and tasks
+    function update_list(list_type) {
+        var list_ctrl = null;
+        var list_rec = null;
+        var list_field = null;
+        if(api_return_code == 200) {
+            console.log("Rebuilding " + list_type + "list");
+            if(list_type == 'applications') {
+                list_ctrl = $('#app_id_lst');
+                list_rec = $(api_result['applications']);
+                list_field = 'description';
+            } else if(list_type == 'infrastructures') {
+                list_ctrl = $('#infra_id_lst');
+                list_rec = $(api_result['infrastructures']);
+                list_field = 'description';
+            } else if(list_type == 'tasks') {
+                list_ctrl = $('#task_id_lst');
+                list_rec = $(api_result['tasks']);
+                list_field = 'description';
+            } else {
+                console.log('Unsupported list type: ' + list_type);
+            }
+            if(list_ctrl != null && list_rec != null && list_field != null) {
+                list_ctrl.empty();
+                list_rec.each(function(idx,obj){
+                    console.log(idx+"-"+obj[list_field]);
+                    list_ctrl.append('<option value="' + obj['id'] +
+                                     '">' + obj['description'] + '</option>');
+                });
+            }
+            update_details(list_type);
+        }
+    }
+
+    // Helper function that updates the detailed view of:
+    // Infrastructures, Applications and tasks
+    function update_details(list_type) {
+        if(list_type == 'applications') {
+            var app_id = $('#app_id_lst').val();
+            app_show(app_id);
+            if(2 == api_return_code/100) {
+            }
+        } else if(list_type == 'infrastructures') {
+            var infra_id = $('#infra_id_lst').val();
+            infra_show(infra_id);
+            if(2 == api_return_code/100) {
+                infra_details = 
+                    '<table id="infra_tab">' +
+                    '<tr><td>date</td><td>' + 
+                    '<input id="infra_show_date" type="text" value="' + api_result['date'] + '"/></td><td></td></tr>' +
+                    '<tr><td>name</td><td>' + 
+                    '<input id="infra_show_name" type="text" value="' + api_result['name'] + '"/></td><td></td></tr>' +
+                    '<tr><td>description</td><td>' + 
+                    '<input id="infra_show_desc" type="text" value="' + api_result['description'] + '"/></td><td></td></tr>' +
+                    '<tr><td>virtual</td><td>' + 
+                    '<input id="infra_show_virt" type="text" value="' + api_result['virtual'] + '"/></td><td></td></tr>' +
+                    '<tr><td>enabled</td><td>' + 
+                    '<input id="infra_show_enabled" type="text" value="' + api_result['enabled'] + '"/></td><td></td></tr>';
+                infra_params =
+                    '<tr><td>Parameters: </td><td></td><td></td></tr>' +
+                    '<tr><td>P.Name</td><td>P.Value</td><td>P.Description</td></tr>';
+                api_result['parameters'].forEach(function(obj) {
+                    var pname=obj['name'];
+                    var pvalue=obj['value'];
+                    var pdesc=(null==obj['description'])?'':obj['description'];
+                    infra_params +=
+                        '<tr>' +
+                        '<td><input id="infra_pname" type="text" value="' + pname + '"/></td>' +
+                        '<td><input id="infra_pname" type="text" value="' + pvalue + '"/></td>' +
+                        '<td><input id="infra_pname" type="text" value="' + pdesc + '"/></td>' +
+                        '</tr>';
+                });
+                infra_details += infra_params + '</table>';
+                $('#infra_details').html(infra_details);
+            }
+        } else if(list_type == 'tasks') {
+            var task_id = $('#task_id_lst').val();
+            task_show(task_id);
+            if(2 == api_return_code/100) {
+            }
+        } else {
+            console.log('Unsupported list type: ' + list_type);
+        }
+    }
+
+    // json_extract - Extracts json data from a given details table:
+    // Infrastructure, Application, Task
+    function json_extract(list_type) {
+        var json_data = {};
+        var json_params = [];
+        var parameter_row = false;
+        if(list_type == 'infrastructures') {
+            $('#infra_tab').each(function(){
+                $(this).find('tr').each(function(){
+		    var tab_row = $(this);
+                    var cols = tab_row.find('td');
+                    if(cols[0].innerHTML == 'Parameters: ')
+                        parameter_row = true; 
+                    else if(cols[0].innerHTML != 'P.Name' && !parameter_row) {
+                        console.log(cols[0].innerHTML+'-'+cols.find('input')[0].value);
+                        var pname = cols[0].innerHTML;
+                        var pvalue = cols.find('input')[0].value;
+                        json_data[pname] = pvalue;
+                    } else if(cols[0].innerHTML != 'P.Name') {
+                        var inputs = cols.find('input');
+                        var pname = inputs[0].value;
+                        var pvalue = inputs[1].value;
+                        var pdesc = inputs[2].value;
+                        param_record = {
+                            'name': pname,
+                            'value': pvalue,
+                            'description': null==pdesc?'':pdesc,
+                        };
+                        json_params.push(param_record);
+                    }
+                });
+            });
+            json_data['parameters'] = json_params;
+        } else if(list_type == 'applications') {
+        } else if(list_type == 'tasks') {
+        } else {
+            console.log('Unsupported list type: ' + list_type);
+        }
+        return json_data;
+    }
+
+    // Helper function that initializes all available control lists: 
+    // Infrastructures, applications and tasks
+    function init_lists() {
+        console.log("Updating infastructure list");
+        infra_list();
+        update_list('infrastructures');
+        console.log("Updating application list");
+        app_list();
+        update_list('applications');
+        console.log("Updating task list");
+        task_list();
+        update_list('tasks');
+    }
+
+    $( document ).ready(function() {
+        // Almost all test feedback are available in the browser console
+        console.log( "document loaded" );
+        
+        // Show config
+        $('#fg_endpoint').html(
+            '<ul><li>FutureGateway endpoint: ' + fg_info.apiserver_url + '</li></ul>'
+        );
+
+        // Initialize lists
+        init_lists();
+
+        //
+        // Infrastructures
+        //
+
+        // New infrastructure button
+        $('#infra_new_btn').on('click', function(event) {
+            var infra_name = $('#infra_new_name').val();
+            var infra_desc = $('#infra_new_desc').val();
+            console.log("New infrastructure");
+            infra_json_data = {
+                "name": infra_name,
+                "parameters": [{"name": "jobservice",
+                                "value": ssh_host},
+                               {"name": "username",
+                                "value": ssh_user},
+                               {"name": "password",
+                                "value": ssh_pass}],
+                "description": infra_desc,
+                "enabled": true,
+                "virtual": false
+            };
+            infra_create(infra_json_data);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Updating infastructure list");
+            infra_list();
+            update_list('infrastructures');
+        });
+        // Infrastructures list
+        $('#infra_list_btn').on('click',function(event) {
+            console.log('List infrastuctures');
+            infra_list();
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            update_list('infrastructures');
+        });
+        // Infrastructure delete
+        $('#infra_del_btn').on('click',function(event) {
+            var infra_id = $('#infra_id_lst').val();
+            console.log("Delete infrastucture having id: '" + infra_id + "'");
+            infra_delete(infra_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Update the infrastructure list");
+            infra_list();
+            update_list('infrastructures');
+        });
+        // Show given infrastructure id
+        $('#infra_show_btn').on('click',function(event) {
+            var infra_id = $('#infra_id_lst').val();
+            console.log("Show infrastructure having id '" + infra_id + "'");
+            infra_show(infra_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+        });
+        // Change infra id lsit
+        $('#infra_id_lst').on('change',function(event) {
+             update_details('infrastructures');
+        });
+        // Update infrastructure settings
+        $('#infra_update_btn').on('click',function(event) {
+            var infra_id = $('#infra_id_lst').val();
+            console.log("Update infrastructure having id '" + infra_id + "'");
+            infra_json_data = json_extract('infrastructures');
+            infra_json_data['id'] = infra_id;
+            infra_update(infra_json_data);
+        });
+
+        //
+        // Applications
+        //
+
+        // Applications list
+        $('#app_list_btn').on('click',function(event) {
+            console.log('List applications');
+            app_list();
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            update_list('applications');
+        });
+        // New application button
+        $('#app_new_btn').on('click', function(event) {
+            console.log("New application");
+            var infra_id = $('#infra_id_lst').val();
+            var app_name = $('#app_new_name').val();
+            var app_desc = $('#app_new_desc').val();
+            console.log("Installing new application using infrastructure id '" + infra_id + "'");
+            app_json_data = { 
+                "infrastructures": [ infra_id ],
+                "parameters": [{"name": "target_executor",
+                                "value": "GridEngine",
+                                "description": "Target executor name" },
+                               {"name": "jobdesc_executable",
+                                "value": "cp input.txt ouput.txt && hostname | tee -a output.txt",
+                                "description": "Command to execute" },
+                               {"name": "jobdesc_output",
+                                "value": "stdout.txt",
+                                "description": "Standard output" },
+                               {"name": "jobdesc_error",
+                                "value": "stderr.txt",
+                                "description": "Standard error" }],
+                "enabled": true,
+                "name": app_name,
+                "description": app_desc
+            };
+            app_create(app_json_data);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Updating application list");
+            app_list();
+            update_list('applications');
+        });
+        // Application delete
+        $('#app_del_btn').on('click',function(event) {
+            var app_id = $('#app_id_lst').val();
+            console.log("Delete application having id: '" + app_id + "'");
+            app_delete(app_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Update the application list");
+            app_list();
+            update_list('applications');
+        });
+        // Show given application id
+        $('#app_show_btn').on('click',function(event) {
+            var app_id = $('#app_id_lst').val();
+            console.log("Show application having id '" + app_id + "'");
+            app_show(app_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+        });
+        // Upload application files
+        $('#app_files_btn').on('click',function(event) {
+          var app_id = $('#app_id_lst').val();
+          var files = document.getElementById('app_files_ctrl').files; 
+          console.log("Uploading file(s) for application having id '" + app_id + "'");
+          app_files(app_id, files);
+          console.log("API return code: " + api_return_code);
+          console.log("Whatch API call result whatching variable 'api_result'");
+        });
+
+        //
+        // Tasks
+        //
+
+        // Tasks list
+        $('#task_list_btn').on('click',function(event) {
+            console.log('List tasks');
+            task_list();
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            update_list('tasks');
+        });
+        // Task creation (new application run) 
+        $('#task_new_btn').on('click',function(event) {
+          var app_id = $('#app_id_lst').val();
+          var run_desc = $('#task_new_desc').val();
+          task_json_data = {
+              "application": app_id,
+              "description": "" + run_desc
+              //"arguments": [],
+              //"input_files": [],
+              //"output_files": []
+          };
+          task_create(task_json_data);
+          console.log("API return code: " + api_return_code);
+          console.log("Whatch API call result whatching variable 'api_result'");
+          console.log("Updating task list");
+          task_list();
+          update_list('tasks');  
+        });
+        // Task delete
+        $('#task_del_btn').on('click',function(event) {
+            var task_id = $('#task_id_lst').val();
+            console.log("Delete task having id: '" + task_id + "'");
+            task_delete(task_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+            console.log("Update the application list");
+            task_list();
+            update_list('tasks');
+        });
+        // Show given task id
+        $('#task_show_btn').on('click',function(event) {
+            var task_id = $('#task_id_lst').val();
+            console.log("Show task having id '" + task_id + "'");
+            task_show(task_id);
+            console.log("API return code: " + api_return_code);
+            console.log("Whatch API call result whatching variable 'api_result'");
+        });
+
+    });
+</script>
+<div class="container theme-showcase" role="main">
+  <div class="jumbotron">
+    <table><tbody><tr>
+    <td><img src="images/fglogo.png" width="50%"/></td>
+    <td><h1>FutureGateway test API javascript</h1></td>
+    </tbody></tr></table>
+  </div>
+  <div class="page-header"><h1>API Calls</h1></div>
+  <p>This is the main page testing the fg_apis.js javascript. The principal aim of this code is to provide a set of high level function calls hiding most of the technical details in calling FutureGateway REST APIs.</br>
+    In order to get the full feedback from the fg_apis.js code, this page should be opened enabling the Browser' web inspector, showing the log console and sometime interacting with it. Most of the fg_apis.js javascript functions return two variables:
+   <ul><li>api_result - That normally contains the json data returned by the called API function</li>
+       <li>api_return_code - A variable containing the return code of the REST API</li>
+   </ul>
+    Once interacting with the web page controls, the user can whatch the content of these variables using the browser' console.
+  </p>
+  <p>This test makes use of the following futuregateway setup:
+    <div id="fg_endpoint"></div>
+    </ul>
+  </p> 
+  <!--
+      Below buttons to execute each fg_api function call
+   -->
+   <p><h2>Infrastructures</h2>
+     <ul>
+       <li>List infrastuctures <button id="infra_list_btn" type="button" class="btn btn-primary">exec</button></li>
+       <li>Infrastructures list 
+         <select class="form-control" id="infra_id_lst">
+           <option value="1">Baseline SSH test infrastructure</option>
+         </select>
+         Details
+         <div id="infra_details"></div>
+         Get details of selected infrastructure (whatch variable api_result)
+         <button id="infra_show_btn" type="button" class="btn btn-primary">Show</button></br>
+         Update details of selected infrastructure using values above
+         <button id="infra_update_btn" type="button" class="btn btn-danger">Update</button></br>
+         Delete selected infrastructure
+         <button id="infra_del_btn" type="button" class="btn btn-danger">Delete</button>
+       </li>
+       <li>Create new infrastucture; using fgtest infrastructure parameters</br>
+         Name: <input id="infra_new_name" type="text"/></br>
+         Description: <input id="infra_new_desc" type="text"/> 
+         <button id="infra_new_btn" type="button" class="btn btn-danger">Exec</button>
+       </li>
+     </ul>
+   </p>
+
+   <p><h2>Applications</h2>
+     <ul>
+       <li>List applications <button id="app_list_btn" type="button" class="btn btn-primary">exec</button></li>
+       <li>Applications list
+         <select class="form-control" id="app_id_lst">
+           <option value="1">Baseline SSH test app</option>
+         </select>
+         Get details of selected application (whatch variable api_result)
+         <button id="app_show_btn" type="button" class="btn btn-primary">Show</button></br>
+         Delete selected application
+         <button id="app_del_btn" type="button" class="btn btn-danger">Delete</button></br>
+         Upload files to associate at the selected application
+         <form id="app_files_form" enctype="multipart/form-data">
+           <input id="app_files_ctrl" name="file[]" type="file" multiple/>
+         </form>
+         <button id="app_files_btn" type="button" class="btn btn-danger">Upload</button>
+       </li>
+       <li>Create new application; using infrastructure selected above</br>
+         Name: <input id="app_new_name" type="text"/></br>
+         Description: <input id="app_new_desc" type="text"/>
+         <button id="app_new_btn" type="button" class="btn btn-danger">Exec</button>
+       </li>
+     </ul>
+   </p>
+
+   <p><h2>Tasks</h2>
+     <ul>
+       <li>List tasks <button id="task_list_btn" type="button" class="btn btn-primary">exec</button></li>
+       <li>Tasks list 
+         <select class="form-control" id="task_id_lst">
+           <option value="1">Baseline task</option>
+         </select>
+         Get details of selected task
+         <button id="task_show_btn" type="button" class="btn btn-primary">Show</button></br>
+         Delete selected task
+         <button id="task_del_btn" type="button" class="btn btn-danger">Delete</button>
+       </li>
+       <li>Create new task; using application selected above</br>
+         Description: <input id="task_new_desc" type="text"/>
+         <button id="task_new_btn" type="button" class="btn btn-danger">exec</button>
+       </li>
+     </ul>
+   </p>
+</div>
+</body>
+</html>

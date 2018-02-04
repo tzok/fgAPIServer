@@ -68,6 +68,15 @@ fgtest_init() {
 EOF
 }
 
+# Show banner at the beginning of each test
+test_banner() {
+    cat >&1 <<EOF
+# PKG  : '${TEST_PKG}'
+# TITLE: '${TEST_TITLE}'
+# DESC : '${TEST_DESC}
+EOF
+}
+
 ###
 ### Testing FutureGateway baseline environment
 ###
@@ -76,7 +85,9 @@ EOF
 # This is a pre-requisite and no report is foreseen for this test
 fgtest_user() {
     TEST_PKG="Creating SSH test environment"
-
+    TEST_TITLE=""
+    TEST_DESC="Create the SSH user/password for test environment"
+    test_banner
     CHK_FGTEST_USR=$(cat /etc/passwd | grep $FGTEST_USR)
     if [ "$CHK_FGTEST_USR" == "" ]; then
         echo "FutureGateway test user does not exists"
@@ -127,6 +138,7 @@ fgtest_ptv() {
 This test verifies that baseline PTV service is up and running calling \
 <span class=\"badge\">/get-token</span> endpoint using <b>GET</b> method"
     TEST_APICALL="(GET) /get-token"
+    test_banner
     TEST_CMD="curl -w \"\n%{http_code}\" -u '"$PTV_USER":"$PTV_PASS"' $PTV_ENDPOINT/get-token"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
@@ -148,6 +160,7 @@ fgtest_fg() {
 This test verifies that baseline FutureGateway endpoint is up and running calling \
 <span class=\"badge\">/</span> endpoint and using <b>GET</b> method"
     TEST_APICALL="(GET) /"
+    test_banner
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_ENDPOINT/"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
@@ -167,6 +180,7 @@ fgtest_asd() {
 This test verifies that baseline FutureGateway APIServerDaemon is up and running calling \
 <span class=\"badge\">/$ASD_MAINPAGE</span> address"
     TEST_APICALL="(GET) /$ASD_MAINPAGE"
+    test_banner
     TEST_CMD="curl -w \"\n%{http_code}\" -f $ASD_ENDPOINT/$ASD_MAINPAGE"
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
@@ -190,6 +204,7 @@ fgtest_newinfra() {
 This test create a new infrastructure calling \
 <span class=\"badge\">/infrastructures</span> endpoint and using <b>POST</b> method"
     TEST_APICALL="(POST) /infrastructures"
+    test_banner
     NEW_INFRA_JSON=$(mktemp)
     cat >$NEW_INFRA_JSON <<EOF
 { "name": "SSH Test infrastructure",
@@ -226,6 +241,7 @@ fgtest_viewinfras() {
 This test uses <span class=\"badge\">/infrastructures</span> API call to view \
 all defined infrastructures using <b>GET</b> method"
     TEST_APICALL="(GET) /infrastructures"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/infrastructures"
     echo "Executing: '"$TEST_CMD"'"
@@ -246,6 +262,7 @@ fgtest_viewinfra() {
 This test uses <span class=\"badge\">/infrastructures</span> API call to view the last \
 inserted  infrastructure having id: '${TEST_INFRA_ID}' and using <b>GET</b> method"
     TEST_APICALL="(GET) /infrastructures/$TEST_INFRA_ID"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/infrastructures/$TEST_INFRA_ID"
     echo "Executing: '"$TEST_CMD"'"
@@ -266,6 +283,7 @@ fgtest_modinfra() {
 This test modifies the new inserted infrastructure having id: '${TEST_INFRA_ID}' calling \
 <span class=\"badge\">/infrastructures</span> endpoint and using <b>PUT</b> method"
     TEST_APICALL="(PUT) /infrastructures/$TEST_INFRA_ID"
+    test_banner
     MOD_INFRA_JSON=$(mktemp)
     cat >$MOD_INFRA_JSON <<EOF
 { "id": ${TEST_INFRA_ID},
@@ -302,6 +320,7 @@ fgtest_delinfra() {
 This test delete the new inserted infrastructure having id: '${TEST_INFRA_ID}' calling \
 <span class=\"badge\">/infrastructures</span> endpoint and using <b>DELETE</b> method"
     TEST_APICALL="(DELETE) /infrastructures/$TEST_INFRA_ID"
+    test_banner
     FG_HEADERS="$FG_HEAD_AUTH"
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X DELETE $FG_ENDPOINT/infrastructures/$TEST_INFRA_ID"
     echo "Executing: '"$TEST_CMD"'"
@@ -325,6 +344,7 @@ fgtest_newapp() {
 This test create a new application calling \
 <span class=\"badge\">/applications</span> endpoint and using <b>POST</b> method"
     TEST_APICALL="(POST) /applications"
+    test_banner
     # The same infrastructure created during infrastructures/
     # tests will be re-created here
     NEW_INFRA_JSON=$(mktemp)
@@ -405,6 +425,7 @@ fgtest_viewapps() {
 This test uses <span class=\"badge\">/applications</span> API call to view \
 all defined applications using <b>GET</b> method"
     TEST_APICALL="(GET) /applications"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/applications"
     echo "Executing: '"$TEST_CMD"'"
@@ -425,6 +446,7 @@ fgtest_viewapp() {
 This test uses <span class=\"badge\">/applications</span> API call to view the last \
 inserted  application having id: '${TEST_APP_ID}' and using <b>GET</b> method"
     TEST_APICALL="(GET) /applications/$TEST_APP_ID"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/applications/$TEST_APP_ID"
     echo "Executing: '"$TEST_CMD"'"
@@ -445,10 +467,11 @@ fgtest_modapp() {
 This test modifies the new inserted application having id: '${TEST_APP_ID}' calling \
 <span class=\"badge\">/applications</span> endpoint and using <b>PUT</b> method"
     TEST_APICALL="(PUT) /applications/$TEST_APP_ID"
+    test_banner
     MOD_APP_JSON=$(mktemp)
     cat >$MOD_APP_JSON <<EOF
 {
-    "files": [], 
+    "files": [ "newfile" ], 
     "name": "(modified) Tester application", 
     "parameters": [
         {
@@ -494,6 +517,66 @@ EOF
     return $?
 }
 
+# Upload a file to the application
+fgtest_upldappfile() {
+    TEST_PKG="Upload application input file"
+    TEST_TITLE="Application upload input file"
+    TEST_SHDESC="app_upldappfile"
+    TEST_DESC="\
+This test upload an input file of an existing application having id: ${TEST_APP_ID} \
+<span class=\"badge\">applications/<id>/input</span> endpoint and using <b>POST</b> method"
+    TEST_APICALL="(POST) applications/<id>/input"
+    test_banner
+    APP_UPLINP_FILE=/tmp/newfile
+    cat >$APP_UPLINP_FILE <<EOF
+This is a stest input file for tester application id: ${TEST_APP_ID}
+This file has no impacts on the functionaities of the tester application
+EOF
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -F \"file[]=@$APP_UPLINP_FILE\" $FG_ENDPOINT/applications/$TEST_APP_ID/input"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    rm -f $APP_INPUT_FILE # This will be removed later
+    fgtest_report
+    return $? 
+}
+
+# Download application input file
+fgtest_dwnldappinpfile() {
+    TEST_PKG="Download application input file"
+    TEST_TITLE="Application download input file"
+    TEST_SHDESC="app_dnwldinpfile"
+    TEST_DESC="\
+This test download an input file of an existing application having id: ${TEST_APP_ID} \
+<span class=\"badge\">/file?path=...</span> endpoint and using <b>GET</b> method"
+    TEST_APICALL="(GET) /file?path=..."
+    test_banner
+    # First retrieve the file endpoint from task JSON
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/applications/$TEST_APP_ID"
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    if [ $TEST_RES -ne 0 ]; then
+        echo "Failed getting info for application: $TEST_APP_ID"
+        return 1
+    fi
+    sed -i '$ d' $FGTEST_OUT
+    APP_INPUT_FGPATH=$(cat $FGTEST_OUT | jq '.files[].url' | xargs echo)
+    FG_HEADERS=$FG_HEAD_AUTH
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS \"$FG_ENDPOINT/$APP_INPUT_FGPATH\""
+    echo "Executing: '"$TEST_CMD"'"
+    eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
+    TEST_RES=$?
+    TEST_HTTPRETCODE=$(cat $FGTEST_OUT | tail -n 1)
+    sed -i '$ d' $FGTEST_OUT
+    fgtest_report
+    return $?
+}
+
 # Delete last inserted application
 fgtest_delapp() {
     TEST_PKG="Delete application"
@@ -503,6 +586,7 @@ fgtest_delapp() {
 This test delete the new inserted application having id: '${TEST_APP_ID}' calling \
 <span class=\"badge\">/applications</span> endpoint and using <b>DELETE</b> method"
     TEST_APICALL="(DELETE) /applications/$TEST_APP_ID"
+    test_banner
     FG_HEADERS="$FG_HEAD_AUTH"
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X DELETE $FG_ENDPOINT/applications/$TEST_APP_ID"
     echo "Executing: '"$TEST_CMD"'"
@@ -526,6 +610,7 @@ fgtest_newtask() {
 This test creates a new task calling \
 <span class=\"badge\">/tasks</span> endpoint and using <b>POST</b> method"
     TEST_APICALL="(POST) /tasks"
+    test_banner
     # The same application created during applications/
     # tests will be re-created here
     NEW_APP_JSON=$(mktemp)
@@ -601,6 +686,7 @@ fgtest_viewtasks() {
 This test uses <span class=\"badge\">/tasks</span> API call to view \
 all defined tasks using <b>GET</b> method"
     TEST_APICALL="(GET) /tasks"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks"
     echo "Executing: '"$TEST_CMD"'"
@@ -621,6 +707,7 @@ fgtest_viewtask() {
 This test uses <span class=\"badge\">/tasks/id</span> API call to view the last \
 inserted  task having id: '${TEST_TASK_ID}' and using <b>GET</b> method"
     TEST_APICALL="(GET) /tasks/$TEST_TASK_ID"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID"
     echo "Executing: '"$TEST_CMD"'"
@@ -641,6 +728,7 @@ fgtest_viewtaskinp() {
 This test uses <span class=\"badge\">/tasks/input</span> API call to view input files\
 of the last inserted  task having id: '${TEST_TASK_ID}' and using <b>GET</b> method"
     TEST_APICALL="(GET) /tasks/$TEST_TASK_ID/input"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID/input"
     echo "Executing: '"$TEST_CMD"'"
@@ -661,6 +749,7 @@ fgtest_taskinpfile() {
 This test sends an input file to an existing task having id: ${TEST_TASK_ID} \
 <span class=\"badge\">/tasks/input</span> endpoint and using <b>POST</b> method"
     TEST_APICALL="(POST) /tasks/task_id/input"
+    test_banner
     APP_INPUT_FILE=input.txt
     echo "This is the input file for tester application" > $APP_INPUT_FILE
     FG_HEADERS=$FG_HEAD_AUTH
@@ -676,7 +765,7 @@ This test sends an input file to an existing task having id: ${TEST_TASK_ID} \
 }
 
 # Download input file
-fgtest_dwnldinpfile() {
+fgtest_dwnldtaskinpfile() {
     TEST_PKG="Download task input file"
     TEST_TITLE="Task download input file"
     TEST_SHDESC="task_dnwldinpfile"
@@ -684,6 +773,7 @@ fgtest_dwnldinpfile() {
 This test download an input file of an existing task having id: ${TEST_TASK_ID} \
 <span class=\"badge\">/file?path=...</span> endpoint and using <b>GET</b> method"
     TEST_APICALL="(GET) /file?path=..."
+    test_banner
     # First retrieve the file endpoint from task JSON
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID"
@@ -695,9 +785,9 @@ This test download an input file of an existing task having id: ${TEST_TASK_ID} 
         return 1
     fi
     sed -i '$ d' $FGTEST_OUT
-    APP_INPUT_FGPATH=$(cat $FGTEST_OUT | jq .input_files | grep url | awk -F":" '{print $2}' | xargs echo | sed s/,//)
+    TASK_INPUT_FGPATH=$(cat $FGTEST_OUT | jq .input_files | grep url | awk -F":" '{print $2}' | xargs echo | sed s/,//)
     FG_HEADERS=$FG_HEAD_AUTH
-    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS \"$FG_ENDPOINT/$APP_INPUT_FGPATH\""
+    TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS \"$FG_ENDPOINT/$TASK_INPUT_FGPATH\""
     echo "Executing: '"$TEST_CMD"'"
     eval "$TEST_CMD" >$FGTEST_OUT 2>$FGTEST_ERR
     TEST_RES=$?
@@ -716,6 +806,7 @@ fgtest_runtimedataset() {
 This test create runtime data for task having id: $TEST_TASK_ID calling \
 <span class=\"badge\">/tasks/id</span> endpoint and using <b>PATCH</b> method"
     TEST_APICALL="(PATCH) /tasks/id"
+    test_banner
     RUNTIMEDATA_JSON=$(mktemp)
     cat >$RUNTIMEDATA_JSON <<EOF
 { "runtime_data" : [ { "data_name":  "test_data_field"
@@ -746,6 +837,7 @@ This test uses <span class=\"badge\">/tasks/id</span> API call to view the last 
 inserted  task having id: '${TEST_TASK_ID}' and using <b>GET</b> method\
 Inside the task information the new inserted runtime_data field should be present"
     TEST_APICALL="(GET) /tasks/$TEST_TASK_ID"
+    test_banner
     FG_HEADERS=$FG_HEAD_AUTH
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS $FG_ENDPOINT/tasks/$TEST_TASK_ID"
     echo "Executing: '"$TEST_CMD"'"
@@ -766,6 +858,7 @@ fgtest_dwnldoutfile() {
 This test download an output file of an existing task having id: ${TEST_TASK_ID} \
 <span class=\"badge\">/file?path=...</span> endpoint and using <b>GET</b> method"
     TEST_APICALL="(GET) /file?path=..."
+    test_banner
     # First wait for task execution termination
     FG_HEADERS=$FG_HEAD_AUTH
     rm -f $APP_INPUT_FILE # Now it is possible to remove input file
@@ -821,6 +914,7 @@ fgtest_deletetask() {
 This test delete the new created task having id: '${TEST_TASK_ID}' calling \
 <span class=\"badge\">/tasks/id</span> endpoint and using <b>DELETE</b> method"
     TEST_APICALL="(DELETE) /tasks/$TEST_TASK_ID"
+    test_banner
     FG_HEADERS="$FG_HEAD_AUTH"
     TEST_CMD="curl -w \"\n%{http_code}\" -f $FG_HEADERS -X DELETE $FG_ENDPOINT/tasks/$TEST_TASK_ID"
     echo "Executing: '"$TEST_CMD"'"
@@ -975,13 +1069,15 @@ fgtest_newapp &&
 fgtest_viewapps &&
 fgtest_viewapp &&
 fgtest_modapp &&
+fgtest_upldappfile &&
+fgtest_dwnldappinpfile &&
 fgtest_delapp &&
 fgtest_newtask &&
 fgtest_viewtasks &&
 fgtest_viewtask &&
 fgtest_viewtaskinp &&
 fgtest_taskinpfile &&
-fgtest_dwnldinpfile &&
+fgtest_dwnldtaskinpfile &&
 fgtest_runtimedataset &&
 fgtest_runtimedataget &&
 fgtest_dwnldoutfile &&

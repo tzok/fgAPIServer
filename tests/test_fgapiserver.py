@@ -597,6 +597,14 @@ class Test_fgAPIServer(unittest.TestCase):
         assert state[0] is False
         assert result is True
 
+    def test_dbobj_get_file_app_id(self):
+        self.banner("Testing fgapiserverdb get_file_app_id")
+        app_id = self.fgapisrv_db.get_file_app_id('/tmp', 'input.txt')
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        assert app_id is not None
+
     #
     # mklogtoken
     #

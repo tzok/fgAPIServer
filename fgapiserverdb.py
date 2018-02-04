@@ -1040,7 +1040,8 @@ class FGAPIServerDB:
         try:
             # Create the Task IO Sandbox
             iosandbox = '%s/%s' % (self.iosandbbox_dir, str(uuid.uuid1()))
-            os.makedirs(iosandbox, 0770)
+            os.makedirs(iosandbox)
+            os.chmod(iosandbox, 0770)
             # Insert new Task record
             db = self.connect()
             cursor = db.cursor()
@@ -1188,7 +1189,11 @@ class FGAPIServerDB:
             # or no files are specified in the application_file table for this
             # app_id
             if self.is_overridden_sandbox(app_id):
-                self.submit_task(task_id)
+                if not self.submit_task(task_id):
+                    self.log.debug("Unable to submit taks: '%s'"
+                                   % self.err_msg)
+            else:
+                self.log.debug("Task %s needs to finalize its input sandbox")
 
         return task_id
 
@@ -1697,6 +1702,7 @@ class FGAPIServerDB:
 
     """
       get_file_task_id - Get the task id related to the given file and path
+                         or null if no task is found with the given input
     """
 
     def get_file_task_id(self, file_name, file_path):
@@ -1710,7 +1716,9 @@ class FGAPIServerDB:
                    'where file=%s and path=%s\n'
                    'union all\n'
                    'select task_id from task_input_file\n'
-                   'where file=%s and path=%s;')
+                   'where file=%s and path=%s\n'
+                   'union all\n'
+                   'select null;')
             sql_data = (file_name, file_path, file_name, file_path)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1727,6 +1735,36 @@ class FGAPIServerDB:
         return task_id
 
     """
+      get_file_app_id - Starting from path and filename get the corresponding
+                        application id
+    """
+    def get_file_app_id(self, file_path, file_name):
+        db = None
+        cursor = None
+        task_id = None
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('select app_id from application_file\n'
+                   'where file=%s and path=%s\n'
+                   'union all\n'
+                   'select null;')
+            sql_data = (file_name, file_path)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            app_id = cursor.fetchone()[0]
+            self.query_done(
+                ("app_id for file name '%s' "
+                 "having path '%s' is: '%s'" % (file_name,
+                                                file_path,
+                                                app_id)))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, False)
+        finally:
+            self.close_db(db, cursor, False)
+        return app_id
+
+    """
       status_change - Add a task status change command in as_queue
                       this causes the EIs to handle the change properly
     """
@@ -1734,34 +1772,127 @@ class FGAPIServerDB:
     def status_change(self, task_id, new_status):
         db = None
         cursor = None
+        result = False
         try:
             db = self.connect()
             cursor = db.cursor()
-            sql = ('insert into as_queue (task_id,'
-                   '                      action,'
-                   '                      status,'
-                   '                      target,'
-                   '                      target_status,'
-                   '                      creation,'
-                   '                      last_change,'
-                   '                      check_ts)'
-                   'values (%s,'
-                   '        "STATUSCH",'
-                   '        "QUEUED",'
-                   '        (select target '
-                   '         from as_queue '
-                   '         where task_id=%s '
-                   '         and action="SUBMIT"),'
-                   '         %s,'
-                   '         now(),'
-                   '         now(),'
-                   '         now());')
-            sql_data = (task_id, task_id, new_status)
+            sql = ('insert into as_queue (task_id,\n'
+                   '                      action,\n'
+                   '                      status,\n'
+                   '                      target,\n'
+                   '                      target_status,\n'
+                   '                      creation,\n'
+                   '                      last_change,\n'
+                   '                      check_ts,\n'
+                   '                      action_info\n)'
+                   'select %s,\n'
+                   '       "STATUSCH",\n'
+                   '       "QUEUED",\n'
+                   '       (select target\n'
+                   '        from as_queue\n'
+                   '        where task_id=%s\n'
+                   '          and action="SUBMIT"),\n'
+                   '       %s,\n'
+                   '       now(),\n'
+                   '       now(),\n'
+                   '       now(),\n'
+                   '       (select action_info\n'
+                   '        from as_queue\n'
+                   '        where task_id=%s\n'
+                   '          and action=\'SUBMIT\');')
+            sql_data = (task_id, task_id, new_status, task_id)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
+            result = True
             self.query_done(
                 ("Status change for task '%s' "
                  "successfully changed to '%s'" % (task_id, new_status)))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, True)
+        finally:
+            self.close_db(db, cursor, True)
+        return result
+
+    """
+      serve_callback - Process an incoming callback call for a given task_id
+    """
+    def serve_callback(self, task_id, info):
+        # Retrieve task record
+        task_record = self.get_task_record(task_id)
+        # Create a file containing callback_info
+        # Callback info filename will be stored in action_info dir
+        # and the file name will be: callback.task_id
+        callback_f = None
+        try:
+            callback_filename = '%s/callback.%s' % (task_record['iosandbox'],
+                                                    task_id)
+            self.log.debug('Creating callback info file: %s'
+                           % callback_filename)
+            self.log.debug('Callback info content: \'%s\'' % json.dumps(info))
+            callback_f = open(callback_filename, 'w')
+            callback_f.write(json.dumps(info))
+            callback_f.close()
+        except IOError as xxx_todo_changeme:
+            (errno, strerror) = xxx_todo_changeme.args
+            self.err_flag = True
+            self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
+        finally:
+            if callback_f is not None:
+                callback_f.close()
+        # Add a queue recod informing the EI
+        db = None
+        cursor = None
+        count = 0
+        try:
+            db = self.connect()
+            cursor = db.cursor()
+            sql = ('select count(*)\n'
+                   'from as_queue\n'
+                   'where task_id = %s\n'
+                   '  and action = \'CALLBACK\';')
+            sql_data = (task_id,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            callback_count = cursor.fetchone()
+            if callback_count == 0:
+                # 1st Callback entry
+                sql = ('insert into as_queue (task_id,\n'
+                       '                      target_id,\n'
+                       '                      target,\n'
+                       '                      action,\n'
+                       '                      status,\n'
+                       '                      target_status,\n'
+                       '                      retry,\n'
+                       '                      creation,\n'
+                       '                      last_change,\n'
+                       '                      check_ts,\n'
+                       '                      action_info)\n'
+                       'select task_id,\n'
+                       '       target_id,\n'
+                       '       target,\n'
+                       '       \'CALLBACK\',\n'
+                       '       \'DONE\',\n'
+                       '       target_status,\n'
+                       '       retry,\n'
+                       '       now(),\n'
+                       '       now(),\n'
+                       '       now(),\n'
+                       '       action_info\n'
+                       'from as_queue\n'
+                       ' where task_id = %s\n'
+                       '   and action = \'SUBMIT\';')
+            else:
+                # next Callback entry
+                sql = ('update as_queue\n'
+                       'set last_change = now()\n'
+                       'where task_id = %s\n'
+                       'and action = \'CALLBACK\';')
+            sql_data = (task_id,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            self.query_done(
+                ("Callback for task '%s' successfully queued; info file: '%s'"
+                 % (task_id, callback_filename)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, True)
         finally:
@@ -1892,6 +2023,12 @@ class FGAPIServerDB:
                     "path": ifile[1],
                     "override": bool(ifile[2])
                 }
+                # Downloadable application files
+                # Add url field in case the path exists
+                if ifile[1] is not None and len(ifile[1]) > 0:
+                    ifile_entry['url'] = 'file?%s' % urllib.urlencode(
+                        {"path": ifile[1],
+                         "name": ifile[0]})
                 app_ifiles += [ifile_entry, ]
             # Application infrastructures
             app_infras = self.get_infra_list(app_id)
@@ -2597,7 +2734,7 @@ class FGAPIServerDB:
                     'from application a\n'
                     '    ,infrastructure i\n'
                     'where i.app_id=a.id\n'
-                    '  and a.id != 0'
+                    '  and a.id != 0\n'
                     '  and i.id = %s;')
                 sql_data = (infra_id,)
                 self.log.debug(sql % sql_data)

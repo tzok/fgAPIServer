@@ -174,7 +174,14 @@ queries = [
                'where file=%s and path=%s\n'
                'union all\n'
                'select task_id from task_input_file\n'
-               'where file=%s and path=%s;'),
+               'where file=%s and path=%s\n'
+               'union all\n'
+               'select null;'),
+     'result': ['1']},
+    {'query': ('select app_id from application_file\n'
+               'where file=%s and path=%s\n'
+               'union all\n'
+               'select null;'),
      'result': ['1']},
     {'query': ('select id        \n'
                '      ,name      \n'
@@ -300,6 +307,7 @@ queries = [
                'from application a\n'
                '    ,infrastructure i\n'
                'where i.app_id=a.id\n'
+               '  and a.id != 0\n'
                '  and i.id = %s;'),
      'result': ['0']},
     {'query': ('select if(count(*)>0,uuid(),NULL) acctoken \n'
@@ -507,25 +515,30 @@ queries = [
                'where data_name=%s\n'
                '  and task_id=%s;'),
      'result': []},
-    {'query': ('insert into as_queue (task_id,'
-               '                      action,'
-               '                      status,'
-               '                      target,'
-               '                      target_status,'
-               '                      creation,'
-               '                      last_change,'
-               '                      check_ts)'
-               'values (%s,'
-               '        "STATUSCH",'
-               '        "QUEUED",'
-               '        (select target '
-               '         from as_queue '
-               '         where task_id=%s '
-               '         and action="SUBMIT"),'
-               '         %s,'
-               '         now(),'
-               '         now(),'
-               '         now());'),
+    {'query': ('insert into as_queue (task_id,\n'
+               '                      action,\n'
+               '                      status,\n'
+               '                      target,\n'
+               '                      target_status,\n'
+               '                      creation,\n'
+               '                      last_change,\n'
+               '                      check_ts,\n'
+               '                      action_info\n)'
+               'select %s,\n'
+               '       "STATUSCH",\n'
+               '       "QUEUED",\n'
+               '       (select target\n'
+               '        from as_queue\n'
+               '        where task_id=%s\n'
+               '          and action="SUBMIT"),\n'
+               '       %s,\n'
+               '       now(),\n'
+               '       now(),\n'
+               '       now(),\n'
+               '       (select action_info\n'
+               '        from as_queue\n'
+               '        where task_id=%s\n'
+               '          and action=\'SUBMIT\');'),
      'result': []},
     {'query': ('select count(*)\n'
                'from application\n'
