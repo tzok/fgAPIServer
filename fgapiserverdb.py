@@ -153,13 +153,21 @@ class FGAPIServerDB:
       connect Connects to the fgapiserver database
     """
 
-    def connect(self):
-        return MySQLdb.connect(
+    def connect(self, safe_transaction=False):
+        db = MySQLdb.connect(
             host=self.db_host,
             user=self.db_user,
             passwd=self.db_pass,
             db=self.db_name,
             port=self.db_port)
+        if db is not None and safe_commit is True:
+            sql = "BEGIN"
+            sql_data = ()
+            cursor = db.cursor()
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql)
+            cursor.close()
+        return db
 
     """
      test - DB connection tester function
@@ -168,9 +176,10 @@ class FGAPIServerDB:
     def test(self):
         db = None
         cursor = None
+        safe_transaction = False
         try:
             # Connect the DB
-            db = self.connect()
+            db = self.connect(safe_transaction)
             # Prepare SQL statement
             sql = "SELECT VERSION()"
             # Prepare SQL data for statement
@@ -185,9 +194,9 @@ class FGAPIServerDB:
             data = cursor.fetchone()
             self.query_done("Database version : '%s'" % data[0])
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
 
     """
       get_db_version - Return the database version
@@ -196,9 +205,10 @@ class FGAPIServerDB:
     def get_db_version(self):
         db = None
         cursor = None
+        safe_transaction = False
         dbver = ''
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select version from db_patches order by id desc limit 1;')
             sql_data = ()
@@ -207,9 +217,9 @@ class FGAPIServerDB:
             dbver = cursor.fetchone()[0]
             self.query_done("fgapiserver DB schema version: '%s'" % dbver)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return dbver
 
     """
@@ -230,9 +240,10 @@ class FGAPIServerDB:
         # considered
         db = None
         cursor = None
+        safe_transaction = True
         sestoken = ''
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select if(count(*)>0,uuid(),NULL) acctoken \n'
                    'from fg_user \n'
@@ -252,9 +263,9 @@ class FGAPIServerDB:
                 cursor.execute(sql, sql_data)
                 self.query_done("session token is '%s'" % sestoken)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return sestoken
 
     """
@@ -265,10 +276,11 @@ class FGAPIServerDB:
     def verify_session_token(self, sestoken):
         db = None
         cursor = None
+        safe_transaction = False
         user_id = ''
         user_name = ''
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = (
                 'select if((creation+expiry)-now()>0,user_id,NULL) user_id\n'
@@ -289,9 +301,9 @@ class FGAPIServerDB:
                                      user_id,
                                      user_name)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return user_id, user_name
 
     """
@@ -302,9 +314,10 @@ class FGAPIServerDB:
     def register_token(self, userid, token, subject):
         db = None
         cursor = None
+        safe_transaction = True
         sestoken = ''
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             if token is not None:
                 sql = ('insert into \n'
@@ -319,9 +332,9 @@ class FGAPIServerDB:
                 cursor.execute(sql, sql_data)
                 self.query_done("token: '%s' successfully registered" % token)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return
 
     """
@@ -334,10 +347,11 @@ class FGAPIServerDB:
     def verify_user_role(self, user_id, roles):
         db = None
         cursor = None
+        safe_transaction = False
         result = 1
         for role_name in roles.split(','):
             try:
-                db = self.connect()
+                db = self.connect(safe_transaction)
                 cursor = db.cursor()
                 sql = ('select count(*)>0      \n'
                        'from fg_user        u  \n'
@@ -357,11 +371,11 @@ class FGAPIServerDB:
                 hasrole = cursor.fetchone()[0]
                 result *= hasrole
             except MySQLdb.Error as e:
-                self.catch_db_error(e, db, False)
+                self.catch_db_error(e, db, safe_transaction)
                 result = 0
                 break
             finally:
-                self.close_db(db, cursor, False)
+                self.close_db(db, cursor, safe_transaction)
         self.query_done(
             ("role(s) '%s' for user_id '%s' is %s'" % (roles,
                                                        user_id,
@@ -375,8 +389,9 @@ class FGAPIServerDB:
     def verify_user_app(self, user_id, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select count(*)>0      \n'
                    'from fg_user        u  \n'
@@ -400,9 +415,9 @@ class FGAPIServerDB:
                                     app_id,
                                     result > 0))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return result
 
     """
@@ -412,9 +427,10 @@ class FGAPIServerDB:
     def same_group(self, user_1, user_2):
         db = None
         cursor = None
+        safe_transaction = False
         result = ''
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select count(*)>1               \n'
                    'from fg_user_group              \n'
@@ -438,9 +454,9 @@ class FGAPIServerDB:
                                      user_2,
                                      result > 0)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return result
 
     """
@@ -450,9 +466,10 @@ class FGAPIServerDB:
     def get_user_info_by_name(self, name):
         db = None
         cursor = None
+        safe_transaction = False
         user_info = None
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select id        \n'
                    '      ,name      \n'
@@ -483,9 +500,9 @@ class FGAPIServerDB:
             self.query_done(
                 "User '%s' info: '%s'" % (name, user_info))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return user_info
 
     """
@@ -495,9 +512,10 @@ class FGAPIServerDB:
     def get_ptv_groups(self, portal_groups):
         db = None
         cursor = None
+        safe_transaction = False
         fg_groups = []
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             for group in portal_groups:
                 sql = ('select count(*) from fg_group where lower(name)=%s;')
@@ -510,9 +528,9 @@ class FGAPIServerDB:
                 else:
                     self.log.warn("Group '%s' does not exists" % group)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         self.query_done(
             "Passed groups: '%s' -> valid groups: '%s'" % (portal_groups,
                                                            fg_groups))
@@ -528,9 +546,10 @@ class FGAPIServerDB:
     def register_ptv_subject(self, portal_user, fg_groups):
         db = None
         cursor = None
+        safe_transaction = True
         user_record = (None, None)
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select id, name from fg_user where name=%s;')
             sql_data = (portal_user,)
@@ -589,9 +608,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Portal user '%s' successfully inserted" % portal_user)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return user_record
 
     """
@@ -601,10 +620,11 @@ class FGAPIServerDB:
     def task_exists(self, task_id, user_id, user):
         db = None
         cursor = None
+        safe_transaction = False
         v_user = []
         v_task = []
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select name from fg_user where id = %s;')
             sql_data = (user_id,)
@@ -612,9 +632,9 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             v_user.append(cursor.fetchone()[0])
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         if v_user[0] != user:
             v_user.append(user)
         for user in v_user:
@@ -630,9 +650,10 @@ class FGAPIServerDB:
     def get_task_record(self, task_id):
         db = None
         cursor = None
+        safe_transaction = False
         task_record = {}
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Task record
             sql = (
@@ -781,9 +802,9 @@ class FGAPIServerDB:
                 "Task '%s' record: '%s'" % (task_id,
                                             task_record))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return task_record
 
     """
@@ -800,9 +821,10 @@ class FGAPIServerDB:
     def get_task_input_files(self, task_id):
         db = None
         cursor = None
+        safe_transaction = False
         task_ifiles = ()
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select file\n'
                    '      ,if(path is null,\'NEEDED\',\'READY\') status\n'
@@ -820,9 +842,9 @@ class FGAPIServerDB:
                 "Input files for task '%s': '%s'" % (task_id,
                                                      task_ifiles))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return task_ifiles
 
     """
@@ -832,9 +854,10 @@ class FGAPIServerDB:
     def get_task_output_files(self, task_id):
         db = None
         cursor = None
+        safe_transaction = False
         task_ofiles = ()
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select file\n'
                    '      ,if(path is null,\'waiting\',\'ready\')\n'
@@ -852,9 +875,9 @@ class FGAPIServerDB:
                 "Output files for task '%s': '%s'" % (task_id,
                                                       task_ofiles))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return task_ofiles
 
     """
@@ -864,9 +887,10 @@ class FGAPIServerDB:
     def get_app_detail(self, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         app_detail = {}
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = (
                 'select id\n'
@@ -952,9 +976,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Details for app '%s': '%s'" % (app_id, app_detail))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return app_detail
 
     """
@@ -992,9 +1016,10 @@ class FGAPIServerDB:
     def get_app_files(self, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         app_files = []
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select file\n'
                    '      ,path\n'
@@ -1012,9 +1037,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Files for application '%s': '%s'" % (app_id, app_files))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return app_files
 
     """
@@ -1036,6 +1061,7 @@ class FGAPIServerDB:
         # Start creating task
         db = None
         cursor = None
+        safe_transaction = True
         task_id = -1
         try:
             # Create the Task IO Sandbox
@@ -1043,7 +1069,7 @@ class FGAPIServerDB:
             os.makedirs(iosandbox)
             os.chmod(iosandbox, 0770)
             # Insert new Task record
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('insert into task (id\n'
                    '                 ,creation\n'
@@ -1176,9 +1202,9 @@ class FGAPIServerDB:
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
 
         # Accordingly to specs: input_files -
         # If omitted the task is immediately ready to start
@@ -1206,9 +1232,10 @@ class FGAPIServerDB:
     def setup_default_inputs(self, task_id, task_sandbox):
         db = None
         cursor = None
+        safe_transaction = True
         iosandbox = None
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select file\n'
                    '      ,path\n'
@@ -1243,9 +1270,9 @@ class FGAPIServerDB:
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
 
     """
       get_task_io_sandbox - Get the assigned IO Sandbox folder of the
@@ -1255,9 +1282,10 @@ class FGAPIServerDB:
     def get_task_io_sandbox(self, task_id):
         db = None
         cursor = None
+        safe_transaction = False
         iosandbox = None
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = 'select iosandbox from task where id=%s;'
             sql_data = (task_id,)
@@ -1272,9 +1300,9 @@ class FGAPIServerDB:
                 self.query_done(
                     "IO sandbox for task '%s': '%s'" % (task_id, iosandbox))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return iosandbox
 
     """
@@ -1285,8 +1313,9 @@ class FGAPIServerDB:
     def update_input_sandbox_file(self, task_id, filename, filepath):
         db = None
         cursor = None
+        safe_transaction = True
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('update task_input_file\n'
                    'set path=%s\n'
@@ -1298,9 +1327,9 @@ class FGAPIServerDB:
             self.query_done(
                 "input sandbox for task '%s' successfully updated" % task_id)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return
 
     """
@@ -1313,9 +1342,10 @@ class FGAPIServerDB:
     def is_input_sandbox_ready(self, task_id):
         db = None
         cursor = None
+        safe_transaction = False
         sandbox_ready = False
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = (
                 'select '
@@ -1330,9 +1360,9 @@ class FGAPIServerDB:
                 "sandbox ready for task '%s' is %s"
                 % (task_id, 1 == int(sandbox_ready)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return 1 == int(sandbox_ready)
 
     """
@@ -1389,6 +1419,7 @@ class FGAPIServerDB:
     def enqueue_task_request(self, task_info):
         db = None
         cursor = None
+        safe_transaction = True
         self.err_flag = False
         try:
             # Save native APIServer JSON file, having the format:
@@ -1404,7 +1435,7 @@ class FGAPIServerDB:
                     break
             try:
                 # Insert task record in the APIServerDaemon' queue
-                db = self.connect()
+                db = self.connect(safe_transaction)
                 cursor = db.cursor()
                 sql = (
                     'insert into as_queue (\n'
@@ -1441,9 +1472,9 @@ class FGAPIServerDB:
                 self.query_done(
                     "Task '%s' enqueued successfully" % task_info)
             except MySQLdb.Error as e:
-                self.catch_db_error(e, db, True)
+                self.catch_db_error(e, db, safe_transaction)
             finally:
-                self.close_db(db, cursor, True)
+                self.close_db(db, cursor, safe_transaction)
                 if as_file is not None:
                     as_file.close()
         except IOError as xxx_todo_changeme1:
@@ -1461,11 +1492,12 @@ class FGAPIServerDB:
     def get_task_list(self, user, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         task_ids = []
         try:
             # Get Task ids preparing the right query (user/*,@
             # wildcards/app_id)
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             app_clause = ''
             sql_data = ()
@@ -1512,9 +1544,9 @@ class FGAPIServerDB:
                                                              app_id,
                                                              task_ids))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return task_ids
 
     """
@@ -1524,12 +1556,13 @@ class FGAPIServerDB:
     def delete(self, task_id):
         db = None
         cursor = None
+        safe_transaction = True
         status = False
         # Get task information
         task_info = self.get_task_info(task_id)
         try:
             # Insert task record in the GridEngine' queue
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = (
                 'insert into as_queue (\n'
@@ -1576,9 +1609,9 @@ class FGAPIServerDB:
             self.query_done("Task '%s' successfully deleted" % task_id)
             status = True
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return status
 
     """
@@ -1588,9 +1621,10 @@ class FGAPIServerDB:
     def patch_task(self, task_id, runtime_data):
         db = None
         cursor = None
+        safe_transaction = True
         status = False
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             for rtdata in runtime_data:
                 data_name = rtdata['data_name']
@@ -1660,9 +1694,9 @@ class FGAPIServerDB:
                 ("Runtime data '%s' successfully updated"
                  " on task '%s'" % (runtime_data, task_id)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return status
 
     """
@@ -1675,9 +1709,10 @@ class FGAPIServerDB:
     def is_overridden_sandbox(self, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         no_override = False
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = (
                 'select '
@@ -1695,9 +1730,9 @@ class FGAPIServerDB:
                  "for app '%s' is %s" % (app_id,
                                          1 == int(no_override))))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return 1 == int(no_override)
 
     """
@@ -1708,9 +1743,10 @@ class FGAPIServerDB:
     def get_file_task_id(self, file_name, file_path):
         db = None
         cursor = None
+        safe_transaction = False
         task_id = None
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select task_id from task_output_file\n'
                    'where file=%s and path=%s\n'
@@ -1729,9 +1765,9 @@ class FGAPIServerDB:
                                                 file_path,
                                                 task_id)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return task_id
 
     """
@@ -1741,9 +1777,10 @@ class FGAPIServerDB:
     def get_file_app_id(self, file_path, file_name):
         db = None
         cursor = None
+        safe_transaction = False
         task_id = None
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select app_id from application_file\n'
                    'where file=%s and path=%s\n'
@@ -1759,9 +1796,9 @@ class FGAPIServerDB:
                                                 file_path,
                                                 app_id)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return app_id
 
     """
@@ -1772,9 +1809,10 @@ class FGAPIServerDB:
     def status_change(self, task_id, new_status):
         db = None
         cursor = None
+        safe_transaction = True
         result = False
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('insert into as_queue (task_id,\n'
                    '                      action,\n'
@@ -1808,9 +1846,9 @@ class FGAPIServerDB:
                 ("Status change for task '%s' "
                  "successfully changed to '%s'" % (task_id, new_status)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return result
 
     """
@@ -1842,9 +1880,10 @@ class FGAPIServerDB:
         # Add a queue recod informing the EI
         db = None
         cursor = None
+        safe_transaction = True
         count = 0
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select count(*)\n'
                    'from as_queue\n'
@@ -1894,9 +1933,9 @@ class FGAPIServerDB:
                 ("Callback for task '%s' successfully queued; info file: '%s'"
                  % (task_id, callback_filename)))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return
 #
 # Application
@@ -1908,9 +1947,10 @@ class FGAPIServerDB:
     def app_exists(self, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         count = 0
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select count(*)\n'
                    'from application\n'
@@ -1922,9 +1962,9 @@ class FGAPIServerDB:
             self.query_done(
                 "App \'%s\' existing is %s" % (app_id, count > 0))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return count > 0
 
     """
@@ -1934,10 +1974,11 @@ class FGAPIServerDB:
     def get_app_list(self):
         db = None
         cursor = None
+        safe_transaction = False
         app_ids = []
         try:
             # Get Task ids preparing the right query (user/app_id)
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql_data = ()
             sql = ('select id\n'
@@ -1950,9 +1991,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Application list: '%s'" % app_ids)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return app_ids
 
     """
@@ -1962,9 +2003,10 @@ class FGAPIServerDB:
     def get_app_record(self, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         app_record = {}
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             # application record
             sql = (
@@ -2085,9 +2127,9 @@ class FGAPIServerDB:
             self.query_done("Application '%s' record: '%s'"
                             % (app_id, app_record))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return app_record
 
     """
@@ -2113,10 +2155,11 @@ class FGAPIServerDB:
         # Start creating app
         db = None
         cursor = None
+        safe_transaction = True
         app_id = -1
         try:
             # Insert new application record
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('insert into application (id\n'
                    '                        ,name\n'
@@ -2340,10 +2383,10 @@ class FGAPIServerDB:
             self.query_done(
                 "Application successfully inserted with id '%s'" % app_id)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
             app_id = 0
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return app_id
 
     """
@@ -2353,10 +2396,11 @@ class FGAPIServerDB:
     def insert_or_update_app_file(self, app_id, file_name, file_path):
         db = None
         cursor = None
+        safe_transaction = True
         status = False
         try:
             # Delete given application records
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select count(*)\n'
                    'from application_file\n'
@@ -2394,9 +2438,9 @@ class FGAPIServerDB:
                                                                    app_id))
             status = True
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return status
 
     """
@@ -2407,10 +2451,11 @@ class FGAPIServerDB:
         # Start deleting app
         db = None
         cursor = None
+        safe_transaction = True
         result = False
         try:
             # Delete given application records
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             #
             # (!) Pay attention infrastructures belonging to
@@ -2450,9 +2495,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Application '%s' successfully deleted" % app_id)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return result
 
     """
@@ -2463,8 +2508,9 @@ class FGAPIServerDB:
     def enable_app_by_userid(self, user_id, app_id):
         db = None
         cursor = None
+        safe_transaction = True
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Task record
             sql = ("select group_id from fg_user_group where user_id = %s")
@@ -2482,9 +2528,9 @@ class FGAPIServerDB:
                 "Application '%s' enabled for user '%s'" % (app_id,
                                                             user_id))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return None
 
     """
@@ -2495,9 +2541,10 @@ class FGAPIServerDB:
     def infra_exists(self, infra_id):
         db = None
         cursor = None
+        safe_transaction = False
         count = 0
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select count(*)\n'
                    'from infrastructure\n'
@@ -2509,9 +2556,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Infrastructure '%s' exists is: %s" % (infra_id, count > 0))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return count > 0
 
     """
@@ -2522,10 +2569,11 @@ class FGAPIServerDB:
     def get_infra_list(self, app_id):
         db = None
         cursor = None
+        safe_transaction = False
         infra_ids = []
         try:
             # Get Task ids preparing the right query (user/app_id)
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql_data = ()
             if app_id is None:
@@ -2544,9 +2592,9 @@ class FGAPIServerDB:
                 "Infrastructure list for app '%s': '%s'" % (app_id,
                                                             infra_ids))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, False)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, False)
+            self.close_db(db, cursor, safe_transaction)
         return infra_ids
 
     """
@@ -2556,9 +2604,10 @@ class FGAPIServerDB:
     def get_infra_record(self, infra_id):
         db = None
         cursor = None
+        safe_transaction = True
         infra_record = {}
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             # infrastructure record
             sql = (
@@ -2621,9 +2670,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Infrastructure '%s': '%s'" % (infra_id, infra_record))
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return infra_record
 
     """
@@ -2645,10 +2694,11 @@ class FGAPIServerDB:
         # Start creating app
         db = None
         cursor = None
+        safe_transaction = True
         infra_id = -1
         try:
             # Insert new application record
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('insert into infrastructure (id\n'
                    '                           ,app_id\n'
@@ -2705,10 +2755,10 @@ class FGAPIServerDB:
             self.query_done(
                 "Infrastructure successfully created with id '%s'" % infra_id)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
             app_id = 0
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return infra_id
 
     """
@@ -2722,10 +2772,11 @@ class FGAPIServerDB:
         # Start deleting infrastructure
         db = None
         cursor = None
+        safe_transaction = True
         result = False
         app_orphans = 0
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Check for orphan applications
             if not app_orhpan:
@@ -2842,9 +2893,9 @@ class FGAPIServerDB:
             self.query_done(
                 "Infrastructure '%s' successfully deleted" % infra_id)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return result
 
     """
@@ -2856,9 +2907,10 @@ class FGAPIServerDB:
     def infra_change(self, infra_id, infra_desc):
         db = None
         cursor = None
+        safe_transaction = True
         result = False
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Update infrastructure values
             sql = (
@@ -2913,9 +2965,9 @@ class FGAPIServerDB:
                 "Infrastructure having id: '%s' successfully changed"
                 % infra_id)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return result
 
     """
@@ -2927,9 +2979,10 @@ class FGAPIServerDB:
     def app_change(self, app_id, app_desc):
         db = None
         cursor = None
+        safe_transaction = True
         result = False
         try:
-            db = self.connect()
+            db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Update infrastructure values
             sql = (
@@ -3270,7 +3323,7 @@ class FGAPIServerDB:
                 "Application having id '%s' successfully changed"
                 % app_id)
         except MySQLdb.Error as e:
-            self.catch_db_error(e, db, True)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-            self.close_db(db, cursor, True)
+            self.close_db(db, cursor, safe_transaction)
         return result
