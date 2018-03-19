@@ -160,7 +160,7 @@ class FGAPIServerDB:
             passwd=self.db_pass,
             db=self.db_name,
             port=self.db_port)
-        if db is not None and safe_commit is True:
+        if db is not None and safe_transaction is True:
             sql = "BEGIN"
             sql_data = ()
             cursor = db.cursor()
