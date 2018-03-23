@@ -2000,9 +2000,7 @@ if __name__ == "__main__":
 
     # Starting-up server
     if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
-        context = SSL.Context(SSL.SSLv23_METHOD)
-        context.use_privatekey_file(fgapisrv_key)
-        context.use_certificate_file(fgapisrv_crt)
+        context = (fgapisrv_crt, fgapisrv_key)
         app.run(host=fgapisrv_host, port=fgapisrv_port,
                 ssl_context=context, debug=fgapisrv_debug)
     else:
