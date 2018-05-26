@@ -28,8 +28,18 @@
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
-grant all on fgapiserver.* TO 'fgapiserver'@'%' IDENTIFIED BY "fgapiserver_password";
-grant all on fgapiserver.* TO 'fgapiserver'@'localhost' IDENTIFIED BY "fgapiserver_password";
+
+create user 'fgapiserver'@'%';
+grant all privileges
+on fgapiserver.*
+to 'fgapiserver'@'%' identified by "fgapiserver_password" 
+with grant option;
+create user 'fgapiserver'@'localhost';
+grant all privileges
+on fgapiserver.*
+to 'fgapiserver'@'localhost' identified by "fgapiserver_password" 
+with grant option;
+
 use fgapiserver;
 
 -- Application
