@@ -30,14 +30,17 @@ drop database if exists fgapiserver;
 create database fgapiserver;
 
 create user 'fgapiserver'@'%';
+alter user 'fgapiserver'@'%' identified by "fgapiserver_password"; 
 grant all privileges
 on fgapiserver.*
-to 'fgapiserver'@'%' identified by "fgapiserver_password" 
+to 'fgapiserver'@'%' 
 with grant option;
+
 create user 'fgapiserver'@'localhost';
+alter user 'fgapiserver'@'localhost' identified by "fgapiserver_password"; 
 grant all privileges
 on fgapiserver.*
-to 'fgapiserver'@'localhost' identified by "fgapiserver_password" 
+to 'fgapiserver'@'localhost' 
 with grant option;
 
 use fgapiserver;
