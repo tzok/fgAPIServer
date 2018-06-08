@@ -1429,7 +1429,8 @@ def applications():
             name = params.get('name', '')
             description = params.get('description', '')
             outcome = params.get('outcome', 'JOB')
-            enabled = params.get('enabled', [])
+            enabled = params.get('enabled', 'false')
+            enabled = enabled.lower() == 'true' or enabled == '1'
             parameters = params.get('parameters', [])
             inp_files = params.get('input_files', [])
             files = params.get('files', [])
