@@ -114,6 +114,22 @@ fgapisrv_db = None
 # Helper functions
 #
 
+def json_bool(bool_value):
+    """
+    Accepts true/false values in different forms from json streams and
+    transform it in boolean value accordingly to the following table:
+        bool_Value = ["true"|"True"|"TRUE]" -> True/False otherwise
+        bool_Value = true/false             -> True/False (bool)
+        bool_value = "1"/"0"                -> True/False (str)
+        bool_value = 1/0                    -> True/False (int)
+    """
+    if type(bool_value) != bool:
+        bool_value= str(bool_value)
+        if bool_value.lower() == 'true' or bool_value ==  '1':
+            bool_value = True
+        else:
+            bool_value = False
+    return bool_value
 
 def get_fgapiserver_db():
     """
@@ -1429,8 +1445,7 @@ def applications():
             name = params.get('name', '')
             description = params.get('description', '')
             outcome = params.get('outcome', 'JOB')
-            enabled = params.get('enabled', 'false')
-            enabled = enabled.lower() == 'true' or enabled == '1'
+            enabled = json_bool(params.get('enabled', False))
             parameters = params.get('parameters', [])
             inp_files = params.get('input_files', [])
             files = params.get('files', [])
