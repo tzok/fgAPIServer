@@ -5,6 +5,7 @@
 APPNAME="hostname@toscaIDC"
 APPDESC="hostname tester application on toscaIDC"
 OUTCOME="JOB"
+APISRV_ENDPOINT="http://localhost:8888/v1.0"
 TOSCA_ENDPOINT="http://localhost:8889/orchestrator/deployments"
 TOSCA_IP=$(echo $TOSCA_ENDPOINT | sed s/[a-z][A-Z]*//g | tr '/' ' ' | sed s/': '// | xargs echo)
 INFRADESC="Tosca test at $TOSCA_ENDPOINT"
@@ -92,7 +93,7 @@ EOF
 # Setup application, retrieve id and sets stress_test app_id
 CURLOUT=$(mktemp /tmp/curlout_XXXXXXXX)
 CURLDATA_CONTENT=$(cat $CURLDATA)
-CMD="curl -H \"Content-Type: application/json\" $CURL_AUTH -X POST -d '"$CURLDATA_CONTENT"' http://localhost:8888/v1.0/applications | tee $CURLOUT" 
+CMD="curl -H \"Content-Type: application/json\" $CURL_AUTH -X POST -d '"$CURLDATA_CONTENT"' $APISRV_ENDPOINT/applications | tee $CURLOUT" 
 echo "Executing: "
 echo $CMD
 eval $CMD 
