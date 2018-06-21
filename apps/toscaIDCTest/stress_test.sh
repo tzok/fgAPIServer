@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# stress_test.sh - Application execution script
+#
+# Author: Riccardo Bruno <riccardo.bruno@ct.infn.it>
+#
+APISRV_ENDPOINT="http://localhost:8888/v1.0"
 APP_ID=<app_id> # Place here the appId
 USER=brunor
 SUBMIT_COUNT=1
@@ -20,12 +26,12 @@ for i in $(seq 1 $SUBMIT_COUNT)
 do
   echo "Submitting job #$i"
   TMP=$(mktemp /tmp/stresstest_XXXXXXXX)
-  CMD="curl -H \"Content-Type: application/json\" $CURL_AUTH  -X POST -d '{\"application\":\""$APP_ID"\",\"description\":\"tosca test run\"}' http://localhost:8888/v1.0/tasks | tee $TMP"
+  CMD="curl -H \"Content-Type: application/json\" $CURL_AUTH  -X POST -d '{\"application\":\""$APP_ID"\",\"description\":\"tosca test run\"}' $APISRV_ENDPOINT/tasks | tee $TMP"
   eval $CMD
   id=$(cat $TMP | jq '.id' | xargs echo)
   if [ "$id" != "" ]; then
     echo "id for job $i = $id"
-    CMD="curl -H \"Content-Type: application/json\" $CURL_AUTH  -X POST http://localhost:8888/v1.0/tasks/$id/input | tee $TMP"
+    CMD="curl -H \"Content-Type: application/json\" $CURL_AUTH  -X POST $APISRV_ENDPOINT/tasks/$id/input | tee $TMP"
     eval $CMD
   fi
   rm -f $TMP

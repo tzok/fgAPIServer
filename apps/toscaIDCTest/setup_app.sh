@@ -2,6 +2,8 @@
 #
 # setup_app.sh - Script to install an application on FutureGateway
 #
+# Author: Riccardo Bruno <riccardo.bruno@ct.infn.it>
+#
 APPNAME="hostname@toscaIDC"
 APPDESC="hostname tester application on toscaIDC"
 OUTCOME="JOB"
