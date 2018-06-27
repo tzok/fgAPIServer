@@ -28,8 +28,21 @@
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
-grant all on fgapiserver.* TO 'fgapiserver'@'%' IDENTIFIED BY "fgapiserver_password";
-grant all on fgapiserver.* TO 'fgapiserver'@'localhost' IDENTIFIED BY "fgapiserver_password";
+
+create user 'fgapiserver'@'%';
+alter user 'fgapiserver'@'%' identified by "fgapiserver_password"; 
+grant all privileges
+on fgapiserver.*
+to 'fgapiserver'@'%' 
+with grant option;
+
+create user 'fgapiserver'@'localhost';
+alter user 'fgapiserver'@'localhost' identified by "fgapiserver_password"; 
+grant all privileges
+on fgapiserver.*
+to 'fgapiserver'@'localhost' 
+with grant option;
+
 use fgapiserver;
 
 -- Application
@@ -250,11 +263,11 @@ create table fg_user (
 
 -- Users baseline values; users and passwords must be replaced with real values
 insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
-values (1,'futuregateway',password('futuregateway'),'FutureGateway','FutureGateway','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
+values (1,'futuregateway',sha('futuregateway'),'FutureGateway','FutureGateway','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
 insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
-values (2,'test',password('test'),'Test','Test','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
+values (2,'test',sha('test'),'Test','Test','INFN','sgw-admin@lists.indigo-datacloud.eu',now(),now());
 insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
-values (3,'brunor',password('brunor'),'Riccardo','Bruno','INFN','riccardo.bruno@ct.infn.it',now(),now());
+values (3,'brunor',sha('brunor'),'Riccardo','Bruno','INFN','riccardo.bruno@ct.infn.it',now(),now());
 
 
 -- Groups table, users may belong to one or more groups defined below
@@ -449,5 +462,5 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.10','baseline setup','../fgapiserver_db.sql',now());
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.11','baseline setup','../fgapiserver_db.sql',now());
 

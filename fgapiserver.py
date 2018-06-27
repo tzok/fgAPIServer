@@ -114,6 +114,22 @@ fgapisrv_db = None
 # Helper functions
 #
 
+def json_bool(bool_value):
+    """
+    Accepts true/false values in different forms from json streams and
+    transform it in boolean value accordingly to the following table:
+        bool_Value = ["true"|"True"|"TRUE]" -> True/False otherwise
+        bool_Value = true/false             -> True/False (bool)
+        bool_value = "1"/"0"                -> True/False (str)
+        bool_value = 1/0                    -> True/False (int)
+    """
+    if type(bool_value) != bool:
+        bool_value= str(bool_value)
+        if bool_value.lower() == 'true' or bool_value ==  '1':
+            bool_value = True
+        else:
+            bool_value = False
+    return bool_value
 
 def get_fgapiserver_db():
     """
@@ -1429,7 +1445,7 @@ def applications():
             name = params.get('name', '')
             description = params.get('description', '')
             outcome = params.get('outcome', 'JOB')
-            enabled = params.get('enabled', [])
+            enabled = json_bool(params.get('enabled', False))
             parameters = params.get('parameters', [])
             inp_files = params.get('input_files', [])
             files = params.get('files', [])
@@ -2000,9 +2016,7 @@ if __name__ == "__main__":
 
     # Starting-up server
     if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
-        context = SSL.Context(SSL.SSLv23_METHOD)
-        context.use_privatekey_file(fgapisrv_key)
-        context.use_certificate_file(fgapisrv_crt)
+        context = (fgapisrv_crt, fgapisrv_key)
         app.run(host=fgapisrv_host, port=fgapisrv_port,
                 ssl_context=context, debug=fgapisrv_debug)
     else:

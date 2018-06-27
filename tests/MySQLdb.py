@@ -312,13 +312,13 @@ queries = [
      'result': ['0']},
     {'query': ('select if(count(*)>0,uuid(),NULL) acctoken \n'
                'from fg_user \n'
-               'where name=%s and fg_user.password=password(%s);'),
+               'where name=%s and fg_user.password=sha(%s);'),
      'result': ['1']},
     {'query': ('insert into fg_token \n'
                '  select %s, id, now() creation, 24*60*60 \n'
                '  from  fg_user \n'
                '  where name=%s \n'
-               '    and fg_user.password=password(%s);'),
+               '    and fg_user.password=sha(%s);'),
      'result': []},
     {'query': ('select count(*)>0      \n'
                'from fg_user        u  \n'
@@ -346,7 +346,7 @@ queries = [
                '                     creation,\n'
                '                     modified)\n'
                'values (%s,\n'
-               '        password(\'NOPASSWORD\'),\n'
+               '        sha(\'NOPASSWORD\'),\n'
                '        \'PTV_TOKEN\',\n'
                '        \'PTV_TOKEN\',\n'
                '        \'PTV_TOKEN\',\n'

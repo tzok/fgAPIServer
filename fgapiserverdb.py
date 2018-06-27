@@ -247,7 +247,7 @@ class FGAPIServerDB:
             cursor = db.cursor()
             sql = ('select if(count(*)>0,uuid(),NULL) acctoken \n'
                    'from fg_user \n'
-                   'where name=%s and fg_user.password=password(%s);')
+                   'where name=%s and fg_user.password=sha(%s);')
             sql_data = (username, password)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -257,7 +257,7 @@ class FGAPIServerDB:
                        '  select %s, id, now() creation, 24*60*60 \n'
                        '  from  fg_user \n'
                        '  where name=%s \n'
-                       '    and fg_user.password=password(%s);')
+                       '    and fg_user.password=sha(%s);')
                 sql_data = (sestoken, username, password)
                 self.log.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
@@ -574,7 +574,7 @@ class FGAPIServerDB:
                    '                     creation,\n'
                    '                     modified)\n'
                    'values (%s,\n'
-                   '        password(\'NOPASSWORD\'),\n'
+                   '        sha(\'NOPASSWORD\'),\n'
                    '        \'PTV_TOKEN\',\n'
                    '        \'PTV_TOKEN\',\n'
                    '        \'PTV_TOKEN\',\n'

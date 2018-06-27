@@ -170,7 +170,7 @@ default_groups = ['Admin',
 
 
 def get_groups_file(groups_file):
-    """This function returns the groups stored in the fiven groups file"""
+    """This function returns the groups stored in the given groups file"""
     groups = default_groups
     try:
         grp_f = open(groups_file)
@@ -178,7 +178,7 @@ def get_groups_file(groups_file):
         grp_f.close()
     except IOError:
         print ("Groups file '%s' could not be accessed; using default"
-               % grous_file)
+               % groups_file)
     return groups
 
 ##
