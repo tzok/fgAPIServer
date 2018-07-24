@@ -32,7 +32,7 @@ out "         This scripts will reset each passord to the fixed"
 out "         value: '"$FG_USER_PASSWORD"'"
 cat >$SQLTMP <<EOF
 update fg_user set password=SHA('${FG_USER_PASSWORD}') where first_name != 'PTV_TOKEN';
-update fg_user set passeotd=SHA('NOPASSWORD') where first_name = 'PTV_TOKEN';
+update fg_user set password=SHA('NOPASSWORD') where first_name = 'PTV_TOKEN';
 EOF
 asdb_file $SQLTMP
 
