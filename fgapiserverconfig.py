@@ -18,6 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import random
 import string
 import json
@@ -105,7 +106,16 @@ class FGApiServerConfig:
                     self.fgConfigMsg += ("[WARNING]:Couldn't find option '%s' "
                                          "in section '%s'; "
                                          "using default value '%s'"
-                                         % conf_name, section, def_value)
+                                         % (conf_name, section, def_value))
+                # The use of environment varialbes override any default or
+                # configuration setting present in the configuration file
+                try:
+                   env_value = os.environ[conf_name.upper()]
+                   self.fgConfigMsg += ("Environment bypass of '%s': '%s' <- '%s'\n"
+                                        % (conf_name, self.fgConfig[conf_name], env_value))
+                   self.fgConfig[conf_name] = env_value
+                except KeyError:
+                   pass
 
         # Show configuration in Msg variable
         if self.fgConfig['fgapisrv_debug'] == 'True':
