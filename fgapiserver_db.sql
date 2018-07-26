@@ -445,6 +445,39 @@ create table tosca_idc (
 );
 
 --
+-- Service registry
+--
+-- FutureGateway foresees the use of one or many components which presence is tracked
+-- by the FutureGateway database
+--
+create table srv_registry (
+    uuid          varchar(1024) not null
+   ,creation      datetime      not null
+   ,last_access   datetime      not null
+   ,enabled       boolean default true
+   ,cfg_hash      varchar(1024)     
+   ,primary key(uuid)
+);
+
+-- Service configuration
+--
+-- FutureGateway uses registered services to store their configuration settings
+-- this allows safe service restarts as well as 'on the fly' change of configuration
+-- settings for all modules supporting this
+-- Configuration values are stored in the form conf_name = conf_value
+-- the field conf_enabled tells if the configuration is enabled or not
+--
+create table srv_config (
+    uuid          varchar(1024) not null
+   ,name          varchar(256)  not null
+   ,value         varchar(4096)
+   ,enabled       boolean default true
+   ,created       datetime not null
+   ,modified      datetime not null
+   ,foreign key (uuid) references srv_registry(uuid)
+);
+
+--
 -- Patching mechanism
 --
 -- Futuregateway provides automated scripts exploiting GITHub to automatically
@@ -462,5 +495,5 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.11','baseline setup','../fgapiserver_db.sql',now());
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.12','baseline setup','../fgapiserver_db.sql',now());
 

@@ -132,6 +132,19 @@ class FGApiServerConfig:
                                     indent=int(
                                         self.fgConfig['fgjson_indent'])))
 
+    def config(self, fg_config):
+        """
+          Load configuration from a given dictionary
+        """
+        for key in fg_config:
+            val = fg_config[key]
+            # Assign key, val into fgConfig
+            for section in self.fgConfig.keys():
+                for conf_name in self.fgConfig[section].keys():
+                    if conf_name == key:
+                        self.fgConfig[section][key] = value
+                        break
+
     def get_config(self):
         """
          This function returns the object containing loaded configuration

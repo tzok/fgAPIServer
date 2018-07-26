@@ -26,6 +26,7 @@ import urllib
 import shutil
 import logging
 import json
+from fgapiserverconfig import FGApiServerConfig
 
 """
   GridEngine API Server database
@@ -221,6 +222,203 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return dbver
+
+    """
+      is_srv_reg - Return true if the service is registered
+    """
+
+    def is_srv_reg(self, uuid):
+        db = None
+        cursor = None
+        safe_transaction = False
+        is_reg = False
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select count(*)>0 from srv_registry where uuid = %s;')
+            sql_data = (uuid,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            is_reg = cursor.fetchone()[0]
+            self.query_done("Service registration '%s' is '%s'"
+                            % (uuid, is_reg))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return is_reg
+
+    """
+      srv_register - Register the given server and stores its current 
+                     configuration
+    """
+
+    def srv_register(self, fgapisrv_uuid, fg_config):
+        db = None
+        cursor = None
+        safe_transaction = True
+        cfg_hash = None
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = (
+                'insert into srv_registry (uuid,\n'
+                '                          creation,\n'
+                '                          last_access,\n'
+                '                          enabled)\n'
+                'values (%s,now(),now(),%s);'
+            )
+            sql_data = (fgapisrv_uuid, True)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            # Now save configuration settings
+            for key in fg_config.keys():
+                key_value = fg_config[key]
+                sql = (
+                    'insert into srv_config (uuid,\n'
+                    '                        name,\n'
+                    '                        value,\n'
+                    '                        enabled,\n'
+                    '                        created,\n'
+                    '                        modified)\n'
+                    'values (%s, %s, %s, %s, now(), now());'
+                )
+                sql_data = (fgapisrv_uuid, key, key_value, True)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+            # Calculate configuration hash
+            sql = (
+                'select md5(group_concat(value)) cfg_hash\n'
+                'from srv_config\n'
+                'where uuid = %s\n'
+                'group by uuid;'
+            )
+            sql_data = (fgapisrv_uuid,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            cfg_hash = cursor.fetchone()[0]
+            # Register calculated hash
+            sql = (
+                'update srv_registry set cfg_hash = %s where uuid = %s;'
+            )
+            sql_data = (cfg_hash, fgapisrv_uuid)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            # Service registration queries executed
+            self.query_done("Service with uuid: '%s' has been registered"
+                            "and configuration parameters saved." 
+                            % fgapisrv_uuid)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+
+#    """
+#      srv_config - returns a dictionary containing configuration settings
+#                   of the service using its uuid value
+#    """
+#
+#    def srv_config(self, fgapisrv_uuid):
+#        db = None
+#        cursor = None
+#        safe_transaction = False
+#        fg_config = {}
+#        try:
+#            db = self.connect(safe_transaction)
+#            cursor = db.cursor()
+#            sql = (
+#                'select name,\n'
+#                '       value\n'
+#                'from srv_config\n'
+#                'where uuid=%s and enabled=%s;'
+#            )
+#            sql_data = (fgapisrv_uuid, True)
+#            self.log.debug(sql % sql_data)
+#            cursor.execute(sql, sql_data)
+#            for config in cursor:
+#                kname = config[0]
+#                kvalue = config[1]
+#                fg_config[kname] = kvalue
+#            self.query_done("Configuration settings for service having "
+#                            "uuid: '%s' have been retrieved." % fgapisrv_uuid)
+#        except MySQLdb.Error as e:
+#            self.catch_db_error(e, db, safe_transaction)
+#        finally:
+#            self.close_db(db, cursor, safe_transaction)
+#        return fg_config
+
+    """
+      srv_config_check - Check if configuration settings have been changed for
+                         the given service uuid and returns the new setting
+                         in case the configuration has been changed or None
+                         otherwise. The new hash will be resigteded in case
+                         it has been changed.
+    """
+
+    def srv_config_check(self, fgapisrv_uuid):
+        db = None
+        cursor = None
+        safe_transaction = True
+        cfg_hash = None
+        srv_hash = None
+        fg_config = {}
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            # Get configuration hash from registry
+            sql = (
+                'select cfg_hash srv_hash\n'
+                'from srv_registry\n'
+                'where uuid=%s;'
+            )
+            sql_data = (fgapisrv_uuid,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            srv_hash = cursor.fetchone()[0]
+            # Calculate new configuration hash
+            sql = (
+                'select md5(group_concat(value)) cfg_hash\n'
+                'from srv_config\n'
+                'where uuid = %s\n'
+                'group by uuid;'
+            )
+            sql_data = (fgapisrv_uuid,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            cfg_hash = cursor.fetchone()[0]
+            if cfg_hash != srv_hash:
+                # Service configuration changed
+                sql = (
+                    'select name,\n'
+                    '       value\n'
+                    'from srv_config\n'
+                    'where uuid=%s and enabled=%s;'
+                )
+                sql_data = (fgapisrv_uuid, True)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                for config in cursor:
+                    kname = config[0]
+                    kvalue = config[1]
+                    fg_config[kname] = kvalue
+                sql = (
+                    'update srv_registry set cfg_hash = %s where uuid = %s;'
+                )
+                sql_data = (cfg_hash, fgapisrv_uuid)
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                self.query_done("Configuration settings for service having "
+                                "uuid: '%s' have been changed." % fgapisrv_uuid)
+            else:
+                # Service configuration unchanged
+                fg_config = None
+                self.query_done("Configuration settings for service having "
+                                "uuid: '%s' have not been changed." % fgapisrv_uuid)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return fg_config
 
     """
       get_state returns the status and message of the last action on the DB

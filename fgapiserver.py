@@ -33,6 +33,7 @@ from fgapiserver_user import User
 import os
 import sys
 import uuid
+import socket
 import time
 import json
 import ConfigParser
@@ -57,43 +58,107 @@ __update__ = "23-05-2017 17:23:15"
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# fgapiserver configuration settings
+fgapiver = None
+fgapiserver_name = None
+fgapisrv_host = None
+fgapisrv_port = None
+fgapisrv_debug = None
+fgapisrv_iosandbox = None
+fgapisrv_geappid = None
+fgjson_indent = None
+fgapisrv_key = None
+fgapisrv_crt = None
+fgapisrv_logcfg = None
+fgapisrv_dbver = None
+fgapisrv_secret = None
+fgapisrv_notoken = None
+fgapisrv_notokenusr = None
+fgapisrv_lnkptvflag = None
+fgapisrv_ptvendpoint = None
+fgapisrv_ptvuser = None
+fgapisrv_ptvpass = None
+fgapisrv_ptvdefusr = None
+fgapisrv_ptvdefgrp = None
+fgapisrv_ptvmapfile = None
+fgapisrv_db_host = None
+fgapisrv_db_port = None
+fgapisrv_db_user = None
+fgapisrv_db_pass = None
+fgapisrv_db_name = None
+
+def load_config(fg_config):
+    """
+      Load configuration settings stored in the given dictionary
+    """
+    global fgapiver
+    global fgapiserver_name
+    global fgapisrv_host
+    global fgapisrv_port
+    global fgapisrv_debug
+    global fgapisrv_iosandbox
+    global fgapisrv_geappid
+    global fgjson_indent
+    global fgapisrv_key
+    global fgapisrv_crt
+    global fgapisrv_logcfg
+    global fgapisrv_dbver
+    global fgapisrv_secret
+    global fgapisrv_notoken
+    global fgapisrv_notokenusr
+    global fgapisrv_lnkptvflag
+    global fgapisrv_ptvendpoint
+    global fgapisrv_ptvuser
+    global fgapisrv_ptvpass
+    global fgapisrv_ptvdefusr
+    global fgapisrv_ptvdefgrp
+    global fgapisrv_ptvmapfile
+    global fgapisrv_db_host
+    global fgapisrv_db_port
+    global fgapisrv_db_user
+    global fgapisrv_db_pass
+    global fgapisrv_db_name
+ 
+    fgapiver = fg_config['fgapiver']
+    fgapiserver_name = fg_config['fgapiserver_name']
+    fgapisrv_host = fg_config['fgapisrv_host']
+    fgapisrv_port = int(fg_config['fgapisrv_port'])
+    fgapisrv_debug = fg_config['fgapisrv_debug'].lower() == 'true'
+    fgapisrv_iosandbox = fg_config['fgapisrv_iosandbox']
+    fgapisrv_geappid = int(fg_config['fgapisrv_geappid'])
+    fgjson_indent = int(fg_config['fgjson_indent'])
+    fgapisrv_key = fg_config['fgapisrv_key']
+    fgapisrv_crt = fg_config['fgapisrv_crt']
+    fgapisrv_logcfg = fg_config['fgapisrv_logcfg']
+    fgapisrv_dbver = fg_config['fgapisrv_dbver']
+    fgapisrv_secret = fg_config['fgapisrv_secret']
+    fgapisrv_notoken = fg_config['fgapisrv_notoken'].lower() == 'true'
+    fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
+    fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
+    fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
+    fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
+    fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
+    fgapisrv_ptvdefusr = fg_config['fgapisrv_ptvdefusr']
+    fgapisrv_ptvdefgrp = fg_config['fgapisrv_ptvdefgrp']
+    fgapisrv_ptvmapfile = fg_config['fgapisrv_ptvmapfile']
+
+    # fgapiserver database settings
+    fgapisrv_db_host = fg_config['fgapisrv_db_host']
+    fgapisrv_db_port = int(fg_config['fgapisrv_db_port'])
+    fgapisrv_db_user = fg_config['fgapisrv_db_user']
+    fgapisrv_db_pass = fg_config['fgapisrv_db_pass']
+    fgapisrv_db_name = fg_config['fgapisrv_db_name']
+
 # fgapiserver configuration file
 fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
+
+# FutureGateway database object holder
+fgapisrv_db = None
 
 # Load configuration
 fg_config_obj = FGApiServerConfig(fgapiserver_config_file)
 fg_config = fg_config_obj.get_config()
-
-# fgapiserver settings
-fgapiver = fg_config['fgapiver']
-fgapiserver_name = fg_config['fgapiserver_name']
-fgapisrv_host = fg_config['fgapisrv_host']
-fgapisrv_port = int(fg_config['fgapisrv_port'])
-fgapisrv_debug = fg_config['fgapisrv_debug'].lower() == 'true'
-fgapisrv_iosandbox = fg_config['fgapisrv_iosandbox']
-fgapisrv_geappid = int(fg_config['fgapisrv_geappid'])
-fgjson_indent = int(fg_config['fgjson_indent'])
-fgapisrv_key = fg_config['fgapisrv_key']
-fgapisrv_crt = fg_config['fgapisrv_crt']
-fgapisrv_logcfg = fg_config['fgapisrv_logcfg']
-fgapisrv_dbver = fg_config['fgapisrv_dbver']
-fgapisrv_secret = fg_config['fgapisrv_secret']
-fgapisrv_notoken = fg_config['fgapisrv_notoken'].lower() == 'true'
-fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
-fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
-fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
-fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
-fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
-fgapisrv_ptvdefusr = fg_config['fgapisrv_ptvdefusr']
-fgapisrv_ptvdefgrp = fg_config['fgapisrv_ptvdefgrp']
-fgapisrv_ptvmapfile = fg_config['fgapisrv_ptvmapfile']
-
-# fgapiserver database settings
-fgapisrv_db_host = fg_config['fgapisrv_db_host']
-fgapisrv_db_port = int(fg_config['fgapisrv_db_port'])
-fgapisrv_db_user = fg_config['fgapisrv_db_user']
-fgapisrv_db_pass = fg_config['fgapisrv_db_pass']
-fgapisrv_db_name = fg_config['fgapisrv_db_name']
+load_config(fg_config)
 
 # Logging
 logging.config.fileConfig(fgapisrv_logcfg)
@@ -105,10 +170,6 @@ logger.debug(fg_config_obj.get_messages())
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
-
-# FutureGateway database object holder
-fgapisrv_db = None
-
 
 #
 # Helper functions
@@ -162,6 +223,22 @@ def get_fgapiserver_db():
         return None
     return fgapisrv_db
 
+def check_api_ver(apiver):
+    """
+    Check the API version
+
+    Future versions of this function can be used to route different versions
+
+    :return: A list containing three values:
+              - A true boolean value if the version matches
+              - 404 error code in case versions are not matching
+              - The error message in case versions are not matching 
+    """
+    if apiver == fgapiver:
+        ret_value = (True, 200, 'Supported API version %s' % apiver)
+    else:
+        ret_value = (False, 404, "Unsupported API version %s" % apiver)
+    return ret_value
 
 def check_db_ver():
     """
@@ -187,14 +264,77 @@ def check_db_ver():
            fgapisrv_dbver != db_ver:
             msg = ("Current database version '%s' is not compatible "
                    "with this version of the API server front-end; "
-                   "version %s is required."
+                   "version %s is required.\n"
                    "It is suggested to update your database applying "
-                   "new available patches" % (db_ver, fgapisrv_dbver))
+                   "new available patches." % (db_ver, fgapisrv_dbver))
             logger.error(msg)
             print msg
             sys.exit(1)
     logger.debug("Check database version passed")
     return db_ver
+
+
+def srv_uuid():
+    """
+    Service UUID
+
+    :return: This function returns the service UUID calculated
+             using the server' hostname
+    """
+
+    # UUID from hostname/IP
+    return uuid.uuid3(uuid.NAMESPACE_DNS, socket.gethostname())
+
+
+def check_db_cfg():
+    """
+    Check configuration changes
+
+    :return: This function checks configuration changes, reloading
+             configuration settings in chase their values have been
+             modified since last check
+    """
+    global fgapisrv_db
+    
+    fgapisrv_uuid = srv_uuid()
+    fg_config = fgapisrv_db.srv_config_check(fgapisrv_uuid)
+    if fg_config is not None:
+        load_config(fg_config)
+        logger.debug('Configuration change detected:\n%s\n' % fg_config)
+
+def check_db_reg():
+    """
+    Running server registration check
+
+    :return: This fucntion checks if this running server has been registered
+             into the database. If the registration is not yet done, the
+             registration will be performed and the current configuration
+             registered. If the server has been registered retrieve the
+             configuration saved from the registration.
+    """
+    global fgapisrv_db
+    
+    # Retrieve the service UUID
+    fgapisrv_uuid = srv_uuid()
+    if not fgapisrv_db.is_srv_reg(fgapisrv_uuid):
+        # The service is not registered
+        # Register the service and its configuration variables taken from
+        # the configuration file and overwritten by environment variables
+        logger.debug("Server has uuid: '%s' and it results not yet registered" 
+                     % fgapisrv_uuid)
+        fg_config = fg_config_obj.get_config()
+        fgapisrv_db.srv_register(fgapisrv_uuid, fg_config)
+        db_state = fgapisrv_db.get_state()
+        if db_state[0] != 0:
+            msg = ("Unable to register service under uuid: '%s'"
+                   % fgapisrv_uuid)
+            logger.error(msg)
+            print(msg)
+            sys.exit(1)
+    else:
+        # Registered service checks for database configuration
+        check_db_cfg()
+    logger.debug("Check service registry passed")
 
 
 def paginate_response(response, page, per_page, page_url):
@@ -684,8 +824,8 @@ def header_links(req, resp, json):
 # receive back an access token
 #
 @app.route('/auth', methods=['GET', 'POST'])
-@app.route('/%s/auth' % fgapiver, methods=['GET', 'POST'])
-def auth():
+@app.route('/<apiver>/auth', methods=['GET', 'POST'])
+def auth(apiver=fgapiver):
     global logger
     logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
     token = ""
@@ -693,7 +833,10 @@ def auth():
     logtoken = request.values.get('token')
     username = request.values.get('username')
     password = request.values.get('password')
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        pass
+    elif request.method == 'GET':
         if logtoken is not None or len(token) > 0:
             # Retrieve access token from an login token
             token = create_session_token(logtoken=logtoken)
@@ -741,16 +884,16 @@ def auth():
         response = {
             "token": token
         }
-        log_status = 200
+        state = 200
     else:
         response = {
             "message": message
         }
-        log_status = 404
+        state = 404
     # include _links part
     response["_links"] = [{"rel": "self", "href": "/auth"}, ]
     js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=log_status, mimetype='application/json')
+    resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
@@ -765,24 +908,29 @@ def auth():
 
 
 @app.route('/')
-@app.route('/%s/' % fgapiver)
-def index():
+@app.route('/<apiver>/')
+def index(apiver=fgapiver):
     global logger
     logger.debug('index(%s): %s' % (request.method, request.values.to_dict()))
-    versions = ({"id": fgapiver,
-                 "_links": ({"rel": "self",
-                            "href": fgapiver},),
-                 "media-types": ({"type": "application/json"}),
-                 "status": __status__,
-                 "updated": __update__,
-                 "build:": __version__},)
-    response = {
-        "versions": versions,
-        "_links": ({"rel": "self",
-                    "href": "/"},)
-    }
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }  
+    else:
+        versions = ({"id": fgapiver,
+                     "_links": ({"rel": "self",
+                                "href": fgapiver},),
+                     "media-types": ({"type": "application/json"}),
+                     "status": __status__,
+                     "updated": __update__,
+                     "build:": __version__},)
+        response = {
+            "versions": versions,
+            "_links": ({"rel": "self",
+                        "href": "/"},)
+        }
+        state = 200
     js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=200, mimetype='application/json')
+    resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
@@ -797,9 +945,9 @@ def index():
 # POST - Create a new task; it only prepares the task for execution
 
 
-@app.route('/%s/tasks' % fgapiver, methods=['GET', 'POST'])
+@app.route('/<apiver>/tasks', methods=['GET', 'POST'])
 @login_required
-def tasks():
+def tasks(apiver=fgapiver):
     global fgapisrv_db
     global logger
     logger.debug('tasks(%s): %s' % (request.method, request.values.to_dict()))
@@ -812,9 +960,11 @@ def tasks():
     status = request.values.get('status')
     user = request.values.get('user', user_name)
     app_id = request.values.get('application')
-    task_state = 0
 
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_view")
         logger.debug("[task_view]: auth_state: '%s', auth_msg: '%s'"
@@ -964,8 +1114,7 @@ def tasks():
 # POST - could reshape the request (Delete/Recreate)
 
 @app.route(
-    '/%s/tasks/<task_id>' %
-    fgapiver,
+    '/<apiver>/tasks/<task_id>',
     methods=[
         'GET',
         'PUT',
@@ -973,7 +1122,7 @@ def tasks():
         'DELETE',
         'PATCH'])
 @login_required
-def task_id(task_id=None):
+def task_id(apiver=fgapiver, task_id=None):
     global fgapisrv_db
     global logger
     logger.debug('tasks(%s)/%s: %s' % (request.method,
@@ -983,7 +1132,10 @@ def task_id(task_id=None):
     user_id = current_user.get_id()
     app_id = get_task_app_id(task_id)
     user = request.values.get('user', user_name)
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_view")
         if not auth_state:
@@ -1136,11 +1288,11 @@ def task_id(task_id=None):
 # POST - specify input files
 
 
-@app.route('/%s/tasks/<task_id>/input' % fgapiver,
+@app.route('/<apiver>/tasks/<task_id>/input',
            methods=['GET',
                     'POST'])
 @login_required
-def task_id_input(task_id=None):
+def task_id_input(apiver=fgapiver, task_id=None):
     global fgapisrv_db
     global logger
     logger.debug('task_id_input(%s): %s' % (request.method,
@@ -1150,7 +1302,10 @@ def task_id_input(task_id=None):
     app_id = get_task_app_id(task_id)
     user = request.values.get('user', user_name)
     state = 404
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "task_view")
         if not auth_state:
@@ -1247,14 +1402,17 @@ def task_id_input(task_id=None):
 # of the task acrivity
 
 
-@app.route('/%s/callback/<task_id>' % fgapiver, methods=['GET', 'POST'])
-def task_callback(task_id=None):
+@app.route('/<apiver>/callback/<task_id>', methods=['GET', 'POST'])
+def task_callback(apiver=fgapiver, task_id=None):
     global fgapisrv_db
     global logger
     logger.debug('callback(%s)/%s: %s' % (request.method,
                                           task_id,
                                           request.values.to_dict()))
-    if request.method == 'POST':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'POST':
         # Getting values
         callback_info = request.get_json()
         logger.debug("Callback info for task_id: %s - '%s'"
@@ -1277,9 +1435,9 @@ def task_callback(task_id=None):
 # File download endpoint
 
 
-@app.route('/%s/file' % fgapiver, methods=['GET', ])
+@app.route('/<apiver>/file', methods=['GET', ])
 @login_required
-def file():
+def file(apiver=fgapiver):
     global fgapisrv_db
     global logger
     logger.debug('file(%s): %s' % (request.method, request.values.to_dict()))
@@ -1294,7 +1452,10 @@ def file():
         app_id = get_task_app_id(task_id)
     else:
         app_id = fgapisrv_db.get_file_app_id(file_path, file_name)
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         if app_id is None:
             auth_state = False
             auth_msg = 'Unexisting file: %s/%s' % (file_path, file_name)
@@ -1302,8 +1463,8 @@ def file():
             auth_state, auth_msg = authorize_user(
                 current_user, app_id, user, "app_run")
         if not auth_state:
-            task_state = 402
-            file_response = {
+            state = 402
+            response = {
                 "message": "Not authorized to perform this request: %s" %
                            auth_msg}
         else:
@@ -1316,16 +1477,17 @@ def file():
                                  'attachment; filename="%s"' % file_name)
                 return resp
             except:
-                file_response = {
+                response = {
                     "message": "Unable to get file: %s/%s" %
                                (file_path, file_name)}
+                state = 404
             finally:
                 if serve_file is not None:
                     serve_file.close()
-        js = json.dumps(file_response, indent=fgjson_indent)
-        resp = Response(js, status=404)
-        resp.headers['Content-type'] = 'application/json'
-        return resp
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=state)
+    resp.headers['Content-type'] = 'application/json'
+    return resp
 
 
 #
@@ -1337,12 +1499,12 @@ def file():
 # POST - Create a new task; it only prepares the task for execution
 
 
-@app.route('/%s/applications' % fgapiver,
+@app.route('/<apiver>/applications',
            methods=['GET',
                     'PUT',
                     'POST'])
 @login_required
-def applications():
+def applications(apiver=fgapiver):
     global fgapisrv_db
     global logger
     logger.debug('applications(%s): %s' % (request.method,
@@ -1356,11 +1518,15 @@ def applications():
     user = request.values.get('user')
     state = 0
     response = {}
-    if request.method == 'GET':
+
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_view")
         if not auth_state:
-            task_state = 402
+            state = 402
             task_response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
@@ -1461,12 +1627,12 @@ def applications():
                 files,
                 infrastructures)
             if app_id <= 0:
-                task_state = fgapisrv_db.get_state()
+                db_state = fgapisrv_db.get_state()
                 # Error initializing task
                 # Prepare for 410 error
                 state = 410
                 response = {
-                    "message": task_state[1]
+                    "message": db_state[1]
                 }
             else:
                 # Enable the groups owned by the installing user to
@@ -1501,14 +1667,14 @@ def applications():
 
 
 @app.route(
-    '/%s/applications/<app_id>' % fgapiver,
+    '/<apiver>/applications/<app_id>',
     methods=[
         'GET',
         'DELETE',
         'PUT',
         'POST'])
 @login_required
-def app_id(app_id=None):
+def app_id(apiver=fgapiver, app_id=None):
     global fgapisrv_db
     global logger
     logger.debug('application(%s)/%s: %s' % (request.method,
@@ -1517,17 +1683,21 @@ def app_id(app_id=None):
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
-    if request.method == 'GET':
+
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_view")
         if not auth_state:
-            status = 402
+            state = 402
             response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
             if not fgapisrv_db.app_exists(app_id):
-                status = 404
+                state = 404
                 response = {
                     "message":
                     "Unable to find application with id: %s"
@@ -1539,7 +1709,7 @@ def app_id(app_id=None):
                 if db_state[0] != 0:
                     # Couldn't get AppRecord
                     # Prepare for 404 not found
-                    status = 404
+                    state = 404
                     response = {
                         "message": db_state[1]
                     }
@@ -1548,36 +1718,36 @@ def app_id(app_id=None):
                         {"rel": "self",
                          "href": "/%s/application/%s/input"
                                  % (fgapiver, app_id)}, ]
-                    status = 200
+                    state = 200
     elif request.method == 'DELETE':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_delete")
         if not auth_state:
-            status = 402
+            state = 402
             response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
             if not fgapisrv_db.app_exists(app_id):
-                status = 404
+                state = 404
                 response = {
                     "message": "Unable to find application with id: %s" %
                                app_id}
             elif not fgapisrv_db.app_delete(app_id):
-                status = 410
+                state = 410
                 response = {
                     "message": ("Unable to delete application with id: %s; "
                                 "reason: '%s'"
                                 % (app_id, fgapisrv_db.get_state()[1]))}
             else:
-                status = 204
+                state = 204
                 response = {
                     "message": "Successfully removed application with id: %s" %
                                app_id}
                 # 204 - NO CONTENT cause no output
                 logger.debug(response['message'])
     elif request.method == 'POST':
-        statis = 404
+        state = 404
         response = {
             "message": "Not supported method"
         }
@@ -1585,7 +1755,7 @@ def app_id(app_id=None):
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_change")
         if not auth_state:
-            status = 402
+            state = 402
             response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
@@ -1593,38 +1763,38 @@ def app_id(app_id=None):
             app_desc = request.get_json()
             if app_desc.get("id", None) is not None\
                and int(app_desc['id']) != int(app_id):
-                status = 403
+                state = 403
                 response = {
                     "message": "JSON application id %s is different than "
                                "URL application id: %s" % (app_desc['id'],
                                                            app_id)}
             elif not fgapisrv_db.app_exists(app_id):
-                status = 404
+                state = 404
                 response = {
                     "message": "Unable to find application with id: %s" %
                                app_id}
             elif not fgapisrv_db.app_change(app_id, app_desc):
-                status = 410
+                state = 410
                 response = {
                     "message": ("Unable to change application with id: %s; "
                                 "reason: '%s'"
                                 % (app_id, fgapisrv_db.get_state()[1]))}
             else:
-                status = 200
+                state = 200
                 response = {
                     "message": "Successfully changed application with id: %s" %
                                app_id}
     js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=status, mimetype='application/json')
+    resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
 
 
-@app.route('/%s/applications/<app_id>/input' % fgapiver,
+@app.route('/<apiver>/applications/<app_id>/input',
            methods=['GET', 'POST'])
 @login_required
-def app_id_input(app_id=None):
+def app_id_input(apiver=fgapiver, app_id=None):
     global fgapisrv_db
     global logger
     logger.debug('index(%s)/%s/input: %s' % (request.method,
@@ -1633,8 +1803,11 @@ def app_id_input(app_id=None):
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
-    state = 404
-    if request.method == 'GET':
+
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }    
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, app_id, user, "app_view")
         if not auth_state:
@@ -1706,12 +1879,12 @@ def app_id_input(app_id=None):
 #
 
 
-@app.route('/%s/infrastructures' % fgapiver,
+@app.route('/<apiver>/infrastructures',
            methods=['GET',
                     'PUT',
                     'POST'])
 @login_required
-def infrastructures():
+def infrastructures(apiver=fgapiver):
     global fgapisrv_db
     global logger
     logger.debug('infrastructures(%s): %s' % (request.method,
@@ -1723,8 +1896,11 @@ def infrastructures():
     page = request.values.get('page')
     per_page = request.values.get('per_page')
     user = request.values.get('user')
-    state = 0
-    if request.method == 'GET':
+    
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, infra_id, user, "infra_view")
         if not auth_state:
@@ -1857,15 +2033,14 @@ def infrastructures():
 
 
 @app.route(
-    '/%s/infrastructures/<infra_id>' %
-    fgapiver,
+    '/<apiver>/infrastructures/<infra_id>',
     methods=[
         'GET',
         'DELETE',
         'POST',
         'PUT'])
 @login_required
-def infra_id(infra_id=None):
+def infra_id(apiver=fgapiver, infra_id=None):
     global fgapisrv_db
     global logger
     logger.debug('infrastructures(%s)/%s: %s' % (request.method,
@@ -1874,7 +2049,11 @@ def infra_id(infra_id=None):
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
-    if request.method == 'GET':
+
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = { "message": message }
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, None, user, "infra_view")
         if not auth_state:
@@ -2001,13 +2180,21 @@ def after_request(response):
     response.headers.add('Server', fgapiserver_name)
     return response
 
+# Common check for requests
+
+@app.before_request
+def before_request():
+    check_db_cfg()
 
 #
-# The app starts here
+# The fgAPIServer app starts here
 #
 
 # Get database object and check the DB
 check_db_ver()
+
+# Server registration and configuration from fgdb
+check_db_reg()
 
 # Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":
