@@ -106,12 +106,12 @@ def get_fgapiserver_db():
              database connection fails
     """
 
-    db_host = fg_config['fgapisrv_db_host'],
-    db_port = fg_config['fgapisrv_db_port'],
-    db_user = fg_config['fgapisrv_db_user'],
-    db_pass = fg_config['fgapisrv_db_pass'],
-    db_name = fg_config['fgapisrv_db_name'],
-    iosandbbox_dir = fg_config['fgapisrv_iosandbox'],
+    db_host = fg_config['fgapisrv_db_host']
+    db_port = fg_config['fgapisrv_db_port']
+    db_user = fg_config['fgapisrv_db_user']
+    db_pass = fg_config['fgapisrv_db_pass']
+    db_name = fg_config['fgapisrv_db_name']
+    iosandbbox_dir = fg_config['fgapisrv_iosandbox']
     fgapiserverappid = fg_config['fgapisrv_geappid']
 
     fgdb = FGAPIServerDB(
