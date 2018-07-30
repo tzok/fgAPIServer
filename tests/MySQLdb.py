@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
-# Consorzio COMETA (COMETA), Italy
 #
-# See http://www.infn.it and and http://www.consorzio-cometa.it for details on
-# the copyright holders.
+# See http://www.infn.it  for details on the copyrigh holder
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 
 #
 # MySQLdb.py emulates the MySQL module returning configurable outputs
@@ -32,14 +29,16 @@ __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
 
 
-# export PYTHONPATH=\
-# $PYTHONPATH:/Users/Macbook/Documents/fgAPIServer_codestyle_changes/tests/..
-# from fgapiserver import fgapiserver
+"""
+Almost ALL fgapiserverdb.py Queries
+"""
 queries = [
+    {'query': 'BEGIN',
+     'result': None},
     {'query': 'SELECT VERSION()',
      'result': [['test', ], ]},
     {'query': 'select version from db_patches order by id desc limit 1;',
-     'result': [['0.0.10'], ]},
+     'result': [['0.0.12'], ]},
     {'query': ('select '
                ' id\n'
                ',status\n'
@@ -827,6 +826,64 @@ queries = [
                'set app_id = 0\n'
                'where id=%s\n'
                '  and app_id=%s;'),
+     'result': None},
+    {'query': 'select count(*)>0 from srv_registry where uuid = %s;',
+     'result': [[0], ]},
+    {'query': ('insert into srv_registry (uuid,\n'
+               '                          creation,\n'
+               '                          last_access,\n'
+               '                          enabled)\n'
+               'values (%s,now(),now(),%s);'),
+     'result': None},
+    {'query': 'insert into srv_config (uuid,\n'
+              '                        name,\n'
+              '                        value,\n'
+              '                        enabled,\n'
+              '                        created,\n'
+              '                        modified)\n'
+              'values (%s, %s, %s, %s, now(), now());',
+     'result': None},
+    {'query': ('select md5(group_concat(value)) cfg_hash\n'
+               'from srv_config\n'
+               'where uuid = %s\n'
+               'group by uuid;'),
+     'result': '11111111111111111111111111111'},
+    {'query': ('delete from application_file\n'
+               'where app_id = %s\n'
+               '  and file= %s\n'
+               '  and path = %s;'),
+     'result': None},
+    {'query': ('update srv_registry set cfg_hash = %s where uuid = %s;'),
+     'result': None},
+    {'query': ('select cfg_hash srv_hash\n'
+               'from srv_registry\n'
+               'where uuid=%s;'),
+     'result': '123123123123123123123123123123'},
+    {'query': ('select group_id from fg_user_group where user_id = %s'),
+     'result': [[1], ]},
+    {'query': ('insert into fg_token \n'
+               '  select %s, id, now() creation, 24*60*60 \n'
+               '  from  fg_user \n'
+               '  where name=%s \n'
+               '    and fg_user.password=sha(%s);'),
+     'result': None},
+    {'query': ('insert into fg_group_apps (group_id, app_id, creation)\n'
+               'values (%s, %s, now())'),
+     'result': None},
+    {'query': ('delete from fg_group_apps where app_id=%s;'),
+     'result': None},
+    {'query': ('delete from infrastructure_parameter\n'
+               'where infra_id in (select id \n'
+               '                   from infrastructure \n'
+               '                   where app_id=%s);'),
+     'result': None},
+    {'query': ('delete from infrastructure where app_id=%s;'),
+     'result': None},
+    {'query': ('delete from application_file where app_id=%s;'),
+     'result': None},
+    {'query': ('delete from application_parameter where app_id=%s;'),
+     'result': None},
+    {'query': ('delete from application where id=%s;'),
      'result': None},
     {'query': None,
      'result': None},

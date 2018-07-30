@@ -1,3 +1,6 @@
+werkzeug
+pycrypto
+Crypto
 pep8
 setuptools
 packaging

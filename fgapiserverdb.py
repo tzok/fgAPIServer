@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
-# Consorzio COMETA (COMETA), Italy
 #
-# See http://www.infn.it and and http://www.consorzio-cometa.it for details on
-# the copyright holders.
+# See http://www.infn.it  for details on the copyrigh holder
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -90,6 +88,10 @@ class FGAPIServerDB:
     """
 
     def __init__(self, *args, **kwargs):
+        """
+
+        :rtype:
+        """
         self.log = logging.getLogger(__name__)
         self.db_host = kwargs.get('db_host', def_db_host)
         self.db_port = kwargs.get('db_port', def_db_port)
@@ -425,6 +427,10 @@ class FGAPIServerDB:
     """
 
     def get_state(self):
+        """
+
+        :rtype:
+        """
         return (self.err_flag, self.err_msg)
 
     """
@@ -2707,19 +2713,23 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
+        group_ids = []
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Task record
-            sql = ("select group_id from fg_user_group where user_id = %s")
+            sql = ('select group_id from fg_user_group where user_id = %s')
             sql_data = (user_id,)
             self.log.debug(sql % sql_data)
+
             cursor.execute(sql, sql_data)
             for group_id in cursor:
+                group_ids.append(group_id[0])
+            for group_id in group_ids:
                 sql = (
-                    "insert into fg_group_apps (group_id, app_id, creation)\n"
-                    "values (%s, %s, now())")
-                sql_data = (group_id[0], app_id)
+                    'insert into fg_group_apps (group_id, app_id, creation)\n'
+                    'values (%s, %s, now())')
+                sql_data = (group_id, app_id)
                 self.log.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             self.query_done(
