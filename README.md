@@ -1,5 +1,5 @@
 # FutureGateway API Server front-end (fgAPIServer)
-[![Travis](http://img.shields.io/travis/FutureGateway/geAPIServer/master.png)](https://travis-ci.org/FutureGateway/geAPIServer)
+[![Travis](https://travis-ci.org/FutureGatewayFramework/fgAPIServer.svg?branch=master)](https://travis-ci.org/FutureGatewayFramework/fgAPIServer.svg?branch=master)
 [![License](https://img.shields.io/github/license/FutureGateway/geAPIServer.svg?style?flat)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 This project implements the interface of a RESTful API Server, compliant with [CSGF APIs][specs] specifications. Any activity processed by this interface will be then processed by the [API Server Daemon][APIServerDaemon] component.
