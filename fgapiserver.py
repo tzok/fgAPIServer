@@ -105,7 +105,6 @@ def get_fgapiserver_db():
     :return: Return the fgAPIServer database object or None if the
              database connection fails
     """
-    global fg_config
 
     db_host = fg_config['fgapisrv_db_host'],
     db_port = fg_config['fgapisrv_db_port'],
@@ -167,7 +166,6 @@ def check_db_ver():
              database schema version is not aligned with the version
              required by the code; see fgapisrv_dbver in configuration file
     """
-    global fg_config
     global fgapisrv_db
 
     fgapisrv_db = get_fgapiserver_db()
@@ -215,8 +213,6 @@ def check_db_cfg():
              configuration settings in chase their values have been
              modified since last check
     """
-    global fg_config
-    global fgapisrv_db
 
     fgapisrv_uuid = srv_uuid()
     fg_dbconfig = fgapisrv_db.srv_config_check(fgapisrv_uuid)
@@ -235,8 +231,6 @@ def check_db_reg():
              registered. If the server has been registered retrieve the
              configuration saved from the registration.
     """
-    global fg_config
-    global fgapisrv_db
 
     # Retrieve the service UUID
     fgapisrv_uuid = srv_uuid()
@@ -246,7 +240,6 @@ def check_db_reg():
         # the configuration file and overwritten by environment variables
         logger.debug("Server has uuid: '%s' and it results not yet registered"
                      % fgapisrv_uuid)
-        #fg_config = fg_config.get_config()
         fgapisrv_db.srv_register(fgapisrv_uuid, fg_config)
         db_state = fgapisrv_db.get_state()
         if db_state[0] != 0:
@@ -313,7 +306,7 @@ def get_task_app_id(taskid):
     :param taskid: Task id
     :return: The associated application id associated to the given task id
     """
-    global fgapisrv_db
+
     task_info = fgapisrv_db.get_task_info(taskid)
     app_record = task_info.get('application', None)
     if app_record is not None:
@@ -359,7 +352,6 @@ def process_log_token(logtoken):
                  APIServer users table
     :return: Unencripted triple: (username, password, timestamp)
     """
-    global fg_config
 
     username = ""
     password = ""
@@ -391,7 +383,7 @@ def create_session_token(**kwargs):
     :return: An access token to be used by any further transaction with
              the APIServer front-end
     """
-    global fgapisrv_db
+
     timestamp = int(time.time())
     sestoken = ""
     logtoken = kwargs.get("logtoken", "")
@@ -430,7 +422,6 @@ def authorize_user(user, appid, filter_user, reqroles):
     :return:
     """
     logger.debug("AuthUser: (begin)")
-    global fgapisrv_db
 
     # Return True if token management is disabled
     # if fgapisrv_notoken:
@@ -497,8 +488,6 @@ def authorize_user(user, appid, filter_user, reqroles):
 
 @login_manager.request_loader
 def load_user(req):
-    global fg_config
-    global fgapisrv_db
 
     logger.debug("LoadUser: begin")
     # Login manager could be disabled in conf file
@@ -759,8 +748,6 @@ def header_links(req, resp, json_dict):
 @app.route('/auth', methods=['GET', 'POST'])
 @app.route('/<apiver>/auth', methods=['GET', 'POST'])
 def auth(apiver=fg_config['fgapiver']):
-    global fg_config
-    global logger
 
     logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
     token = ""
@@ -845,8 +832,6 @@ def auth(apiver=fg_config['fgapiver']):
 @app.route('/')
 @app.route('/<apiver>/')
 def index(apiver=fg_config['fgapiver']):
-    global fg_config
-    global logger
 
     logger.debug('index(%s): %s' % (request.method, request.values.to_dict()))
     api_support, state, message = check_api_ver(apiver)
@@ -886,8 +871,6 @@ def index(apiver=fg_config['fgapiver']):
 @app.route('/<apiver>/tasks', methods=['GET', 'POST'])
 @login_required
 def tasks(apiver=fg_config['fgapiver']):
-    global fgapisrv_db
-    global logger
 
     logger.debug('tasks(%s): %s' % (request.method, request.values.to_dict()))
     user_name = current_user.get_name()
@@ -1069,10 +1052,6 @@ def tasks(apiver=fg_config['fgapiver']):
         'PATCH'])
 @login_required
 def task_id(apiver=fg_config['fgapiver'], taskid=None):
-    global fg_config
-    global fgapisrv_db
-    global logger
-
     logger.debug("tasks(%s)/%s: %s" % (request.method,
                                        taskid,
                                        request.values.to_dict()))
@@ -1243,9 +1222,6 @@ def task_id(apiver=fg_config['fgapiver'], taskid=None):
                     'POST'])
 @login_required
 def task_id_input(apiver=fg_config['fgapiver'], taskid=None):
-    global fg_config
-    global fgapisrv_db
-    global logger
     logger.debug('task_id_input(%s): %s' % (request.method,
                                             request.values.to_dict()))
     user_name = current_user.get_name()
@@ -1354,10 +1330,6 @@ def task_id_input(apiver=fg_config['fgapiver'], taskid=None):
 
 @app.route('/<apiver>/callback/<task_id>', methods=['GET', 'POST'])
 def task_callback(apiver=fg_config['fgapiver'], taskid=None):
-    global fg_config
-    global fgapisrv_db
-    global logger
-
     logger.debug('callback(%s)/%s: %s' % (request.method,
                                           taskid,
                                           request.values.to_dict()))
@@ -1390,10 +1362,6 @@ def task_callback(apiver=fg_config['fgapiver'], taskid=None):
 @app.route('/<apiver>/file', methods=['GET', ])
 @login_required
 def getfile(apiver=fg_config['fgapiver']):
-    global fg_config
-    global fgapisrv_db
-    global logger
-
     logger.debug('file(%s): %s' % (request.method, request.values.to_dict()))
     serve_file = None
     user_name = current_user.get_name()
@@ -1460,10 +1428,6 @@ def getfile(apiver=fg_config['fgapiver']):
                     'POST'])
 @login_required
 def applications(apiver=fg_config['fgapiver']):
-    global fg_config
-    global fgapisrv_db
-    global logger
-
     logger.debug('applications(%s): %s' % (request.method,
                                            request.values.to_dict()))
     user_name = current_user.get_name()
@@ -1631,9 +1595,6 @@ def applications(apiver=fg_config['fgapiver']):
         'POST'])
 @login_required
 def app_id(apiver=fg_config['fgapiver'], appid=None):
-    global fg_config
-    global fgapisrv_db
-    global logger
     logger.debug('application(%s)/%s: %s' % (request.method,
                                              appid,
                                              request.values.to_dict()))
@@ -1752,10 +1713,6 @@ def app_id(apiver=fg_config['fgapiver'], appid=None):
            methods=['GET', 'POST'])
 @login_required
 def app_id_input(apiver=fg_config['fgapiver'], appid=None):
-    global fg_config
-    global fgapisrv_db
-    global logger
-
     logger.debug('index(%s)/%s/input: %s' % (request.method,
                                              appid,
                                              request.values.to_dict()))
@@ -1853,10 +1810,6 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                     'POST'])
 @login_required
 def infrastructures(apiver=fg_config['fgapiver']):
-    global fg_config
-    global fgapisrv_db
-    global logger
-
     logger.debug('infrastructures(%s): %s' % (request.method,
                                               request.values.to_dict()))
     user_name = current_user.get_name()
@@ -2011,10 +1964,6 @@ def infrastructures(apiver=fg_config['fgapiver']):
         'PUT'])
 @login_required
 def infra_id(apiver=fg_config['fgapiver'], infraid=None):
-    global fg_config
-    global fgapisrv_db
-    global logger
-
     logger.debug('infrastructures(%s)/%s: %s' % (request.method,
                                                  infraid,
                                                  request.values.to_dict()))
