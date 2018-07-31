@@ -34,6 +34,9 @@ This class currently does not take in consideration query input values as define
 This test script makes use of unittests and its code is splitted in two separated sections. A firt part consists of unit tests on `fgapiserver.py` code; the second part contains functional tests on developed Flask endpoints.
 In the functional tests; each returned JSON is compared through its MD5Sum value with the `assertEqual()` method. The MD5Sum value to compare is extracted during the test case development and then hardcoded inside the `assertEqual()` method.
 
+## test_fgapiserverconfig.py
+This test script makes use of unittests to perform tests on top of the FGApiServerConfig object used to store fgAPIServer configuration options.
+
 ## test_mklogtoken.py
 This script executes a simple test on mklogtoken.py code used by the baseline Authentication and Authorization.
 It starts to encrypt username/password and timestamp and retrieve back this information with decrypting method.

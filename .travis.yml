@@ -30,6 +30,7 @@ script:
   - export PYTHONPATH=$PYTHONPATH:..:.
   - export FGAPISRV_NOTOKEN=True
   - export FGAPISRV_NOTOKENUSR=test
+  - python ./test_fgapiserverconfig.py
   - python ./test_fgapiserver.py
 
 branches:

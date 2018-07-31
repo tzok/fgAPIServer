@@ -1,0 +1,241 @@
+#!/usr/bin/env python
+# Copyright (c) 2015:
+# Istituto Nazionale di Fisica Nucleare (INFN), Italy
+#
+# See http://www.infn.it  for details on the copyrigh holder
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import unittest
+import hashlib
+import json
+import os
+import shutil
+from fgapiserverconfig import FGApiServerConfig
+
+__author__ = "Riccardo Bruno"
+__copyright__ = "2015"
+__license__ = "Apache"
+__version__ = "v0.0.2-30-g37540b8-37540b8-37"
+__maintainer__ = "Riccardo Bruno"
+__email__ = "riccardo.bruno@ct.infn.it"
+
+
+class Test_fgAPIServerConfig(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    def banner(self, test_name):
+        print ""
+        print "------------------------------------------------"
+        print " Testing: %s" % test_name
+        print "------------------------------------------------"
+
+    def md5sum(self, filename, blocksize=65536):
+        hash = hashlib.md5()
+        with open(filename, "rb") as f:
+            for block in iter(lambda: f.read(blocksize), b""):
+                hash.update(block)
+        return hash.hexdigest()
+
+    def md5sum_str(self, str):
+        return hashlib.md5(str).hexdigest()
+
+    #
+    # fgapiserverconfig
+    #
+
+    def test_Defaults(self):
+        """
+        Test default configuration settings
+        :return:
+        """
+        self.banner("Defaults")
+        cfg = FGApiServerConfig('')
+        print "Configuration: %s" % cfg
+        print "MD5: '%s': " % self.md5sum_str("%s" % cfg)
+        self.assertEqual("0203bce719021cbddd493ed0ccf886c3",
+                         self.md5sum_str("%s" % cfg))
+
+    def test_NoneConfigFile(self):
+        """
+        Test default configuration settings using None as class param
+        :return:
+        """
+        self.banner("Defaults")
+        cfg = FGApiServerConfig(None)
+        print "Configuration: %s" % cfg
+        print "MD5: '%s': " % self.md5sum_str("%s" % cfg)
+        self.assertEqual("0203bce719021cbddd493ed0ccf886c3",
+                         self.md5sum_str("%s" % cfg))
+
+    def test_DefConfigFile(self):
+        """
+        Test default configuration settings from configuration file
+        :return:
+        """
+        self.banner("Default configuration file")
+        cfg = FGApiServerConfig('fgapiserver.conf')
+        print "Configuration: %s" % cfg
+        print "MD5: '%s': " % self.md5sum_str("%s" % cfg)
+        self.assertEqual("0203bce719021cbddd493ed0ccf886c3",
+                         self.md5sum_str("%s" % cfg))
+
+    def test_BothConfig(self):
+        """
+        Test that both class defaults and file config settings are matching
+        :return:
+        """
+        self.banner("Both config are matching")
+        cfg_class = FGApiServerConfig('')
+        cfg_file = FGApiServerConfig('fgapiserver.conf')
+        print "Class Configuration: %s" % cfg_class
+        print "MD5_class: '%s': " % self.md5sum_str("%s" % cfg_class)
+        print "File Configuration: %s" % cfg_file
+        print "MD5_file:  '%s': " % self.md5sum_str("%s" % cfg_file)
+        self.assertEqual(self.md5sum_str("%s" % cfg_class),
+                         self.md5sum_str("%s" % cfg_file))
+
+    def test_ConfigDict(self):
+        """
+        Test that both class defaults and file config settings are matching
+        :return:
+        """
+        self.banner("Config dictionary check")
+        cfg = FGApiServerConfig('fgapiserver.conf')
+
+        self.assertEqual(cfg['fgapiver'], '1.0') and \
+        self.assertEqual(cfg['fgapiserver_name'],
+                         'GridEngine API Server 0.0.71') and \
+        self.assertEqual(cfg['fgapisrv_host'], 'localhost') and \
+        self.assertEqual(cfg['fgapisrv_port'], '8888') and \
+        self.assertEqual(cfg['fgapisrv_debug'], 'True') and \
+        self.assertEqual(cfg['fgapisrv_iosandbox'], '/tmp') and \
+        self.assertEqual(cfg['fgjson_indent'], '4') and \
+        self.assertEqual(cfg['fgapisrv_key'], '') and \
+        self.assertEqual(cfg['fgapisrv_crt'], '') and \
+        self.assertEqual(cfg['fgapisrv_logcfg'], 'fgapiserver_log.conf') and \
+        self.assertEqual(cfg['fgapisrv_dbver'], '') and \
+        self.assertEqual(cfg['fgapisrv_secret'], '0123456789ABCDEF') and \
+        self.assertEqual(cfg['fgapisrv_notoken'], 'False') and \
+        self.assertEqual(cfg['fgapisrv_notokenusr'], 'futuregateway') and \
+        self.assertEqual(cfg['fgapisrv_lnkptvflag'], 'False') and \
+        self.assertEqual(cfg['fgapisrv_ptvendpoint'],
+                         'http://localhost/ptv') and \
+        self.assertEqual(cfg['fgapisrv_ptvuser'], 'ptvuser') and \
+        self.assertEqual(cfg['fgapisrv_ptvpass'], 'ptvpass') and \
+        self.assertEqual(cfg['fgapisrv_ptvdefusr'], 'futuregateway') and \
+        self.assertEqual(cfg['fgapisrv_ptvdefgrp'], 'administrator') and \
+        self.assertEqual(cfg['fgapisrv_ptvmapfile'], 'fgapiserver_ptvmap.json')
+
+    def test_ConfigTypes(self):
+        """
+        Test that both class defaults and file config settings are matching
+        :return:
+        """
+        self.banner("Check param types")
+        cfg = FGApiServerConfig('fgapiserver.conf')
+
+        for param in cfg.keys():
+            msg = "Checking type for param: '%s'" % param
+            if not (param in cfg.int_types or
+                    param in cfg.bool_types):
+                print "%s is string" % msg
+                self.assertEqual(type(cfg[param]), type(''))
+            elif param in cfg.int_types:
+                print "%s is integer" % msg
+                self.assertEqual(type(cfg[param]), type(1))
+            elif param in cfg.bool_types:
+                print "%s is boolean" % msg
+                self.assertEqual(type(cfg[param]), type(True))
+            else:
+                print "%s is unexpected (%s)" % (msg, type(param))
+                self.assertEqual(0,1)
+
+    def test_LoadConfig(self):
+        """
+        Test that both class defaults and file config settings are matching
+        :return:
+        """
+        self.banner("Check param types")
+        cfg = FGApiServerConfig('fgapiserver.conf')
+        cfg_load = FGApiServerConfig('fgapiserver.conf')
+
+        # Configuration with names and keys matching
+        # String types have the key == value
+        # Bool types are inverted
+        # Integer types are multiplied by -1
+        cfg_dict = {
+            # FGDB
+            "fgapisrv_db_pass": "fgapisrv_db_pass",
+            "fgapisrv_db_name": "fgapisrv_db_name",
+            "fgapisrv_db_host": "fgapisrv_db_host",
+            "fgapisrv_db_port": cfg['fgapisrv_db_port']*-1,
+            "fgapisrv_db_user": "fgapisrv_db_user",
+            # fgAPIServer
+            "fgapisrv_ptvuser": "fgapisrv_ptvuser",
+            "fgapisrv_crt": "fgapisrv_crt",
+            "fgapisrv_iosandbox": "fgapisrv_iosandbox",
+            "fgapisrv_logcfg": "fgapisrv_logcfg",
+            "fgapisrv_host": "fgapisrv_host",
+            "fgapisrv_ptvdefgrp": "fgapisrv_ptvdefgrp",
+            "fgapisrv_secret": "fgapisrv_secret",
+            "fgapiserver_name": "fgapiserver_name",
+            "fgapisrv_ptvendpoint": "fgapisrv_ptvendpoint",
+            "fgapiver": "fgapiver",
+            "fgapisrv_key": "fgapisrv_key",
+            "fgjson_indent": cfg['fgjson_indent']*-1,
+            "fgapisrv_notoken": not cfg['fgapisrv_notoken'],
+            "fgapisrv_ptvdefusr": "fgapisrv_ptvdefusr",
+            "fgapisrv_ptvpass": "fgapisrv_ptvpass",
+            "fgapisrv_ptvmapfile": "fgapisrv_ptvmapfile",
+            "fgapisrv_notokenusr": "fgapisrv_notokenusr",
+            "fgapisrv_dbver": "fgapisrv_dbver",
+            "fgapisrv_debug": not cfg['fgapisrv_debug'],
+            "fgapisrv_port": cfg['fgapisrv_port']*-1,
+            "fgapisrv_lnkptvflag": not cfg['fgapisrv_lnkptvflag'],
+            # GridEngine
+            "utdb_user": "utdb_user",
+            "utdb_pass": "utdb_pass",
+            "utdb_host": "utdb_host",
+            "utdb_port": "utdb_port",
+            "utdb_port": cfg['utdb_port']*-1,
+            "utdb_name": "utdb_name",
+            "fgapisrv_geappid": cfg['fgapisrv_geappid']*-1
+        }
+        cfg_load.load_config(cfg_dict)
+
+        # Check that all keys and values are matching
+        for param in cfg_load.keys():
+            print "cfg['%s'] = '%s' <-> cfg_load['%s'] = '%s'"\
+                  % (param, cfg[param], param, cfg_load[param])
+            if not (param in cfg.int_types or
+                    param in cfg.bool_types):
+                self.assertEqual(cfg_load[param], param)
+            elif param in cfg_load.int_types:
+                self.assertEqual(cfg_load[param], -cfg[param])
+            elif param in cfg_load.bool_types:
+                self.assertEqual(cfg_load[param], not cfg[param])
+            else:
+                print "Unexpected type: '%s' for parameter: '%s'"\
+                      % (type(cfg_load['param']), param)
+                self.assertEqual(0, 1)
+
+
+if __name__ == '__main__':
+    print "----------------------------------"
+    print "Starting unit tests ..."
+    print "----------------------------------"
+    unittest.main(failfast=True)
+

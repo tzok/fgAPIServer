@@ -118,7 +118,8 @@ class FGApiServerConfig(dict):
 
         # Parse configuration file
         config = ConfigParser.ConfigParser()
-        if len(config.read(config_file)) == 0:
+        if config_file is None \
+                or len(config.read(config_file)) == 0:
             self.fgConfigMsg += (
                     "[WARNING]: Couldn't find configuration file '%s'; "
                     " default options will be uses\n" % config_file)
@@ -204,5 +205,5 @@ class FGApiServerConfig(dict):
         """
         if cfg_dict is not None:
             for key in cfg_dict:
-                value = cfg[key]
+                value = cfg_dict[key]
                 self[key] = value
