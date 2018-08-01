@@ -58,15 +58,39 @@ class Test_fgAPIServerConfig(unittest.TestCase):
 
     def test_Defaults(self):
         """
-        Test default configuration settings
+        Test default configuration settings using invalid file as class param
         :return:
         """
-        self.banner("Defaults")
+        self.banner("Defaults config")
         cfg = FGApiServerConfig('')
         print "Configuration: %s" % cfg
-        print "MD5: '%s': " % self.md5sum_str("%s" % cfg)
-        self.assertEqual("0203bce719021cbddd493ed0ccf886c3",
-                         self.md5sum_str("%s" % cfg))
+        for key in cfg.keys():
+            for sec in cfg.defaults.keys():
+                for def_key in cfg.defaults[sec]:
+                    if key == def_key:
+                        print ("cfg['%s'] = '%s' <-> "
+                               "cfg.defaults['%s']['%s'] = '%s'") \
+                              % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
+                        if not (key in cfg.int_types or
+                                key in cfg.bool_types):
+                            self.assertEqual(cfg[key],
+                                             cfg.defaults[sec][def_key])
+                            break
+                        elif key in cfg.int_types:
+                            self.assertEqual(cfg[key],
+                                             int(cfg.defaults[sec][def_key]))
+                            break
+                        elif key in cfg.bool_types:
+                            self.assertEqual(
+                                cfg[key],
+                                cfg.defaults[sec][def_key].lower() == 'true')
+                            break
+                        else:
+                            print "Unexpected type: '%s' for parameter: '%s'" \
+                                  % (type(cfg[key]), key)
+                            self.assertEqual(0,1)
+                        print "Reached end while scanning keys"
+                        self.assertEqual(0,1)
 
     def test_NoneConfigFile(self):
         """
@@ -75,22 +99,69 @@ class Test_fgAPIServerConfig(unittest.TestCase):
         """
         self.banner("Defaults")
         cfg = FGApiServerConfig(None)
-        print "Configuration: %s" % cfg
-        print "MD5: '%s': " % self.md5sum_str("%s" % cfg)
-        self.assertEqual("0203bce719021cbddd493ed0ccf886c3",
-                         self.md5sum_str("%s" % cfg))
+        for key in cfg.keys():
+            for sec in cfg.defaults.keys():
+                for def_key in cfg.defaults[sec]:
+                    if key == def_key:
+                        print ("cfg['%s'] = '%s' <-> "
+                               "cfg.defaults['%s']['%s'] = '%s'") \
+                              % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
+                        if not (key in cfg.int_types or
+                                key in cfg.bool_types):
+                            self.assertEqual(cfg[key],
+                                             cfg.defaults[sec][def_key])
+                            break
+                        elif key in cfg.int_types:
+                            self.assertEqual(cfg[key],
+                                             int(cfg.defaults[sec][def_key]))
+                            break
+                        elif key in cfg.bool_types:
+                            self.assertEqual(
+                                cfg[key],
+                                cfg.defaults[sec][def_key].lower() == 'true')
+                            break
+                        else:
+                            print "Unexpected type: '%s' for parameter: '%s'" \
+                                  % (type(cfg[key]), key)
+                            self.assertEqual(0,1)
+                        print "Reached end while scanning keys"
+                        self.assertEqual(0,1)
 
     def test_DefConfigFile(self):
         """
-        Test default configuration settings from configuration file
+        Test default configuration settings from configuration file,
+        values have to match with defaults
         :return:
         """
         self.banner("Default configuration file")
         cfg = FGApiServerConfig('fgapiserver.conf')
-        print "Configuration: %s" % cfg
-        print "MD5: '%s': " % self.md5sum_str("%s" % cfg)
-        self.assertEqual("0203bce719021cbddd493ed0ccf886c3",
-                         self.md5sum_str("%s" % cfg))
+        for key in cfg.keys():
+            for sec in cfg.defaults.keys():
+                for def_key in cfg.defaults[sec]:
+                    if key == def_key:
+                        print ("cfg['%s'] = '%s' <-> "
+                               "cfg.defaults['%s']['%s'] = '%s'") \
+                              % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
+                        if not (key in cfg.int_types or
+                                key in cfg.bool_types):
+                            self.assertEqual(cfg[key],
+                                             cfg.defaults[sec][def_key])
+                            break
+                        elif key in cfg.int_types:
+                            self.assertEqual(cfg[key],
+                                             int(cfg.defaults[sec][def_key]))
+                            break
+                        elif key in cfg.bool_types:
+                            self.assertEqual(
+                                cfg[key],
+                                cfg.defaults[sec][def_key].lower() == 'true')
+                            break
+                        else:
+                            print "Unexpected type: '%s' for parameter: '%s'" \
+                                  % (type(cfg[key]), key)
+                            self.assertEqual(0,1)
+                        print "Reached end while scanning keys"
+                        self.assertEqual(0,1)
 
     def test_BothConfig(self):
         """
@@ -114,10 +185,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
         """
         self.banner("Config dictionary check")
         cfg = FGApiServerConfig('fgapiserver.conf')
-
         self.assertEqual(cfg['fgapiver'], '1.0') and \
         self.assertEqual(cfg['fgapiserver_name'],
-                         'GridEngine API Server 0.0.71') and \
+                        'GridEngine API Server 0.0.71') and \
         self.assertEqual(cfg['fgapisrv_host'], 'localhost') and \
         self.assertEqual(cfg['fgapisrv_port'], '8888') and \
         self.assertEqual(cfg['fgapisrv_debug'], 'True') and \
@@ -146,7 +216,6 @@ class Test_fgAPIServerConfig(unittest.TestCase):
         """
         self.banner("Check param types")
         cfg = FGApiServerConfig('fgapiserver.conf')
-
         for param in cfg.keys():
             msg = "Checking type for param: '%s'" % param
             if not (param in cfg.int_types or
@@ -171,7 +240,6 @@ class Test_fgAPIServerConfig(unittest.TestCase):
         self.banner("Check param types")
         cfg = FGApiServerConfig('fgapiserver.conf')
         cfg_load = FGApiServerConfig('fgapiserver.conf')
-
         # Configuration with names and keys matching
         # String types have the key == value
         # Bool types are inverted
@@ -229,9 +297,88 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                 self.assertEqual(cfg_load[param], not cfg[param])
             else:
                 print "Unexpected type: '%s' for parameter: '%s'"\
-                      % (type(cfg_load['param']), param)
+                     % (type(cfg_load['param']), param)
                 self.assertEqual(0, 1)
 
+    def test_EnvOverload(self):
+        """
+        Test that environment variables are overloading fileconfig settings
+
+        :return:
+        """
+        self.banner("Evironmnet overloading")
+
+        # Configuration with names and keys matching
+        # String types have the key == value
+        # Bool types are inverted
+        # Integer types are multiplied by -1
+
+        cfg = FGApiServerConfig('fgapiserver.conf')
+
+        cfg_dict = {
+            # FGDB
+            "fgapisrv_db_pass": "fgapisrv_db_pass",
+            "fgapisrv_db_name": "fgapisrv_db_name",
+            "fgapisrv_db_host": "fgapisrv_db_host",
+            "fgapisrv_db_port": cfg['fgapisrv_db_port'] * -1,
+            "fgapisrv_db_user": "fgapisrv_db_user",
+            # fgAPIServer
+            "fgapisrv_ptvuser": "fgapisrv_ptvuser",
+            "fgapisrv_crt": "fgapisrv_crt",
+            "fgapisrv_iosandbox": "fgapisrv_iosandbox",
+            "fgapisrv_logcfg": "fgapisrv_logcfg",
+            "fgapisrv_host": "fgapisrv_host",
+            "fgapisrv_ptvdefgrp": "fgapisrv_ptvdefgrp",
+            "fgapisrv_secret": "fgapisrv_secret",
+            "fgapiserver_name": "fgapiserver_name",
+            "fgapisrv_ptvendpoint": "fgapisrv_ptvendpoint",
+            "fgapiver": "fgapiver",
+            "fgapisrv_key": "fgapisrv_key",
+            "fgjson_indent": cfg['fgjson_indent'] * -1,
+            "fgapisrv_notoken": not cfg['fgapisrv_notoken'],
+            "fgapisrv_ptvdefusr": "fgapisrv_ptvdefusr",
+            "fgapisrv_ptvpass": "fgapisrv_ptvpass",
+            "fgapisrv_ptvmapfile": "fgapisrv_ptvmapfile",
+            "fgapisrv_notokenusr": "fgapisrv_notokenusr",
+            "fgapisrv_dbver": "fgapisrv_dbver",
+            "fgapisrv_debug": not cfg['fgapisrv_debug'],
+            "fgapisrv_port": cfg['fgapisrv_port'] * -1,
+            "fgapisrv_lnkptvflag": not cfg['fgapisrv_lnkptvflag'],
+            # GridEngine
+            "utdb_user": "utdb_user",
+            "utdb_pass": "utdb_pass",
+            "utdb_host": "utdb_host",
+            "utdb_port": "utdb_port",
+            "utdb_port": cfg['utdb_port'] * -1,
+            "utdb_name": "utdb_name",
+            "fgapisrv_geappid": cfg['fgapisrv_geappid'] * -1
+        }
+
+        # Set environment variables
+        for key in cfg_dict:
+            os.environ[key.upper()] = "%s"  % cfg_dict[key]
+
+        cfg_new = FGApiServerConfig('fgapiserver.conf')
+        for key in cfg_new.keys():
+            print ("cfg['%s'] = '%s' <-> %s=%s")\
+                  % (key, cfg_new[key],
+                     key.upper(), os.environ[key.upper()])
+            if not (key in cfg_new.int_types or
+                    key in cfg_new.bool_types):
+                self.assertEqual(cfg_new[key], os.environ[key.upper()])
+            elif key in cfg_new.int_types:
+                self.assertEqual(cfg_new[key],
+                                 int(os.environ[key.upper()]))
+            elif key in cfg_new.bool_types:
+                self.assertEqual(cfg_new[key],
+                                 os.environ[key.upper()].lower() == "true")
+            else:
+                print "type %s is unexpected" % type(cfg_new[key])
+                self.assertEqual(0,1)
+
+        # Unset environment variables
+        for key in cfg_dict:
+            del os.environ[key.upper()]
 
 if __name__ == '__main__':
     print "----------------------------------"

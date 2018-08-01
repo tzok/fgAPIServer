@@ -5,33 +5,13 @@ install:
   - pip install -r requirements.txt
 script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
-  - python tests/test_mklogtoken.py
-  #- |
-  #  cat > getlogtoken.py <<EOF
-  #  from mklogtoken import tokenEncode, tokenDecode, tokenInfo
-  #  key="0123456789ABCDEF"
-  #  username="futuregateway"
-  #  password="futuregateway"
-  #  print tokenEncode(key,username,password)
-  #  EOF
-  #- ./fgapiserver.py >fgapiserver.runlog 2>fgapiserver.runlog &
-  #- |
-  #  cat > dotest.sh <<EOF
-  #  LOGTK=$(python getlogtoken.py)
-  #  SSTKN=$(curl -H "Content-Type: application/json" -H "Authorization: Bearer $LOGTK" -X POST http://localhost:8888/v1.0/auth)
-  #  TASKS=$(curl -H "Authorization: $SSTKN" http://localhost:8888/v1.0/tasks)
-  #  echo "Token        : $LOGTK"
-  #  echo "Session token: $SSTKN"
-  #  echo "Tasks        : $TASKS"
-  #  EOF
-  #- /bin/bash dotest.sh
-  #- cat fgapiserver.runlog
   - cd tests
   - export PYTHONPATH=$PYTHONPATH:..:.
   - export FGAPISRV_NOTOKEN=True
   - export FGAPISRV_NOTOKENUSR=test
-  - python ./test_fgapiserverconfig.py
-  - python ./test_fgapiserver.py
+  - python -m unittest test__mklogtoken.py
+  - python -m unittest test_fgapiserverconfig
+  - python -m unittest test_fgapiserver
 
 branches:
   only:

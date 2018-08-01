@@ -48,7 +48,7 @@ class FGApiServerConfig(dict):
 
     # Default values for configuration settings  
     def_api_ver = '1.0'
-    def_fg_ver = '0.0.71'
+    def_fg_ver = __version__
 
     # Default values; used when conf file does not exists
     # or an option is missing on configuration file
