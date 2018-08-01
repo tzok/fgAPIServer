@@ -9,7 +9,7 @@ script:
   - export PYTHONPATH=$PYTHONPATH:..:.
   - export FGAPISRV_NOTOKEN=True
   - export FGAPISRV_NOTOKENUSR=test
-  - python -m unittest test__mklogtoken.py
+  - python -m unittest test_mklogtoken
   - python -m unittest test_fgapiserverconfig
   - python -m unittest test_fgapiserver
 
