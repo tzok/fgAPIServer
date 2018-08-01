@@ -1623,6 +1623,7 @@ class FGAPIServerDB:
         cursor = None
         safe_transaction = True
         self.err_flag = False
+        as_file = None
         try:
             # Save native APIServer JSON file, having the format:
             # <task_iosandbox_dir>/<task_id>.json
@@ -1679,12 +1680,13 @@ class FGAPIServerDB:
                 self.close_db(db, cursor, safe_transaction)
                 if as_file is not None:
                     as_file.close()
-        except IOError as xxx_todo_changeme1:
-            (errno, strerror) = xxx_todo_changeme1.args
+        except IOError as e:
+            (errno, strerror) = e.args
             self.err_flag = True
             self.err_msg = "I/O error({0}): {1}".format(errno, strerror)
         finally:
-            as_file.close()
+            if as_file is not None:
+                as_file.close()
         return not self.err_flag
 
     """

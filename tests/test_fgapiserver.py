@@ -735,6 +735,52 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
                          self.md5sum_str(result.data))
 
+    """
+    TASKS
+    """
+    def test_get_tasks(self):
+        self.banner("GET /v1.0/tasks")
+        result = self.app.get('/v1.0/tasks')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("4afc5c655ea93bdb34e21d9d18101076",
+                         self.md5sum_str(result.data))
+
+    def test_get_task(self):
+        self.banner("GET /v1.0/tasks/1")
+        result = self.app.get('/v1.0/tasks/1')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("6ab2753736658d09062ced3d7fecae6d",
+                         self.md5sum_str(result.data))
+
+    def test_post_task(self):
+        post_data = {'name': 'Test task',
+                     'description': 'Test application execution',
+                     'parameters': [],
+                     'app_id': 1}
+        self.banner("POST /v1.0/tasks")
+        result = self.app.post(
+            '/v1.0/tasks',
+            data=json.dumps(post_data),
+            content_type="application/json")
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("e2f5a4efa29a391496ca36935a5f106b",
+                         self.md5sum_str(result.data))
+
+    def test_delete_task(self):
+        self.banner("DELETE /v1.0/task/1")
+        result = self.app.delete('/v1.0/tasks/1')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
+                         self.md5sum_str(result.data))
+
 
 if __name__ == '__main__':
     print "----------------------------------"
