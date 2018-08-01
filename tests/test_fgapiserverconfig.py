@@ -18,9 +18,7 @@
 
 import unittest
 import hashlib
-import json
 import os
-import shutil
 from fgapiserverconfig import FGApiServerConfig
 
 __author__ = "Riccardo Bruno"
@@ -73,6 +71,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                               % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
+                            # fgapisrv_notokenusr param is 'test' for Tests
+                            if key == 'fgapisrv_notokenusr':
+                                cfg.defaults[sec][def_key] = 'test'
                             self.assertEqual(cfg[key],
                                              cfg.defaults[sec][def_key])
                             break
@@ -81,6 +82,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                                              int(cfg.defaults[sec][def_key]))
                             break
                         elif key in cfg.bool_types:
+                            # fgapisrv_notoken param is ever TRUE for Tests
+                            if key == 'fgapisrv_notoken':
+                                cfg.defaults[sec][def_key] = 'True'
                             self.assertEqual(
                                 cfg[key],
                                 cfg.defaults[sec][def_key].lower() == 'true')
@@ -88,16 +92,16 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                         else:
                             print "Unexpected type: '%s' for parameter: '%s'" \
                                   % (type(cfg[key]), key)
-                            self.assertEqual(0,1)
+                            self.assertEqual(0, 1)
                         print "Reached end while scanning keys"
-                        self.assertEqual(0,1)
+                        self.assertEqual(0, 1)
 
     def test_NoneConfigFile(self):
         """
         Test default configuration settings using None as class param
         :return:
         """
-        self.banner("Defaults")
+        self.banner("None Config")
         cfg = FGApiServerConfig(None)
         for key in cfg.keys():
             for sec in cfg.defaults.keys():
@@ -108,6 +112,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                               % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
+                            # fgapisrv_notokenusr param is 'test' for Tests
+                            if key == 'fgapisrv_notokenusr':
+                                cfg.defaults[sec][def_key] = 'test'
                             self.assertEqual(cfg[key],
                                              cfg.defaults[sec][def_key])
                             break
@@ -116,6 +123,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                                              int(cfg.defaults[sec][def_key]))
                             break
                         elif key in cfg.bool_types:
+                            # fgapisrv_notoken param is ever TRUE for Tests
+                            if key == 'fgapisrv_notoken':
+                                cfg.defaults[sec][def_key] = 'True'
                             self.assertEqual(
                                 cfg[key],
                                 cfg.defaults[sec][def_key].lower() == 'true')
@@ -123,9 +133,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                         else:
                             print "Unexpected type: '%s' for parameter: '%s'" \
                                   % (type(cfg[key]), key)
-                            self.assertEqual(0,1)
+                            self.assertEqual(0, 1)
                         print "Reached end while scanning keys"
-                        self.assertEqual(0,1)
+                        self.assertEqual(0, 1)
 
     def test_DefConfigFile(self):
         """
@@ -144,6 +154,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                               % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
+                            # fgapisrv_notokenusr param is 'test' for Tests
+                            if key == 'fgapisrv_notokenusr':
+                                cfg.defaults[sec][def_key] = 'test'
                             self.assertEqual(cfg[key],
                                              cfg.defaults[sec][def_key])
                             break
@@ -152,6 +165,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                                              int(cfg.defaults[sec][def_key]))
                             break
                         elif key in cfg.bool_types:
+                            # fgapisrv_notoken param is ever TRUE for Tests
+                            if key == 'fgapisrv_notoken':
+                                cfg.defaults[sec][def_key] = 'True'
                             self.assertEqual(
                                 cfg[key],
                                 cfg.defaults[sec][def_key].lower() == 'true')
@@ -159,9 +175,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                         else:
                             print "Unexpected type: '%s' for parameter: '%s'" \
                                   % (type(cfg[key]), key)
-                            self.assertEqual(0,1)
+                            self.assertEqual(0, 1)
                         print "Reached end while scanning keys"
-                        self.assertEqual(0,1)
+                        self.assertEqual(0, 1)
 
     def test_BothConfig(self):
         """
@@ -185,29 +201,31 @@ class Test_fgAPIServerConfig(unittest.TestCase):
         """
         self.banner("Config dictionary check")
         cfg = FGApiServerConfig('fgapiserver.conf')
-        self.assertEqual(cfg['fgapiver'], '1.0') and \
-        self.assertEqual(cfg['fgapiserver_name'],
-                        'GridEngine API Server 0.0.71') and \
-        self.assertEqual(cfg['fgapisrv_host'], 'localhost') and \
-        self.assertEqual(cfg['fgapisrv_port'], '8888') and \
-        self.assertEqual(cfg['fgapisrv_debug'], 'True') and \
-        self.assertEqual(cfg['fgapisrv_iosandbox'], '/tmp') and \
-        self.assertEqual(cfg['fgjson_indent'], '4') and \
-        self.assertEqual(cfg['fgapisrv_key'], '') and \
-        self.assertEqual(cfg['fgapisrv_crt'], '') and \
-        self.assertEqual(cfg['fgapisrv_logcfg'], 'fgapiserver_log.conf') and \
-        self.assertEqual(cfg['fgapisrv_dbver'], '') and \
-        self.assertEqual(cfg['fgapisrv_secret'], '0123456789ABCDEF') and \
-        self.assertEqual(cfg['fgapisrv_notoken'], 'False') and \
-        self.assertEqual(cfg['fgapisrv_notokenusr'], 'futuregateway') and \
-        self.assertEqual(cfg['fgapisrv_lnkptvflag'], 'False') and \
-        self.assertEqual(cfg['fgapisrv_ptvendpoint'],
-                         'http://localhost/ptv') and \
-        self.assertEqual(cfg['fgapisrv_ptvuser'], 'ptvuser') and \
-        self.assertEqual(cfg['fgapisrv_ptvpass'], 'ptvpass') and \
-        self.assertEqual(cfg['fgapisrv_ptvdefusr'], 'futuregateway') and \
-        self.assertEqual(cfg['fgapisrv_ptvdefgrp'], 'administrator') and \
-        self.assertEqual(cfg['fgapisrv_ptvmapfile'], 'fgapiserver_ptvmap.json')
+        self.assertEqual("%s" % cfg['fgapiver'], '1.0')
+        self.assertEqual("%s" % cfg['fgapiserver_name'],
+                         'GridEngine API Server v0.0.7-1')
+        self.assertEqual("%s" % cfg['fgapisrv_host'], 'localhost')
+        self.assertEqual("%s" % cfg['fgapisrv_port'], '8888')
+        self.assertEqual("%s" % cfg['fgapisrv_debug'], 'True')
+        self.assertEqual("%s" % cfg['fgapisrv_iosandbox'], '/tmp')
+        self.assertEqual("%s" % cfg['fgjson_indent'], '4')
+        self.assertEqual("%s" % cfg['fgapisrv_key'], '')
+        self.assertEqual("%s" % cfg['fgapisrv_crt'], '')
+        self.assertEqual("%s" % cfg['fgapisrv_logcfg'], 'fgapiserver_log.conf')
+        self.assertEqual("%s" % cfg['fgapisrv_dbver'], '')
+        self.assertEqual("%s" % cfg['fgapisrv_secret'], '0123456789ABCDEF')
+        # fgapisrv_notoken is ever True in tests
+        self.assertEqual("%s" % cfg['fgapisrv_notoken'], 'True')
+        # fgapisrv_notokenusr is ever 'test' in tests
+        self.assertEqual("%s" % cfg['fgapisrv_notokenusr'], 'test')
+        self.assertEqual("%s" % cfg['fgapisrv_lnkptvflag'], 'False')
+        self.assertEqual("%s" % cfg['fgapisrv_ptvendpoint'],
+                         'http://localhost/ptv')
+        self.assertEqual("%s" % cfg['fgapisrv_ptvuser'], 'ptvuser')
+        self.assertEqual("%s" % cfg['fgapisrv_ptvpass'], 'ptvpass')
+        self.assertEqual("%s" % cfg['fgapisrv_ptvdefusr'], 'futuregateway')
+        self.assertEqual("%s" % cfg['fgapisrv_ptvdefgrp'], 'administrator')
+        self.assertEqual("%s" % cfg['fgapisrv_ptvmapfile'], 'fgapiserver_ptvmap.json')
 
     def test_ConfigTypes(self):
         """
@@ -230,7 +248,7 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                 self.assertEqual(type(cfg[param]), type(True))
             else:
                 print "%s is unexpected (%s)" % (msg, type(param))
-                self.assertEqual(0,1)
+                self.assertEqual(0, 1)
 
     def test_LoadConfig(self):
         """
@@ -249,7 +267,7 @@ class Test_fgAPIServerConfig(unittest.TestCase):
             "fgapisrv_db_pass": "fgapisrv_db_pass",
             "fgapisrv_db_name": "fgapisrv_db_name",
             "fgapisrv_db_host": "fgapisrv_db_host",
-            "fgapisrv_db_port": cfg['fgapisrv_db_port']*-1,
+            "fgapisrv_db_port": cfg['fgapisrv_db_port'] * -1,
             "fgapisrv_db_user": "fgapisrv_db_user",
             # fgAPIServer
             "fgapisrv_ptvuser": "fgapisrv_ptvuser",
@@ -263,7 +281,7 @@ class Test_fgAPIServerConfig(unittest.TestCase):
             "fgapisrv_ptvendpoint": "fgapisrv_ptvendpoint",
             "fgapiver": "fgapiver",
             "fgapisrv_key": "fgapisrv_key",
-            "fgjson_indent": cfg['fgjson_indent']*-1,
+            "fgjson_indent": cfg['fgjson_indent'] * -1,
             "fgapisrv_notoken": not cfg['fgapisrv_notoken'],
             "fgapisrv_ptvdefusr": "fgapisrv_ptvdefusr",
             "fgapisrv_ptvpass": "fgapisrv_ptvpass",
@@ -271,22 +289,21 @@ class Test_fgAPIServerConfig(unittest.TestCase):
             "fgapisrv_notokenusr": "fgapisrv_notokenusr",
             "fgapisrv_dbver": "fgapisrv_dbver",
             "fgapisrv_debug": not cfg['fgapisrv_debug'],
-            "fgapisrv_port": cfg['fgapisrv_port']*-1,
+            "fgapisrv_port": cfg['fgapisrv_port'] * -1,
             "fgapisrv_lnkptvflag": not cfg['fgapisrv_lnkptvflag'],
             # GridEngine
             "utdb_user": "utdb_user",
             "utdb_pass": "utdb_pass",
             "utdb_host": "utdb_host",
-            "utdb_port": "utdb_port",
-            "utdb_port": cfg['utdb_port']*-1,
+            "utdb_port": cfg['utdb_port'] * -1,
             "utdb_name": "utdb_name",
-            "fgapisrv_geappid": cfg['fgapisrv_geappid']*-1
+            "fgapisrv_geappid": cfg['fgapisrv_geappid'] * -1
         }
         cfg_load.load_config(cfg_dict)
 
         # Check that all keys and values are matching
         for param in cfg_load.keys():
-            print "cfg['%s'] = '%s' <-> cfg_load['%s'] = '%s'"\
+            print "cfg['%s'] = '%s' <-> cfg_load['%s'] = '%s'" \
                   % (param, cfg[param], param, cfg_load[param])
             if not (param in cfg.int_types or
                     param in cfg.bool_types):
@@ -296,8 +313,8 @@ class Test_fgAPIServerConfig(unittest.TestCase):
             elif param in cfg_load.bool_types:
                 self.assertEqual(cfg_load[param], not cfg[param])
             else:
-                print "Unexpected type: '%s' for parameter: '%s'"\
-                     % (type(cfg_load['param']), param)
+                print "Unexpected type: '%s' for parameter: '%s'" \
+                      % (type(cfg_load['param']), param)
                 self.assertEqual(0, 1)
 
     def test_EnvOverload(self):
@@ -348,7 +365,6 @@ class Test_fgAPIServerConfig(unittest.TestCase):
             "utdb_user": "utdb_user",
             "utdb_pass": "utdb_pass",
             "utdb_host": "utdb_host",
-            "utdb_port": "utdb_port",
             "utdb_port": cfg['utdb_port'] * -1,
             "utdb_name": "utdb_name",
             "fgapisrv_geappid": cfg['fgapisrv_geappid'] * -1
@@ -356,11 +372,11 @@ class Test_fgAPIServerConfig(unittest.TestCase):
 
         # Set environment variables
         for key in cfg_dict:
-            os.environ[key.upper()] = "%s"  % cfg_dict[key]
+            os.environ[key.upper()] = "%s" % cfg_dict[key]
 
         cfg_new = FGApiServerConfig('fgapiserver.conf')
         for key in cfg_new.keys():
-            print ("cfg['%s'] = '%s' <-> %s=%s")\
+            print "cfg['%s'] = '%s' <-> %s=%s" \
                   % (key, cfg_new[key],
                      key.upper(), os.environ[key.upper()])
             if not (key in cfg_new.int_types or
@@ -374,15 +390,15 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                                  os.environ[key.upper()].lower() == "true")
             else:
                 print "type %s is unexpected" % type(cfg_new[key])
-                self.assertEqual(0,1)
+                self.assertEqual(0, 1)
 
         # Unset environment variables
         for key in cfg_dict:
             del os.environ[key.upper()]
+
 
 if __name__ == '__main__':
     print "----------------------------------"
     print "Starting unit tests ..."
     print "----------------------------------"
     unittest.main(failfast=True)
-
