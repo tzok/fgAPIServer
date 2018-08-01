@@ -613,13 +613,13 @@ class Test_fgAPIServer(unittest.TestCase):
         password = 'testpwd'
         token = token_encode(key, username, password)
         tinfo = token_decode(key, token)
-        print ("Token with key: '%s'; "
+        print ("Token with key: '%s':"
                "encoding: 'username:=%s:"
                "password=%s:"
                "timestamp=<issue_time>' is '%s'"
                % (key, username, password, token))
         print "Decoded token: '%s' -> '%s'" % (token, tinfo)
-        username2, password2, timestamp2 = token_info(token)
+        username2, password2, timestamp2 = token_info(key, token)
         print ("Token info: 'username=%s:password=%s:timestamp=%s'"
                % (username2, password2, timestamp2))
         self.assertEqual("%s:%s" % (username, password), "%s:%s" % (username2,

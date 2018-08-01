@@ -868,7 +868,6 @@ class FGAPIServerDB:
                 ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                 ',app_id\n'
                 ',description\n'
-                ',status\n'
                 ',user\n'
                 ',iosandbox\n'
                 'from task\n'
@@ -889,9 +888,8 @@ class FGAPIServerDB:
                         task_dbrec[3]),
                     "application": task_dbrec[4],
                     "description": task_dbrec[5],
-                    "status": task_dbrec[6],
-                    "user": task_dbrec[7],
-                    "iosandbox": task_dbrec[8]}
+                    "user": task_dbrec[6],
+                    "iosandbox": task_dbrec[7]}
             else:
                 self.query_done("Task '%s' not found" % task_id)
                 return {}

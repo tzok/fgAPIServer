@@ -46,19 +46,17 @@ queries = [
                ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                ',app_id\n'
                ',description\n'
-               ',status\n'
                ',user\n'
                ',iosandbox\n'
                'from task\n'
                'where id=%s\n'
                '  and status != "PURGED";'),
      'result': [['1',
-                 'DONE',
+                 'WAITING',
                  '1970-01-01T00:00:00',
                  '1970-01-01T00:00:00',
                  '1',
                  'test task',
-                 'WAITING',
                  'test user',
                  '/tmp/test']], },
     {'query': ('select argument\n'
