@@ -23,8 +23,5 @@
 --
 --
 
-create user 'fgapiserver'@'%' identified by "fgapiserver_password";
-grant all privileges on fgapiserver.* to 'fgapiserver'@'%' with grant option;
-
-create user 'fgapiserver'@'localhost' identified by "fgapiserver_password";
-grant all privileges on fgapiserver.* to 'fgapiserver'@'localhost' with grant option;
+grant all on fgapiserver.* TO 'fgapiserver'@'%' IDENTIFIED BY "fgapiserver_password";
+grant all on fgapiserver.* TO 'fgapiserver'@'localhost' IDENTIFIED BY "fgapiserver_password";
