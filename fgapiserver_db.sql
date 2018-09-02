@@ -433,7 +433,7 @@ create table tosca_idc (
 -- by the FutureGateway database
 --
 create table srv_registry (
-    uuid          varchar(1024) not null
+    uuid          char(36) not null
    ,creation      datetime      not null
    ,last_access   datetime      not null
    ,enabled       boolean default true
@@ -450,7 +450,7 @@ create table srv_registry (
 -- the field conf_enabled tells if the configuration is enabled or not
 --
 create table srv_config (
-    uuid          varchar(1024) not null
+    uuid          char(36) not null
    ,name          varchar(256)  not null
    ,value         varchar(4096)
    ,enabled       boolean default true
