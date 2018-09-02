@@ -3,10 +3,6 @@
 --
 -- Copyright (c) 2015:
 -- Istituto Nazionale di Fisica Nucleare (INFN), Italy
--- Consorzio COMETA (COMETA), Italy
---
--- See http://www.infn.it and and http://www.consorzio-cometa.it for details on
--- the copyright holders.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -20,7 +16,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
--- Script that creates the GridEngine based apiserver
+-- Script that creates FutureGateway APIServer
 --
 -- Author: riccardo.bruno@ct.infn.it
 -- Version: %VERSION%
@@ -28,20 +24,6 @@
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
-
-create user 'fgapiserver'@'%';
-alter user 'fgapiserver'@'%' identified by "fgapiserver_password"; 
-grant all privileges
-on fgapiserver.*
-to 'fgapiserver'@'%' 
-with grant option;
-
-create user 'fgapiserver'@'localhost';
-alter user 'fgapiserver'@'localhost' identified by "fgapiserver_password"; 
-grant all privileges
-on fgapiserver.*
-to 'fgapiserver'@'localhost' 
-with grant option;
 
 use fgapiserver;
 
