@@ -2246,7 +2246,7 @@ class FGAPIServerDB:
                     '      ,TRUE\n'
                     'from application_file\n'
                     'where app_id=%s')
-                sql_data = (app_id, file['name'], app_id)
+                sql_data = (app_id, file, app_id)
                 self.log.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             # Insert Application infrastructures
