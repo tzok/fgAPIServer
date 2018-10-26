@@ -1652,7 +1652,7 @@ def app_id_input(app_id=None):
                 }
             else:
                 state = 200
-                esponse =\
+                response =\
                     fgapisrv_db.get_app_record(app_id)['files']
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
