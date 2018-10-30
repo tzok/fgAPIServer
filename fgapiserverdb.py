@@ -3380,7 +3380,7 @@ class FGAPIServerDB:
                    '       mail,\n'
                    '       date_format(creation,\n'
                    '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(creation,\n'
+                   '       date_format(modified,\n'
                    '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                    'from fg_user\n'
                    'where name = %s;')
@@ -3458,7 +3458,7 @@ class FGAPIServerDB:
                    '       mail,\n'
                    '       date_format(creation,\n'
                    '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(creation,\n'
+                   '       date_format(modified,\n'
                    '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                    'from fg_user\n'
                    'where name = %s;')
@@ -3484,3 +3484,82 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return result
+
+    """
+      groups_retrieve - Retrieve groups from database
+    """
+
+    def groups_retrieve(self):
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        groups = []
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select id,\n'
+                   '       name,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(modified,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_group;')
+            sql_data = ()
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            for group_record in cursor:
+                groups += [
+                    {"id":  group_record[0],
+                     "name": group_record[1],
+                     "creation": group_record[2],
+                     "modified": group_record[3]}]
+            self.query_done(
+                "Groups: %s" % groups)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return groups
+
+    """
+      user_groups_retrieve - Retrieve user groups from database
+    """
+
+    def user_groups_retrieve(self, uname):
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        groups = []
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select g.id,\n'
+                   '       g.name,\n'
+                   '       date_format(g.creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(g.modified,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_group g,\n'
+                   '     fg_user_group ug,\n'
+                   '     fg_user u\n'
+                   'where u.name = %s\n'
+                   '  and u.id = ug.user_id\n'
+                   '  and g.id = ug.group_id;')
+            sql_data = (uname,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            for group_record in cursor:
+                groups += [
+                    {"id":  group_record[0],
+                     "name": group_record[1],
+                     "creation": group_record[2],
+                     "modified": group_record[3]}]
+            self.query_done(
+                "User groups for user name '%s': %s" % (uname, groups))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return groups

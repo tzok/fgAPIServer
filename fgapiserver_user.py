@@ -253,3 +253,84 @@ def user(user):
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     return resp
+
+
+@user_api.route('/%s/user/<user>/groups' % fgapiver, methods=['GET', 'POST'])
+@login_required
+def user_group(user):
+
+    logging.debug('user_group(%s)/%s: %s' % (request.method,
+                                             user,
+                                             request.values.to_dict()))
+    u = User(0, user)
+    if request.method == 'GET':
+        if u.fgapisrv_db.user_exists(user):
+            user_groups = u.fgapisrv_db.user_groups_retrieve(user)
+            status = 200
+            response = {'groups':  user_groups}
+        else:
+            status = 404
+            response = {
+                'message': 'User \'%s\' does not exists' % user
+            }
+    elif request.method == 'POST':
+        if not u.fgapisrv_db.user_exists(user):
+            user_record = u.fgapisrv_db.user_retrieve(user)
+            status = 404
+            response = {
+                'message': 'User \'%s\' does not exists' % user
+            }
+        else:
+            params = request.get_json()
+            logger.debug("params: '%s'" % params)
+            status = 200
+            response = {
+                'message': 'Not implemented'}
+            # if params is not None:
+            #    user_data = {
+            #        'first_name': params.get('first_name', ''),
+            #        'last_name': params.get('last_name', ''),
+            #        'name': user,
+            #        'institute': params.get('institute', ''),
+            #        'mail': params.get('mail', ''),
+            #    }
+            #    user_record = u.fgapisrv_db.user_create(user_data)
+            #    if user_record is not None:
+            #        status = 201
+            #        response = user_record
+            #    else:
+            #        status = 400
+
+    logger.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=u.fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
+
+
+@user_api.route('/%s/groups' % fgapiver, methods=['GET', 'POST'])
+@login_required
+def groups():
+
+    logging.debug('user(%s): %s' % (request.method,
+                                    request.values.to_dict()))
+    u = User(0, user)
+    if request.method == 'GET':
+        groups = u.fgapisrv_db.groups_retrieve()
+        status = 200
+        response = {'groups': groups}
+    elif request.method == 'POST':
+        pass
+        # if u.fgapisrv_db.user_exists(user):
+        #    user_record = u.fgapisrv_db.user_retrieve(user)
+        #    status = 200
+        #    response = user_record
+        # else:
+    else:
+        response = {"message": "Unhandled method: '%s'" % request.method}
+
+    logger.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=u.fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp

@@ -847,7 +847,7 @@ queries = [
               '       mail,\n'
               '       date_format(creation,\n'
               '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(creation,\n'
+              '       date_format(modified,\n'
               '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
               'from fg_user\n'
               'where name = %s;',
@@ -880,6 +880,27 @@ queries = [
               '      ,now()\n'
               'from fg_user;',
      'result': None},
+    {'query': 'select id,\n'
+              '       name,\n'
+              '       date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(modified,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              'from fg_group;',
+     'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
+    {'query': 'select g.id,\n'
+              '       g.name,\n'
+              '       date_format(g.creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(g.modified,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              'from fg_group g,\n'
+              '     fg_user_group ug,\n'
+              '     fg_user u\n'
+              'where u.name = %s\n'
+              '  and u.id = ug.user_id\n'
+              '  and g.id = ug.group_id;',
+     'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
     {'query': None,
      'result': None},
 ]
