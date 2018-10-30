@@ -3405,3 +3405,82 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return result
+
+    """
+        user_create - Create a user from given user data
+    """
+
+    def user_create(self, user_data):
+        # Start creating app
+        db = None
+        cursor = None
+        safe_transaction = True
+        infra_id = -1
+        result = None
+        try:
+            # Insert new application record
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('insert into fg_user (id\n'
+                   '                    ,name\n'
+                   '                    ,first_name\n'
+                   '                    ,last_name\n'
+                   '                    ,institute\n'
+                   '                    ,mail\n'
+                   '                    ,password\n'
+                   '                    ,creation\n'
+                   '                    ,modified\n'
+                   '                    )\n'
+                   'select if(max(id) is NULL,1,max(id)+1)\n'
+                   '      ,%s\n'
+                   '      ,%s\n'
+                   '      ,%s\n'
+                   '      ,%s\n'
+                   '      ,%s\n'
+                   '      ,\'\'\n'
+                   '      ,now()\n'
+                   '      ,now()\n'
+                   'from fg_user;'
+                   )
+            sql_data = (user_data['name'],
+                        user_data['first_name'],
+                        user_data['last_name'],
+                        user_data['institute'],
+                        user_data['mail'],)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            # Get inserted record
+            sql = ('select id,\n'
+                   '       name,\n'
+                   '       first_name,\n'
+                   '       last_name,\n'
+                   '       institute,\n'
+                   '       mail,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_user\n'
+                   'where name = %s;')
+            sql_data = (user_data['name'],)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            record = cursor.fetchone()
+            result = {
+                'id': record[0],
+                'name': record[1],
+                'first_name': record[2],
+                'last_name': record[3],
+                'institute': record[4],
+                'mail': record[5],
+                'creation': record[6],
+                'modified': record[7],
+            }
+            self.query_done(
+                "User with name: '%s' successfully created, with id: %s"
+                % (result['name'], result['id']))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result

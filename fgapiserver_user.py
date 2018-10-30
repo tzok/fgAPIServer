@@ -216,15 +216,39 @@ def user(user):
                 'message': 'User \'%s\' does not exists' % user
             }
     elif request.method == 'POST':
-        status = 200
-        response = {
-            'user': user,
-            'id': u.id,
-        }
+        if u.fgapisrv_db.user_exists(user):
+            user_record = u.fgapisrv_db.user_retrieve(user)
+            status = 200
+            response = user_record
+        else:
+            params = request.get_json()
+            logger.debug("params: '%s'" % params)
+            if params is not None:
+                user_data = {
+                    'first_name': params.get('first_name', ''),
+                    'last_name': params.get('last_name', ''),
+                    'name': user,
+                    'institute': params.get('institute', ''),
+                    'mail': params.get('mail', ''),
+                }
+                user_record = u.fgapisrv_db.user_create(user_data)
+                if user_record is not None:
+                    status = 201
+                    response = user_record
+                else:
+                    status = 400
+                    response = {
+                        'message': 'Unable to create user \'%s\'' % user
+                    }
+            else:
+                status = 400
+                response = {
+                    'message': 'Missing userdata'
+                }
     else:
         response = {"message": "Unhandled method: '%s'" % request.method}
-        logger.debug(message)
 
+    logger.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=u.fgjson_indent)
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'

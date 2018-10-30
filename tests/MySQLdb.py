@@ -859,6 +859,27 @@ queries = [
                  'mail',
                  '01/01/1970',
                  '01/01/1970'], ]},
+    {'query': 'insert into fg_user (id\n'
+              '                    ,name\n'
+              '                    ,first_name\n'
+              '                    ,last_name\n'
+              '                    ,institute\n'
+              '                    ,mail\n'
+              '                    ,password\n'
+              '                    ,creation\n'
+              '                    ,modified\n'
+              '                    )\n'
+              'select if(max(id) is NULL,1,max(id)+1)\n'
+              '      ,%s\n'
+              '      ,%s\n'
+              '      ,%s\n'
+              '      ,%s\n'
+              '      ,%s\n'
+              '      ,\'\'\n'
+              '      ,now()\n'
+              '      ,now()\n'
+              'from fg_user;',
+     'result': None},
     {'query': None,
      'result': None},
 ]
