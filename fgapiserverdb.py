@@ -3327,3 +3327,81 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return result
+
+
+#
+# User
+#
+
+    """
+      user_exists - Return True if the given user exists, False otherwise
+    """
+
+    def user_exists(self, uname):
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select count(*)\n'
+                   'from fg_user\n'
+                   'where name = %s;')
+            sql_data = (uname,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            count = cursor.fetchone()[0]
+            self.query_done(
+                "User \'%s\' existing is %s" % (uname, count > 0))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return count > 0
+
+    """
+      user_retrieve - Retrieve user record from database
+    """
+
+    def user_retrieve(self, uname):
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select id,\n'
+                   '       name,\n'
+                   '       first_name,\n'
+                   '       last_name,\n'
+                   '       institute,\n'
+                   '       mail,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_user\n'
+                   'where name = %s;')
+            sql_data = (uname,)
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            record = cursor.fetchone()
+            result = {
+                'id': record[0],
+                'name': record[1],
+                'first_name': record[2],
+                'last_name': record[3],
+                'institute': record[4],
+                'mail': record[5],
+                'creation': record[6],
+                'modified': record[7],
+            }
+            self.query_done(
+                "User \'%s\' values: %s" % (uname, result > 0))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result

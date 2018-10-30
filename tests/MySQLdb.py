@@ -39,7 +39,7 @@ queries = [
     {'query': 'SELECT VERSION()',
      'result': [['test', ], ]},
     {'query': 'select version from db_patches order by id desc limit 1;',
-     'result': [['0.0.10'], ]},
+     'result': [['0.0.11'], ]},
     {'query': ('select '
                ' id\n'
                ',status\n'
@@ -776,6 +776,11 @@ queries = [
     {'query': ('delete from application_file\n'
                'where app_id=%s;'),
      'result': None},
+    {'query': ('delete from application_file\n'
+               'where app_id = %s\n'
+               '  and file= %s\n'
+               '  and path = %s;'),
+     'result': None},
     {'query': ('insert into application_file\n'
                '    (app_id,\n'
                '     file_id,\n'
@@ -828,6 +833,32 @@ queries = [
                'where id=%s\n'
                '  and app_id=%s;'),
      'result': None},
+    {'query': 'BEGIN',
+     'result': None},
+    {'query': 'select count(*)\n'
+              'from fg_user\n'
+              'where name = %s;',
+     'result': [[1], ]},
+    {'query': 'select id,\n'
+              '       name,\n'
+              '       first_name,\n'
+              '       last_name,\n'
+              '       institute,\n'
+              '       mail,\n'
+              '       date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              'from fg_user\n'
+              'where name = %s;',
+     'result': [['1',
+                 'test_user',
+                 'test_firstname',
+                 'test_lastname',
+                 'institute',
+                 'mail',
+                 '01/01/1970',
+                 '01/01/1970'], ]},
     {'query': None,
      'result': None},
 ]

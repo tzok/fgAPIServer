@@ -148,6 +148,7 @@ def get_token_file(token_file):
                % token_file)
     return token
 
+
 subject_file = '.iam/subject'
 default_subject = '98e3009e-e39b-11e6-bcba-5eef910c8578'
 
@@ -163,6 +164,7 @@ def get_subject_file(subject_file):
         print ("Subject file '%s' could not be accessed; using default"
                % subject_file)
     return subject
+
 
 groups_file = '.iam/groups'
 default_groups = ['Admin',

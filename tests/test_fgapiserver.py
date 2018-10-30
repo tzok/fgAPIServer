@@ -26,6 +26,7 @@ import os
 import shutil
 from fgapiserver import app
 from mklogtoken import token_encode, token_decode, token_info
+from fgapiserver_user import User
 
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
@@ -94,7 +95,7 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_checkDbVer(self):
         self.banner("checkDbVer()")
-        self.assertEqual('0.0.10', fgapiserver.check_db_ver())
+        self.assertEqual('0.0.11', fgapiserver.check_db_ver())
 
     def test_fgapiserver(self):
         self.banner("get_task_app_id(1)")
@@ -282,7 +283,7 @@ class Test_fgAPIServer(unittest.TestCase):
     def create_test_json(self):
         try:
             os.stat(self.test_dir)
-        except:
+        except OSError:
             os.mkdir(self.test_dir)
         f = open('%s/1.json' % self.test_dir, 'w')
         f.write('{}')
@@ -628,6 +629,14 @@ class Test_fgAPIServer(unittest.TestCase):
                                                                     password2))
 
     #
+    # fgapiserver_user
+    #
+    def test_fgapiserver_user(self):
+        self.banner("Testing user")
+        user = User(1, "test_user")
+        assert user is not None
+
+    #
     # REST APIs - Following tests are functional tests
     #
     # MD5 values are taken from the self.md5sum_str(result.data) value
@@ -685,6 +694,16 @@ class Test_fgAPIServer(unittest.TestCase):
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("8ba55904600d405ea07f71e499ca3aa5",
                          self.md5sum_str(result.data))
+
+    def test_get_user(self):
+        self.banner("GET /v1.0/user/test")
+        result = self.app.get('/v1.0/user/test')
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
+                         self.md5sum_str(result.data))
+
 
 if __name__ == '__main__':
     print "----------------------------------"

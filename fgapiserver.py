@@ -30,6 +30,7 @@ from fgapiserverdb import FGAPIServerDB
 from fgapiserverconfig import FGApiServerConfig
 from fgapiserverptv import FGAPIServerPTV
 from fgapiserver_user import User
+from fgapiserver_user import user_api
 import os
 import sys
 import uuid
@@ -103,6 +104,7 @@ logger.debug(fg_config_obj.get_messages())
 
 # setup Flask app
 app = Flask(__name__)
+app.register_blueprint(user_api)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -124,12 +126,13 @@ def json_bool(bool_value):
         bool_value = 1/0                    -> True/False (int)
     """
     if type(bool_value) != bool:
-        bool_value= str(bool_value)
-        if bool_value.lower() == 'true' or bool_value ==  '1':
+        bool_value = str(bool_value)
+        if bool_value.lower() == 'true' or bool_value == '1':
             bool_value = True
         else:
             bool_value = False
     return bool_value
+
 
 def get_fgapiserver_db():
     """
@@ -1315,7 +1318,7 @@ def file():
                 resp.headers.add('Content-Disposition',
                                  'attachment; filename="%s"' % file_name)
                 return resp
-            except:
+            except IOError:
                 file_response = {
                     "message": "Unable to get file: %s/%s" %
                                (file_path, file_name)}
@@ -1676,7 +1679,7 @@ def app_id_input(app_id=None):
                 try:
                     os.stat(app_dir)
                     logger.debug("App dir: '%s' exists" % app_dir)
-                except:
+                except OSError:
                     logger.debug("Creating app dir: '%s'" % app_dir)
                     os.makedirs(app_dir)
                 uploaded_files = request.files.getlist('file[]')
@@ -2016,7 +2019,9 @@ if __name__ == "__main__":
 
     # Starting-up server
     if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
-        context = (fgapisrv_crt, fgapisrv_key)
+        context = SSL.Context(SSL.SSLv23_METHOD)
+        context.use_privatekey_file(fgapisrv_key)
+        context.use_certificate_file(fgapisrv_crt)
         app.run(host=fgapisrv_host, port=fgapisrv_port,
                 ssl_context=context, debug=fgapisrv_debug)
     else:
