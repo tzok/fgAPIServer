@@ -703,9 +703,18 @@ class Test_fgAPIServer(unittest.TestCase):
     # User
     #
 
+    def test_get_users(self):
+        self.banner("GET /v1.0/users")
+        result = self.app.get('/v1.0/users')
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("1f6e310992a628fa7473c4f63c561ec5",
+                         self.md5sum_str(result.data))
+
     def test_get_user(self):
-        self.banner("GET /v1.0/user/test")
-        result = self.app.get('/v1.0/user/test')
+        self.banner("GET /v1.0/users/test")
+        result = self.app.get('/v1.0/users/test')
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
@@ -718,9 +727,9 @@ class Test_fgAPIServer(unittest.TestCase):
                      'last_name': 'test last name',
                      'institute': 'test institute',
                      'mail': 'test mail'}
-        self.banner("POST /v1.0/user/test")
+        self.banner("POST /v1.0/users")
         result = self.app.post(
-            '/v1.0/user/test',
+            '/v1.0/users',
             data=json.dumps(post_data),
             content_type="application/json")
         print result
@@ -739,8 +748,8 @@ class Test_fgAPIServer(unittest.TestCase):
                          self.md5sum_str(result.data))
 
     def test_get_user_groups(self):
-        self.banner("GET /v1.0/user/test/groups")
-        result = self.app.get('/v1.0/user/test/groups')
+        self.banner("GET /v1.0/users/test/groups")
+        result = self.app.get('/v1.0/users/test/groups')
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)

@@ -3361,6 +3361,52 @@ class FGAPIServerDB:
         return count > 0
 
     """
+      users_retrieve - Retrieve all user records from database
+    """
+
+    def users_retrieve(self):
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        result = []
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select id,\n'
+                   '       name,\n'
+                   '       first_name,\n'
+                   '       last_name,\n'
+                   '       institute,\n'
+                   '       mail,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(modified,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_user\n')
+            sql_data = ()
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            for record in cursor:
+                result += [{
+                    'id': record[0],
+                    'name': record[1],
+                    'first_name': record[2],
+                    'last_name': record[3],
+                    'institute': record[4],
+                    'mail': record[5],
+                    'creation': record[6],
+                    'modified': record[7],}]
+            self.query_done(
+                "Loaded %s users" % len(result))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result
+
+
+    """
       user_retrieve - Retrieve user record from database
     """
 

@@ -901,6 +901,33 @@ queries = [
               '  and u.id = ug.user_id\n'
               '  and g.id = ug.group_id;',
      'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
+    {'query': 'select id,\n'
+              '       name,\n'
+              '       first_name,\n'
+              '       last_name,\n'
+              '       institute,\n'
+              '       mail,\n'
+              '       date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(modified,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              'from fg_user\n',
+     'result': [['1',
+                 'test_user1',
+                 'test_firstname',
+                 'test_lastname',
+                 'institute',
+                 'mail',
+                 '01/01/1970',
+                 '01/01/1970'],
+                ['2',
+                 'test_user2',
+                 'test_firstname',
+                 'test_lastname',
+                 'institute',
+                 'mail',
+                 '01/01/1970',
+                 '01/01/1970'], ]},
     {'query': None,
      'result': None},
 ]

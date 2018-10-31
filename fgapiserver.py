@@ -30,7 +30,7 @@ from fgapiserverdb import FGAPIServerDB
 from fgapiserverconfig import FGApiServerConfig
 from fgapiserverptv import FGAPIServerPTV
 from fgapiserver_user import User
-from fgapiserver_user import user_api
+from fgapiserver_ugr_apis import ugr_apis
 import os
 import sys
 import uuid
@@ -104,7 +104,7 @@ logger.debug(fg_config_obj.get_messages())
 
 # setup Flask app
 app = Flask(__name__)
-app.register_blueprint(user_api)
+app.register_blueprint(ugr_apis)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -2019,9 +2019,7 @@ if __name__ == "__main__":
 
     # Starting-up server
     if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
-        context = SSL.Context(SSL.SSLv23_METHOD)
-        context.use_privatekey_file(fgapisrv_key)
-        context.use_certificate_file(fgapisrv_crt)
+        context = (fgapisrv_crt, fgapisrv_key)
         app.run(host=fgapisrv_host, port=fgapisrv_port,
                 ssl_context=context, debug=fgapisrv_debug)
     else:
