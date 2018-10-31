@@ -3337,23 +3337,28 @@ class FGAPIServerDB:
       user_exists - Return True if the given user exists, False otherwise
     """
 
-    def user_exists(self, uname):
+    def user_exists(self, uname_or_id):
         db = None
         cursor = None
         safe_transaction = False
         count = 0
         try:
+            sql_data = (int(uname_or_id),)
+            clause = 'id = %s'
+        except ValueError:
+            sql_data = (uname_or_id,)
+            clause = 'name = %s'
+        try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = ('select count(*)\n'
                    'from fg_user\n'
-                   'where name = %s;')
-            sql_data = (uname,)
+                   'where %s;' % clause)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
             self.query_done(
-                "User \'%s\' existing is %s" % (uname, count > 0))
+                "User \'%s\' existing is %s" % (uname_or_id, count > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -3396,7 +3401,7 @@ class FGAPIServerDB:
                     'institute': record[4],
                     'mail': record[5],
                     'creation': record[6],
-                    'modified': record[7],}]
+                    'modified': record[7], }]
             self.query_done(
                 "Loaded %s users" % len(result))
         except MySQLdb.Error as e:
@@ -3405,16 +3410,22 @@ class FGAPIServerDB:
             self.close_db(db, cursor, safe_transaction)
         return result
 
-
     """
       user_retrieve - Retrieve user record from database
     """
 
-    def user_retrieve(self, uname):
+    def user_retrieve(self, name_or_id):
         db = None
         cursor = None
         safe_transaction = False
         count = 0
+        result = None
+        try:
+            sql_data = (int(name_or_id),)
+            clause = 'id = %s'
+        except ValueError:
+            sql_data = ('%s' % name_or_id,)
+            clause = 'name = %s'
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -3429,23 +3440,22 @@ class FGAPIServerDB:
                    '       date_format(modified,\n'
                    '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                    'from fg_user\n'
-                   'where name = %s;')
-            sql_data = (uname,)
+                   'where ' + clause + ';')
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             record = cursor.fetchone()
-            result = {
-                'id': record[0],
-                'name': record[1],
-                'first_name': record[2],
-                'last_name': record[3],
-                'institute': record[4],
-                'mail': record[5],
-                'creation': record[6],
-                'modified': record[7],
-            }
+            if record is not None:
+                result = {
+                    'id': record[0],
+                    'name': record[1],
+                    'first_name': record[2],
+                    'last_name': record[3],
+                    'institute': record[4],
+                    'mail': record[5],
+                    'creation': record[6],
+                    'modified': record[7], }
             self.query_done(
-                "User \'%s\' values: %s" % (uname, result > 0))
+                "User \'%s\' values: %s" % (name_or_id, result > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -3609,3 +3619,47 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return groups
+
+    """
+      group_retrieve - Retrieve group from database by name or id
+    """
+
+    def group_retrieve(self, name_or_id):
+        id = 0
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        result = None
+        try:
+            sql_data = (int(name_or_id),)
+            clause = 'id = %s'
+        except ValueError:
+            sql_data = (name_or_id,)
+            clause = 'name = %s'
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select id,\n'
+                   '       name,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(modified,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_group\n'
+                   'where ' + clause + ';')
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            group_record = cursor.fetchone()
+            if group_record is not None:
+                result = {"id":  group_record[0],
+                          "name": group_record[1],
+                          "creation": group_record[2],
+                          "modified": group_record[3]}
+            self.query_done(
+                "Group: %s" % result)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result

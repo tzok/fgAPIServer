@@ -128,13 +128,14 @@ fgapisrv_db = get_fgapiserver_db()
 @ugr_apis.route('/%s/users' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def users():
+    global fgapisrv_db
 
     logging.debug('users(%s): %s' % (request.method,
                                      request.values.to_dict()))
     if request.method == 'GET':
         user_record = fgapisrv_db.users_retrieve()
         status = 200
-        response = { "users": user_record }
+        response = {"users": user_record}
     elif request.method == 'POST':
         params = request.get_json()
         logger.debug("params: '%s'" % params)
@@ -142,7 +143,7 @@ def users():
             user_data = {
                 'first_name': params.get('first_name', ''),
                 'last_name': params.get('last_name', ''),
-                'name': params.get('name',''),
+                'name': params.get('name', ''),
                 'institute': params.get('institute', ''),
                 'mail': params.get('mail', ''),
             }
@@ -173,6 +174,7 @@ def users():
 @ugr_apis.route('/%s/users/<user>' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def users_user(user):
+    global fgapisrv_db
 
     logging.debug('users(%s)/%s: %s' % (request.method,
                                         user,
@@ -230,6 +232,7 @@ def users_user(user):
 @ugr_apis.route('/%s/users/<user>/groups' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def user_groups(user):
+    global fgapisrv_db
 
     logging.debug('user_groups(%s)/%s: %s' % (request.method,
                                               user,
@@ -282,6 +285,7 @@ def user_groups(user):
 @ugr_apis.route('/%s/groups' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def groups():
+    global fgapisrv_db
 
     logging.debug('groups(%s): %s' % (request.method,
                                       request.values.to_dict()))
@@ -291,11 +295,35 @@ def groups():
         response = {'groups': groups}
     elif request.method == 'POST':
         pass
-        # if u.fgapisrv_db.user_exists(user):
-        #    user_record = u.fgapisrv_db.user_retrieve(user)
-        #    status = 200
-        #    response = user_record
-        # else:
+    else:
+        response = {"message": "Unhandled method: '%s'" % request.method}
+
+    logger.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
+
+
+@ugr_apis.route('/%s/groups/<group>' % fgapiver, methods=['GET', 'POST'])
+@login_required
+def groups_group(group):
+    global fgapisrv_db
+
+    logging.debug('groups_group(%s)/%s: %s' % (request.method,
+                                               group,
+                                               request.values.to_dict()))
+    if request.method == 'GET':
+        groups = fgapisrv_db.group_retrieve(group)
+        if groups is not None:
+            status = 200
+            response = {'groups': groups}
+        else:
+            status = 401
+            response = {
+                'message': 'No groups found with name or id: %s' % group}
+    elif request.method == 'POST':
+        pass
     else:
         response = {"message": "Unhandled method: '%s'" % request.method}
 
