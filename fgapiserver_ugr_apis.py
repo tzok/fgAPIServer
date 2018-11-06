@@ -257,23 +257,24 @@ def user_groups(user):
         else:
             params = request.get_json()
             logger.debug("params: '%s'" % params)
-            status = 200
-            response = {
-                'message': 'Not implemented'}
-            # if params is not None:
-            #    user_data = {
-            #        'first_name': params.get('first_name', ''),
-            #        'last_name': params.get('last_name', ''),
-            #        'name': user,
-            #        'institute': params.get('institute', ''),
-            #        'mail': params.get('mail', ''),
-            #    }
-            #    user_record = u.fgapisrv_db.user_create(user_data)
-            #    if user_record is not None:
-            #        status = 201
-            #        response = user_record
-            #    else:
-            #        status = 400
+            if params is not None:
+                groups = params.get('groups', [])
+                inserted_groups = fgapisrv_db.add_user_groups(user, groups)
+                if inserted_groups is not None:
+                    status = 201
+                    response = {'groups': inserted_groups}
+                else:
+                    status = 400
+                    response = {
+                        'message':
+                            'Unable to assign groups %s to user \'%s\'' %
+                            (groups, user)
+                    }
+            else:
+                status = 400
+                response = {
+                    'message': 'Missing groups'
+                }
 
     logger.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fgjson_indent)

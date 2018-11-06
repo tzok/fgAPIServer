@@ -773,6 +773,19 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual("30661885dc0cdeb44de575468597f446",
                          self.md5sum_str(result.data))
 
+    def test_post_user_groups(self):
+        post_data = {'groups': [1]}
+        self.banner("POST /v1.0/users/test/groups")
+        result = self.app.post(
+            '/v1.0/users/test/groups',
+            data=json.dumps(post_data),
+            content_type="application/json")
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("b8d1575a174363bfe4f586af1a224043",
+                         self.md5sum_str(result.data))
+
 
 if __name__ == '__main__':
     print "----------------------------------"

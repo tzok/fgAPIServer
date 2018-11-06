@@ -928,6 +928,23 @@ queries = [
                  'mail',
                  '01/01/1970',
                  '01/01/1970'], ]},
+    {'query': 'insert into fg_user_group (user_id,\n'
+              '                           group_id,\n'
+              '                           creation)\n'
+              'select u.id, g.id, now()\n'
+              'from fg_user u,\n'
+              'fg_group g\n'
+              'where u.name = %s\n'
+              '  and g.id = %s\n'
+              '  and (select count(*)\n'
+              '       from fg_user u1,\n'
+              '            fg_group g1,\n'
+              '            fg_user_group ug1\n'
+              '       where u1.name = %s\n'
+              '         and g1.id = %s\n'
+              '         and ug1.user_id=u1.id\n'
+              '         and ug1.group_id=g1.id) = 0;',
+     'result': None},
     {'query': None,
      'result': None},
 ]

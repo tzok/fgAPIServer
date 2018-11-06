@@ -3663,3 +3663,63 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return result
+
+    """
+      add_user_groups - Assign to the given user, the given list of groups
+    """
+
+    def add_user_groups(self, uname_or_id, gnames_or_ids):
+        id = 0
+        db = None
+        cursor = None
+        safe_transaction = True
+        count = 0
+        result = []
+        try:
+            usql_data = (int(uname_or_id),)
+            uclause = 'id = %s'
+        except ValueError:
+            usql_data = (uname_or_id,)
+            uclause = 'name = %s'
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            for gname_or_id in gnames_or_ids:
+                try:
+                    gsql_data = (int(gname_or_id),)
+                    gclause = 'id = %s'
+                except ValueError:
+                    gsql_data = (gname_or_id,)
+                    gclause = 'name = %s'
+                sql = ('insert into fg_user_group (user_id,\n'
+                       '                           group_id,\n'
+                       '                           creation)\n'
+                       'select u.id, g.id, now()\n'
+                       'from fg_user u,\n'
+                       'fg_group g\n'
+                       'where u.%s\n'
+                       '  and g.%s\n'
+                       '  and (select count(*)\n'
+                       '       from fg_user u1,\n'
+                       '            fg_group g1,\n'
+                       '            fg_user_group ug1\n'
+                       '       where u1.%s\n'
+                       '         and g1.%s\n'
+                       '         and ug1.user_id=u1.id\n'
+                       '         and ug1.group_id=g1.id) = 0;' %
+                       (uclause,
+                        gclause,
+                        uclause,
+                        gclause))
+            sql_data = usql_data + gsql_data + usql_data + gsql_data
+            self.log.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            result += [gname_or_id, ]
+            self.query_done(
+                "Inserted groups '%s' for user name '%s'" %
+                (result, uname_or_id))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result
