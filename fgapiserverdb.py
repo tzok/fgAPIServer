@@ -3582,12 +3582,18 @@ class FGAPIServerDB:
       user_groups_retrieve - Retrieve user groups from database
     """
 
-    def user_groups_retrieve(self, uname):
+    def user_groups_retrieve(self, uname_or_id):
         db = None
         cursor = None
         safe_transaction = False
         count = 0
         groups = []
+        try:
+            sql_data = (int(uname_or_id),)
+            clause = 'id = %s'
+        except ValueError:
+            sql_data = (uname_or_id,)
+            clause = 'name = %s'
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -3600,10 +3606,9 @@ class FGAPIServerDB:
                    'from fg_group g,\n'
                    '     fg_user_group ug,\n'
                    '     fg_user u\n'
-                   'where u.name = %s\n'
+                   'where u.' + clause + '\n'
                    '  and u.id = ug.user_id\n'
                    '  and g.id = ug.group_id;')
-            sql_data = (uname,)
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             for group_record in cursor:
@@ -3613,7 +3618,7 @@ class FGAPIServerDB:
                      "creation": group_record[2],
                      "modified": group_record[3]}]
             self.query_done(
-                "User groups for user name '%s': %s" % (uname, groups))
+                "User groups for user name '%s': %s" % (uname_or_id, groups))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
