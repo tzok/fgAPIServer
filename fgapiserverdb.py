@@ -3716,10 +3716,10 @@ class FGAPIServerDB:
                         gclause,
                         uclause,
                         gclause))
-            sql_data = usql_data + gsql_data + usql_data + gsql_data
-            self.log.debug(sql % sql_data)
-            cursor.execute(sql, sql_data)
-            result += [gname_or_id, ]
+                sql_data = usql_data + gsql_data + usql_data + gsql_data
+                self.log.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                result += [gname_or_id, ]
             self.query_done(
                 "Inserted groups '%s' for user name '%s'" %
                 (result, uname_or_id))
