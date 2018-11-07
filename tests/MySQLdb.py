@@ -945,6 +945,30 @@ queries = [
               '         and ug1.user_id=u1.id\n'
               '         and ug1.group_id=g1.id) = 0;',
      'result': None},
+    {'query': 'select t.id,\n'
+              '       date_format(t.creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(t.last_change,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') last_change,\n'
+              '       t.app_id,\n'
+              '       t.description,\n'
+              '       t.status,\n'
+              '       t.iosandbox,\n'
+              '       t.user\n'
+              'from task t,\n'
+              '     fg_user u,\n'
+              '     application a\n'
+              'where u.name = %s\n'
+              '  and t.user=u.name\n'
+              '  and t.app_id=a.id;',
+     'result': [['1',
+                 '1970-01-01T00:00:00',
+                 '1970-01-01T00:00:00',
+                 '1',
+                 'test_task',
+                 'TEST',
+                 '/tmp/test_iosandbox',
+                 'test_user', ], ]},
     {'query': None,
      'result': None},
 ]

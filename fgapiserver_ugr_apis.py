@@ -275,6 +275,38 @@ def user_groups(user):
                 response = {
                     'message': 'Missing groups'
                 }
+    else:
+        response = {"message": "Unhandled method: '%s'" % request.method}
+
+    logger.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
+
+
+@ugr_apis.route('/%s/users/<user>/tasks' % fgapiver, methods=['GET', ])
+@login_required
+def user_tasks(user):
+    global fgapisrv_db
+
+    logging.debug('user_tasks(%s)/%s: %s' % (request.method,
+                                             user,
+                                             request.values.to_dict()))
+    application = request.values.get('application')
+
+    if request.method == 'GET':
+        if fgapisrv_db.user_exists(user):
+            user_tasks = fgapisrv_db.user_tasks_retrieve(user, application)
+            status = 200
+            response = {'tasks':  user_tasks}
+        else:
+            status = 404
+            response = {
+                'message': 'User \'%s\' does not exists' % user
+            }
+    else:
+        response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fgjson_indent)
