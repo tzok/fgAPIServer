@@ -548,14 +548,16 @@ queries = [
                'from application\n'
                'order by id asc;'),
      'result': [[1], ]},
-    {'query': ('select name\n'
+    {'query': ('select id\n'
+               '      ,name\n'
                '      ,description\n'
                '      ,outcome\n'
                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                '      ,enabled\n'
                'from application\n'
-               'where id=%s;'),
-     'result': [['test_app',
+               'where id = %s;'),
+     'result': [['1',
+                 'test_app',
                  'test_app_desc',
                  'JOB',
                  '1970-01-01T00:00:00',

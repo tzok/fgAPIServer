@@ -1997,43 +1997,51 @@ class FGAPIServerDB:
         return app_ids
 
     """
-       get_app_record - Get application record from its id
+       get_app_record - Get application record from its id or name
     """
 
-    def get_app_record(self, app_id):
+    def get_app_record(self, app_id_or_name):
         db = None
         cursor = None
         safe_transaction = False
         app_record = {}
         try:
+            sql_data = (int(app_id_or_name),)
+            clause = 'id = %s'
+        except ValueError:
+            sql_data = (app_id_or_name,)
+            clause = 'name = %s'
+        try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             # application record
             sql = (
-                'select name\n'
+                'select id\n'
+                '      ,name\n'
                 '      ,description\n'
                 '      ,outcome\n'
                 '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
                 '      ,enabled\n'
                 'from application\n'
-                'where id=%s;')
-            sql_data = (app_id,)
+                'where ' + clause + ';')
             self.log.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             app_dbrec = cursor.fetchone()
             if app_dbrec is not None:
                 app_dicrec = {
-                    "id": str(app_id),
-                    "name": app_dbrec[0],
-                    "description": app_dbrec[1],
-                    "outcome": app_dbrec[2],
+                    "id": app_dbrec[0],
+                    "name": app_dbrec[1],
+                    "description": app_dbrec[2],
+                    "outcome": app_dbrec[3],
                     "creation": str(
-                        app_dbrec[3]),
-                    "enabled": bool(app_dbrec[4])}
+                        app_dbrec[4]),
+                    "enabled": bool(app_dbrec[5])}
             else:
-                self.query_done("Could not find application '%s'" % app_id)
+                self.query_done(
+                    "Could not find application '%s'" % app_id_or_name)
                 return {}
             # Application parameters
+            app_id = app_dicrec['id']
             sql = ('select pname\n'
                    '      ,pvalue\n'
                    '      ,pdesc\n'
