@@ -39,7 +39,7 @@ queries = [
     {'query': 'SELECT VERSION()',
      'result': [['test', ], ]},
     {'query': 'select version from db_patches order by id desc limit 1;',
-     'result': [['0.0.11'], ]},
+     'result': [['0.0.12a'], ]},
     {'query': ('select '
                ' id\n'
                ',status\n'
@@ -243,6 +243,7 @@ queries = [
                '    ,fg_group_role gr  \n'
                '    ,fg_role        r  \n'
                'where u.id=%s          \n'
+               '  and u.enabled = true \n'
                '  and u.id=ug.user_id  \n'
                '  and g.id=ug.group_id \n'
                '  and g.id=gr.group_id \n'

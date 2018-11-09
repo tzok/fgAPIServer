@@ -256,9 +256,18 @@ create table fg_user (
    ,last_name    varchar(128)  not null                -- last name
    ,institute    varchar(256)  not null                -- institution
    ,mail         varchar(1024) not null                -- email, more addresses as comma separated values
-   ,creation     datetime      not null                -- When user has been inserted
-   ,modified     datetime      not null                -- When user has been modified
+   ,creation     datetime      not null                -- when user has been inserted
+   ,modified     datetime      not null                -- when user has been modified
+   ,enabled      boolean       not null default false  -- user enabling flag
    ,primary key(id,name)
+);
+
+-- User activation table
+create table fg_user_check (
+    user_id        int unsigned  not null -- User id to enable
+   ,token          varchar(1024) not null -- Enabling token
+   ,token_expiry   datetime      not null -- Expiry date for enabling token
+   ,foreign key(user_id) references fg_user(id)
 );
 
 -- Users baseline values; users and passwords must be replaced with real values
@@ -462,5 +471,5 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.11','baseline setup','../fgapiserver_db.sql',now());
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.12a','baseline setup','../fgapiserver_db.sql',now());
 

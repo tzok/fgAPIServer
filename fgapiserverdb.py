@@ -360,6 +360,7 @@ class FGAPIServerDB:
                        '    ,fg_group_role gr  \n'
                        '    ,fg_role        r  \n'
                        'where u.id=%s          \n'
+                       '  and u.enabled = true \n'
                        '  and u.id=ug.user_id  \n'
                        '  and g.id=ug.group_id \n'
                        '  and g.id=gr.group_id \n'
