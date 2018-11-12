@@ -81,7 +81,7 @@ fgapisrv_dbver = fg_config['fgapisrv_dbver']
 fgapisrv_secret = fg_config['fgapisrv_secret']
 fgapisrv_notoken = fg_config['fgapisrv_notoken'].lower() == 'true'
 fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
-fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
+fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag'].lower() == 'true'
 fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
 fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
 fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
@@ -331,9 +331,13 @@ def create_session_token(**kwargs):
     global fgapisrv_db
     timestamp = int(time.time())
     sestoken = ""
+    user = kwargs.get("user", "")
     logtoken = kwargs.get("logtoken", "")
     username = kwargs.get("username", "")
     password = kwargs.get("password", "")
+    sestoken = None
+    delegated_token = None
+
     if len(logtoken) > 0:
         # Calculate credentials starting from a logtoken
         username, password, timestamp = process_log_token(logtoken)
@@ -351,7 +355,21 @@ def create_session_token(**kwargs):
                                         logtoken,
                                         username,
                                         password))
-    return sestoken
+
+    if len(user) > 0:
+        # A different user has been specified
+        # First get user info from token
+        user_token = fgapisrv_db.user_token(sestoken)
+
+        # Verify the user has the user_impersonate right
+        if user_token['name'] != user and\
+            fgapisrv_db.verify_user_role(user_token['id'], 'user_impersonate'):
+            delegated_token = fgapisrv_db.create_delegated_token(sestoken, user)
+            logger.debug(
+                "Delegated token is: '%s' for user: '%s'" %
+                (delegated_token, user))
+
+    return sestoken, delegated_token
 
 
 def authorize_user(current_user, app_id, user, reqroles):
@@ -692,47 +710,52 @@ def auth():
     global logger
     logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
     token = ""
+    delegated_token = ""
     message = ""
+    user = request.values.get('user')
     logtoken = request.values.get('token')
     username = request.values.get('username')
     password = request.values.get('password')
     if request.method == 'GET':
         if logtoken is not None or len(token) > 0:
             # Retrieve access token from an login token
-            token = create_session_token(logtoken=logtoken)
+            token, delegated_token = create_session_token(logtoken=logtoken, user=user)
         elif username is not None and len(username) > 0 \
                 and password is not None and len(password) > 0:
             # Retrieve token from given username and password
-            token = create_session_token(username=username, password=password)
+            token, delegated_token = create_session_token(username=username,
+                                                          password=password,
+                                                          user=user)
         else:
             message = "No credentials found!"
         logger.debug('session token: %s' % token)
     elif request.method == 'POST':
         auth = request.headers.get('Authorization')
-        auth_bearer = auth.split(" ")  # Authorization: Bearer <Token>
-        # Authorization: <Username>/Base64(Password)
-        auth_creds0 = auth.split("/")
-        # Authorization: <Username>:Base64(Password)
-        auth_creds1 = auth.split(":")
-        if len(auth_bearer) > 1 and auth_bearer[0] == "Bearer":
-            # Retrieve access token from an login token
-            token = create_session_token(logtoken=auth_bearer[1])
-        elif len(auth_creds0) > 1 \
-                and len(auth_creds0[0]) > 0 \
-                and len(auth_creds0[1]) > 0:
-            # Retrieve token from given username and password
-            token = create_session_token(
-                username=auth_creds0[0],
-                password=base64.b64decode(
-                    auth_creds0[1]))
-        elif len(auth_creds1) > 1 \
-                and len(auth_creds0[1]) > 0 \
-                and len(auth_creds1[1]) > 0:
-            # Retrieve token from given username and password
-            token = create_session_token(
-                username=auth_creds1[0],
-                password=base64.b64decode(
-                    auth_creds1[1]))
+        # auth may be in the form:
+        #     'Bearer TOKEN'
+        #     'Username/Password' or 'Username:Password'
+        auth_bearer = auth.split(" ")
+        if auth_bearer[0] == "Bearer":
+            try:
+                token = auth_bearer[1]
+            except IndexError:
+                token = ''
+            if token != '':
+                # Retrieve access token from a login token
+                token, delegated_token = create_session_token(logtoken=token,
+                                                              user=user)
+        auth_usrnpass = auth.split(":")
+        if len(auth_usrnpass) > 1:       
+            token, delegated_token = create_session_token(
+                username=auth_usrnpass[0],
+                password=base64.b64decode(auth_usrnpass[1]),
+                user=user)
+        auth_usrnpass = auth.split("/")
+        if len(auth_usrnpass) > 1:
+           token, delegated_token = create_session_token(
+                username=auth_usrnpass[0],
+                password=base64.b64decode(auth_usrnpass[1]),
+                user=user)
         else:
             # No credentials found
             message = "No credentials found!"
@@ -744,6 +767,8 @@ def auth():
         response = {
             "token": token
         }
+        if delegated_token != "":
+            response['delegated_token'] = delegated_token
         log_status = 200
     else:
         response = {
