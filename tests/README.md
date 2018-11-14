@@ -21,6 +21,12 @@ fgapisrv_notoken    = False
 fgapisrv_lnkptvflag = False
 ```
 
+Test execution can be controlled by environment variables as listed below:
+
+|**Environment variable**|**Description**|
+|**FGTESTS_STOPATFAIL**| If enabled, test execution stops as soon as the first error occurs|
+
+
 ## MySQLdb
 Test script makes use of a custom `MySQLdb` class where each SQL statement executed by the `fgapiserverdb.py` file is hardcoded.
 Each test suite has its own list of statements stored in a unique vector having the form:
