@@ -23,7 +23,8 @@ fgapisrv_lnkptvflag = False
 
 Test execution can be controlled by environment variables as listed below:
 
-|**Environment variable**|**Description**|
+|Environment variable|Description|
+|---|---|
 |**FGTESTS_STOPATFAIL**| If enabled, test execution stops as soon as the first error occurs|
 
 
