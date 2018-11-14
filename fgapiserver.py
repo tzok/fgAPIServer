@@ -335,8 +335,8 @@ def create_session_token(**kwargs):
     logtoken = kwargs.get("logtoken", "")
     username = kwargs.get("username", "")
     password = kwargs.get("password", "")
-    sestoken = None
-    delegated_token = None
+    sestoken = ''
+    delegated_token = '' 
 
     if len(logtoken) > 0:
         # Calculate credentials starting from a logtoken
@@ -347,6 +347,11 @@ def create_session_token(**kwargs):
         sestoken = fgapisrv_db.create_session_token(username,
                                                     password,
                                                     timestamp)
+    else:
+        # Nor logtoken or (username/password) provided
+        return '', ''
+
+    # Log token info
     logger.debug("Session token is:\n"
                  "logtoken: '%s'\n"
                  "username: '%s'\n"
@@ -356,15 +361,17 @@ def create_session_token(**kwargs):
                                         username,
                                         password))
 
-    if len(user) > 0:
+    # Verify is delegated user is provided
+    if len(sestoken) > 0 and len(user) > 0:
         # A different user has been specified
         # First get user info from token
         user_token = fgapisrv_db.user_token(sestoken)
 
         # Verify the user has the user_impersonate right
         if user_token['name'] != user and\
-            fgapisrv_db.verify_user_role(user_token['id'], 'user_impersonate'):
-            delegated_token = fgapisrv_db.create_delegated_token(sestoken, user)
+           fgapisrv_db.verify_user_role(user_token['id'], 'user_impersonate'):
+            delegated_token = fgapisrv_db.create_delegated_token(sestoken,
+                                                                 user)
             logger.debug(
                 "Delegated token is: '%s' for user: '%s'" %
                 (delegated_token, user))
@@ -712,20 +719,23 @@ def auth():
     token = ""
     delegated_token = ""
     message = ""
-    user = request.values.get('user')
-    logtoken = request.values.get('token')
-    username = request.values.get('username')
-    password = request.values.get('password')
+    user = request.values.get('user', '')
+    logtoken = request.values.get('token', '')
+    username = request.values.get('username', '')
+    password = request.values.get('password', '')
     if request.method == 'GET':
-        if logtoken is not None or len(token) > 0:
+        if len(token) > 0:
             # Retrieve access token from an login token
-            token, delegated_token = create_session_token(logtoken=logtoken, user=user)
-        elif username is not None and len(username) > 0 \
-                and password is not None and len(password) > 0:
+            token, delegated_token = create_session_token(
+                logtoken=logtoken,
+                user=user)
+        elif (len(username) > 0 and 
+              len(password) > 0):
             # Retrieve token from given username and password
-            token, delegated_token = create_session_token(username=username,
-                                                          password=password,
-                                                          user=user)
+            token, delegated_token = create_session_token(
+                username=username,
+                password=base64.b64decode(password),
+                user=user)
         else:
             message = "No credentials found!"
         logger.debug('session token: %s' % token)
@@ -742,17 +752,18 @@ def auth():
                 token = ''
             if token != '':
                 # Retrieve access token from a login token
-                token, delegated_token = create_session_token(logtoken=token,
-                                                              user=user)
+                token, delegated_token = create_session_token(
+                    logtoken=token,
+                    user=user)
         auth_usrnpass = auth.split(":")
-        if len(auth_usrnpass) > 1:       
+        if len(auth_usrnpass) > 1:
             token, delegated_token = create_session_token(
                 username=auth_usrnpass[0],
                 password=base64.b64decode(auth_usrnpass[1]),
                 user=user)
         auth_usrnpass = auth.split("/")
         if len(auth_usrnpass) > 1:
-           token, delegated_token = create_session_token(
+            token, delegated_token = create_session_token(
                 username=auth_usrnpass[0],
                 password=base64.b64decode(auth_usrnpass[1]),
                 user=user)
@@ -763,13 +774,23 @@ def auth():
     else:
         message = "Unhandled method: '%s'" % request.method
         logger.debug(message)
+    if len(delegated_token) == 0:
+        message += "Delegated token not created"
+        if len(token) == 0:
+            if len(message) > 0:
+                message += " "
+            message += "Token not created"
     if len(token) > 0:
         response = {
             "token": token
         }
-        if delegated_token != "":
-            response['delegated_token'] = delegated_token
         log_status = 200
+        if len(user) > 0:
+            if len(delegated_token) > 0:
+                response['delegated_token'] = delegated_token
+            else:
+                response['message'] = "Delegated token for user '%s' not created" % user
+                log_status = 203
     else:
         response = {
             "message": message

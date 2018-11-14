@@ -141,7 +141,7 @@ class FGAPIServerDB:
             self.err_flag = False
             self.err_msg = message
             logging.debug("Query done message:\n"
-                           "%s" % message)
+                          "%s" % message)
 
     """
       connect Connects to the fgapiserver database
@@ -260,6 +260,8 @@ class FGAPIServerDB:
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 self.query_done("session token is '%s'" % sestoken)
+            else:
+                sestoken = ''
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -268,7 +270,7 @@ class FGAPIServerDB:
 
     """
       verify_session_token - Check if the passed token is valid and return
-                           the user id and its name
+                             the user id and its name
     """
 
     def verify_session_token(self, sestoken):
@@ -356,15 +358,16 @@ class FGAPIServerDB:
                 cursor.execute(sql, sql_data)
                 user_rec = cursor.fetchone()
                 if user_rec is not None:
-                  user['id'] = user_rec[0]
-                  user['name'] = user_rec[1]
-                  self.query_done(
-                      ("User id: '%s' "
-                       "user name: '%s'" % (user['id'],
-                                            user['name'])))
+                    user['id'] = user_rec[0]
+                    user['name'] = user_rec[1]
+                    self.query_done(
+                        ("User id: '%s' "
+                         "user name: '%s'" %
+                         (user['id'],
+                          user['name'])))
             else:
                 self.query_done(
-                    "No user record for token: %s" %  token)
+                    "No user record for token: %s" % token)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -406,6 +409,8 @@ class FGAPIServerDB:
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 self.query_done("delegated session token is '%s'" % sestoken)
+            else:
+                sestoken = ''
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -1133,7 +1138,7 @@ class FGAPIServerDB:
         # Get app defined files
         app_files = self.get_app_files(app_id)
         logging.debug("Application files for app_id %s are: %s"
-                       % (app_id, app_files))
+                      % (app_id, app_files))
         # Start creating task
         db = None
         cursor = None
@@ -1293,7 +1298,7 @@ class FGAPIServerDB:
             if self.is_overridden_sandbox(app_id):
                 if not self.submit_task(task_id):
                     logging.debug("Unable to submit taks: '%s'"
-                                   % self.err_msg)
+                                  % self.err_msg)
             else:
                 logging.debug("Task %s needs to finalize its input sandbox")
 
@@ -1941,7 +1946,7 @@ class FGAPIServerDB:
             callback_filename = '%s/callback.%s' % (task_record['iosandbox'],
                                                     task_id)
             logging.debug('Creating callback info file: %s'
-                           % callback_filename)
+                          % callback_filename)
             logging.debug('Callback info content: \'%s\'' % json.dumps(info))
             callback_f = open(callback_filename, 'w')
             callback_f.write(json.dumps(info))
@@ -3098,7 +3103,7 @@ class FGAPIServerDB:
                               "path": app_file[1]}
                 app_files += [app_record]
             logging.debug("Associated files for applciation %s:"
-                           % app_files)
+                          % app_files)
             # Process 'files'
             json_files = app_desc.get('files', None)
             if json_files is not None:
@@ -3222,7 +3227,7 @@ class FGAPIServerDB:
                     if isinstance(infra, dict):
                         # Infrastructure is explicitly given
                         logging.error("Explicit infrastructure description "
-                                       "inserting infrastructure: %s" % infra)
+                                      "inserting infrastructure: %s" % infra)
                         sql = ('insert into infrastructure (id\n'
                                '                           ,app_id\n'
                                '                           ,name\n'
@@ -3361,7 +3366,7 @@ class FGAPIServerDB:
                         # Infrastructure will be not removed but placed in
                         # unassigned status (app_id == 0)
                         logging.debug("Infrastructure %s is assigned only "
-                                       "to application %s" % (infra, app_id))
+                                      "to application %s" % (infra, app_id))
                         sql = ('update infrastructure\n'
                                'set app_id = 0\n'
                                'where id=%s\n'
@@ -3372,8 +3377,8 @@ class FGAPIServerDB:
                         cursor.execute(sql, sql_data)
                     else:
                         logging.debug("Infrastructure %s is not only "
-                                       "assigned to application %s"
-                                       % (infra, app_id))
+                                      "assigned to application %s" %
+                                      (infra, app_id))
                         sql = ('delete from infrastructure\n'
                                'where id=%s\n'
                                '  and app_id=%s;')
@@ -3388,10 +3393,10 @@ class FGAPIServerDB:
                 try:
                     os.remove(prev_app_file_path)
                     logging.debug("Successfully removed file: '%s'"
-                                   % prev_app_file_path),
+                                  % prev_app_file_path),
                 except OSError:
                     logging.error("Unable to remove file: '%s'"
-                                   % prev_app_file_path)
+                                  % prev_app_file_path)
                 # Unregister file from application_file
                 sql = ('delete from application_file\n'
                        'where app_id = %s\n'

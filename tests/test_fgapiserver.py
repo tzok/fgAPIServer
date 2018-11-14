@@ -35,6 +35,13 @@ __version__ = "v0.0.2-30-g37540b8-37540b8-37"
 __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
 
+# FGTESTS_STOPATFAIL environment controls the execution
+# of the tests, if defined, it stops test execution as
+# soon as the first test error occurs
+stop_at_fail = os.getenv('FGTESTS_STOPATFAIL')
+if stop_at_fail is None:
+    stop_at_fail = False
+
 
 class Test_fgAPIServer(unittest.TestCase):
 
@@ -62,6 +69,14 @@ class Test_fgAPIServer(unittest.TestCase):
     #
     # fgapiserver
     #
+
+    # Baseline authentication must be activated
+    def test_CkeckConfig(self):
+        self.banner("Check configuration settings")
+        self.assertEqual(
+            fgapiserver.fg_config['fgapisrv_notoken'].lower(), 'true')
+        self.assertEqual(
+            fgapiserver.fg_config['fgapisrv_notokenusr'].lower(), 'test')
 
     def test_User(self):
         self.banner("User class")
@@ -800,5 +815,5 @@ if __name__ == '__main__':
     print "----------------------------------"
     print "Starting unit tests ..."
     print "----------------------------------"
-    unittest.main()
+    unittest.main(failfast=stop_at_fail)
     print "Tests completed"
