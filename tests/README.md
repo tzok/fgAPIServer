@@ -28,7 +28,7 @@ Each test suite has its own list of statements stored in a unique vector having 
 The list of supported statements is included in a python vector of maps called: `queries`.
 This vector of maps has the following structure:
 
-```json
+```python
 queries = [
     {'category': '<test suite>',
      'statements': [
@@ -52,5 +52,5 @@ In the functional tests; each returned JSON is compared through its MD5Sum value
 This script executes a simple test on mklogtoken.py code used by the baseline Authentication and Authorization.
 It starts to encrypt username/password and timestamp and retrieve back this information with decrypting method.
 
-## test_user_apis
+## test_user_apis.py
 This test controls fgAPIServer APIs dedicated to the user management, using the baseline authentication method. For this reason it requires a specific configuration setting to work and a dedicated test case has been built to check this condition.
