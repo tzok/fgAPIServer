@@ -303,10 +303,26 @@ fgapiserver_queries = [
                '  and a.id != 0\n'
                '  and i.id = %s;'),
      'result': ['0']},
-    {'query': ('select if(count(*)>0,uuid(),NULL) acctoken \n'
-               'from fg_user \n'
-               'where name=%s and fg_user.password=sha(%s);'),
-     'result': [['TEST_ACCESS_TOKEN'], ]},
+    {'query': ('select if(count(*)>0,\n'
+               '          if((select count(token)\n'
+               '              from fg_token t\n'
+               '              where t.subject = %s\n'
+               '                and t.creation+t.expiry>now()\n'
+               '              order by t.creation desc\n'
+               '              limit 1) > 0,\n'
+               '             concat(\'recycled\',\':\',\n'
+               '                    (select token\n'
+               '                     from fg_token t\n'
+               '                     where t.subject = %s\n'
+               '                     and t.creation+t.expiry>now()\n'
+               '                     order by t.creation desc\n'
+               '                     limit 1)),\n'
+               '             concat(\'new\',\':\',uuid())),\n'
+               '          NULL) acctoken\n'
+               'from fg_user u\n'
+               'where u.name=%s\n'
+               '  and u.password=sha(%s);'),
+     'result': [['new:TEST_ACCESS_TOKEN'], ]},
     {'query': ('insert into fg_token \n'
                '  select %s, id, now() creation, 24*60*60\n'
                '  from  fg_user \n'

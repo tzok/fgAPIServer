@@ -336,7 +336,7 @@ def create_session_token(**kwargs):
     username = kwargs.get("username", "")
     password = kwargs.get("password", "")
     sestoken = ''
-    delegated_token = '' 
+    delegated_token = ''
 
     if len(logtoken) > 0:
         # Calculate credentials starting from a logtoken
@@ -729,7 +729,7 @@ def auth():
             token, delegated_token = create_session_token(
                 logtoken=logtoken,
                 user=user)
-        elif (len(username) > 0 and 
+        elif (len(username) > 0 and
               len(password) > 0):
             # Retrieve token from given username and password
             token, delegated_token = create_session_token(
@@ -789,7 +789,8 @@ def auth():
             if len(delegated_token) > 0:
                 response['delegated_token'] = delegated_token
             else:
-                response['message'] = "Delegated token for user '%s' not created" % user
+                response['message'] = (
+                    "Delegated token for user '%s' not created" % user)
                 log_status = 203
     else:
         response = {

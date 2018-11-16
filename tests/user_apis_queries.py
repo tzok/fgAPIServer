@@ -39,9 +39,9 @@ user_apis_queries = [
               '                      creation,\n'
               '                      expiry)\n'
               '  select %s, %s, id, now() creation, 24*60*60\n'
-              '  from  fg_user\n'
-              '  where name=%s\n'
-              '    and fg_user.password=sha(%s);',
+              '  from  fg_user u\n'
+              '  where u.name=%s\n'
+              '    and u.password=sha(%s);',
      'result': None},
     {'query': 'insert into fg_token (token,\n'
               '                      subject,\n'
@@ -49,16 +49,31 @@ user_apis_queries = [
               '                      creation,\n'
               '                      expiry)\n'
               '  select %s, %s, id, now() creation, 24*60*60\n'
-              '  from  fg_user\n'
-              '  where name=%s;',
+              '  from  fg_user u\n'
+              '  where u.name=%s;',
      'result': None},
-    {'query': 'select if(count(*)>0,uuid(),NULL) acctoken \n'
-              'from fg_user \n'
-              'where name=%s\n'
+    {'query': 'select if(count(*)>0,\n'
+              '          if((select count(token)\n'
+              '              from fg_token t\n'
+              '              where t.subject = %s\n'
+              '                and t.creation+t.expiry>now()\n'
+              '              order by t.creation desc\n'
+              '              limit 1) > 0,\n'
+              '             concat(\'recycled\',\':\',\n'
+              '                    (select token\n'
+              '                     from fg_token t\n'
+              '                     where t.subject = %s\n'
+              '                     and t.creation+t.expiry>now()\n'
+              '                     order by t.creation desc\n'
+              '                     limit 1)),\n'
+              '             concat(\'new\',\':\',uuid())),\n'
+              '          NULL) acctoken\n'
+              'from fg_user u\n'
+              'where u.name=%s\n'
               '  and (select creation+expiry > now()\n'
               '       from fg_token\n'
               '       where token = %s);',
-     'result': [['DELEGATED_ACCESS_TOKEN', ], ]},
+     'result': [['new:DELEGATED_ACCESS_TOKEN', ], ]},
 ]
 
 # user_apis tests queries

@@ -314,7 +314,9 @@ def user_tasks(user):
     resp.headers['Content-type'] = 'application/json'
     return resp
 
-@ugr_apis.route('/%s/users/<user>/tasks/<task_id>' % fgapiver, methods=['GET', ])
+
+@ugr_apis.route(
+    '/%s/users/<user>/tasks/<task_id>' % fgapiver, methods=['GET', ])
 @login_required
 def user_tasks_id(user, task_id):
     global fgapisrv_db
@@ -326,7 +328,7 @@ def user_tasks_id(user, task_id):
 
     if request.method == 'GET':
         if fgapisrv_db.user_exists(user):
-            response = fgapisrv_db.get_task_record(task_id) 
+            response = fgapisrv_db.get_task_record(task_id)
             status = 200
         else:
             status = 404

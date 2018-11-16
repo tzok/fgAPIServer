@@ -236,32 +236,61 @@ class FGAPIServerDB:
         cursor = None
         safe_transaction = True
         sestoken = ''
+        token_record = ''
+        token_fields = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select if(count(*)>0,uuid(),NULL) acctoken \n'
-                   'from fg_user \n'
-                   'where name=%s and fg_user.password=sha(%s);')
-            sql_data = (username, password)
+            sql = ('select if(count(*)>0,\n'
+                   '          if((select count(token)\n'
+                   '              from fg_token t\n'
+                   '              where t.subject = %s\n'
+                   '                and t.creation+t.expiry>now()\n'
+                   '              order by t.creation desc\n'
+                   '              limit 1) > 0,\n'
+                   '             concat(\'recycled\',\':\',\n'
+                   '                    (select token\n'
+                   '                     from fg_token t\n'
+                   '                     where t.subject = %s\n'
+                   '                     and t.creation+t.expiry>now()\n'
+                   '                     order by t.creation desc\n'
+                   '                     limit 1)),\n'
+                   '             concat(\'new\',\':\',uuid())),\n'
+                   '          NULL) acctoken\n'
+                   'from fg_user u\n'
+                   'where u.name=%s\n'
+                   '  and u.password=sha(%s);')
+            sql_data = (username, username, username, password)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            sestoken = cursor.fetchone()[0]
-            if sestoken is not None:
-                sql = ('insert into fg_token (token,\n'
-                       '                      subject,\n'
-                       '                      user_id,\n'
-                       '                      creation,\n'
-                       '                      expiry)\n'
-                       '  select %s, %s, id, now() creation, 24*60*60\n'
-                       '  from  fg_user\n'
-                       '  where name=%s\n'
-                       '    and fg_user.password=sha(%s);')
-                sql_data = (sestoken, username, username, password)
+            token_record = cursor.fetchone()[0]
+            # Recycled token do not require the insertion
+            if token_record is not None:
+                token_fields = token_record.split(':')
+                token_type = token_fields[0]
+                sestoken = token_fields[1]
+                # New token will be inserted
+                if token_type == 'new':
+                    sql = ('insert into fg_token (token,\n'
+                           '                      subject,\n'
+                           '                      user_id,\n'
+                           '                      creation,\n'
+                           '                      expiry)\n'
+                           '  select %s, %s, id, now() creation, 24*60*60\n'
+                           '  from  fg_user u\n'
+                           '  where u.name=%s\n'
+                           '    and u.password=sha(%s);')
+                    sql_data = (sestoken, username, username, password)
+                elif token_type == 'recycled':
+                    sql = (
+                        'update fg_token set creation = now()'
+                        ' where token = %s')
+                    sql_data = (sestoken, )
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
-                self.query_done("session token is '%s'" % sestoken)
             else:
                 sestoken = ''
+            self.query_done("session token is '%s'" % sestoken)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -383,34 +412,61 @@ class FGAPIServerDB:
         cursor = None
         safe_transaction = True
         sestoken = ''
+        token_record = ''
+        token_fields = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select if(count(*)>0,uuid(),NULL) acctoken \n'
-                   'from fg_user \n'
-                   'where name=%s\n'
+            sql = ('select if(count(*)>0,\n'
+                   '          if((select count(token)\n'
+                   '              from fg_token t\n'
+                   '              where t.subject = %s\n'
+                   '                and t.creation+t.expiry>now()\n'
+                   '              order by t.creation desc\n'
+                   '              limit 1) > 0,\n'
+                   '             concat(\'recycled\',\':\',\n'
+                   '                    (select token\n'
+                   '                     from fg_token t\n'
+                   '                     where t.subject = %s\n'
+                   '                     and t.creation+t.expiry>now()\n'
+                   '                     order by t.creation desc\n'
+                   '                     limit 1)),\n'
+                   '             concat(\'new\',\':\',uuid())),\n'
+                   '          NULL) acctoken\n'
+                   'from fg_user u\n'
+                   'where u.name=%s\n'
                    '  and (select creation+expiry > now()\n'
                    '       from fg_token\n'
                    '       where token = %s);')
-            sql_data = (username, token)
+            sql_data = (username, username, username, token)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            sestoken = cursor.fetchone()[0]
-            if sestoken is not None:
-                sql = ('insert into fg_token (token,\n'
-                       '                      subject,\n'
-                       '                      user_id,\n'
-                       '                      creation,\n'
-                       '                      expiry)\n'
-                       '  select %s, %s, id, now() creation, 24*60*60\n'
-                       '  from  fg_user\n'
-                       '  where name=%s;')
-                sql_data = (sestoken, username, username, )
+            token_record = cursor.fetchone()[0]
+            # Recycled token do not require the insertion
+            if token_record is not None:
+                token_fields = token_record.split(':')
+                token_type = token_fields[0]
+                sestoken = token_fields[1]
+                # New token will be inserted
+                if token_type == 'new':
+                    sql = ('insert into fg_token (token,\n'
+                           '                      subject,\n'
+                           '                      user_id,\n'
+                           '                      creation,\n'
+                           '                      expiry)\n'
+                           '  select %s, %s, id, now() creation, 24*60*60\n'
+                           '  from  fg_user u\n'
+                           '  where u.name=%s;')
+                    sql_data = (sestoken, username, username, )
+                elif token_type == 'recycled':
+                    sql = ('update fg_token set creation = now()'
+                           ' where token = %s')
+                    sql_data = (sestoken,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
-                self.query_done("delegated session token is '%s'" % sestoken)
             else:
                 sestoken = ''
+            self.query_done("session token is '%s'" % sestoken)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
