@@ -258,7 +258,7 @@ create table fg_user (
    ,mail         varchar(1024) not null                -- email, more addresses as comma separated values
    ,creation     datetime      not null                -- when user has been inserted
    ,modified     datetime      not null                -- when user has been modified
-   ,enabled      boolean       not null default false  -- user enabling flag
+   ,enabled      boolean       not null default true   -- user enabling flag
    ,primary key(id,name)
 );
 

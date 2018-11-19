@@ -27,7 +27,7 @@ out "WARNING: This change will insert new column having false"
 out "         as default value. However existing users will be"
 out "         enabled."
 cat >$SQLTMP <<EOF
-alter table fg_user add column enabled boolean default false;
+alter table fg_user add column enabled boolean default true;
 update fg_user set enabled = true;
 create table fg_user_check (
     user_id        int unsigned  not null -- User id to enable
