@@ -357,7 +357,25 @@ def groups():
         status = 200
         response = {'groups': groups}
     elif request.method == 'POST':
-        pass
+        params = request.get_json()
+        if params is not None:
+            logger.debug("params: '%s'" % params)
+            group_name = params.get('name', '')
+            new_group = fgapisrv_db.group_add(group_name)
+            if new_group is not None:
+                status = 201
+                response = new_group 
+            else:
+                status = 400
+                response = {
+                    'message':
+                    'Unable to create group: \'%s\'' % group_name
+                }
+        else:
+            status = 400
+            response = {
+                'message': 'Missing group'
+            }
     else:
         response = {"message": "Unhandled method: '%s'" % request.method}
 
@@ -386,7 +404,7 @@ def groups_group(group):
             response = {
                 'message': 'No groups found with name or id: %s' % group}
     elif request.method == 'POST':
-        pass
+        response = {"message": "Not yet implemented" }
     else:
         response = {"message": "Unhandled method: '%s'" % request.method}
 

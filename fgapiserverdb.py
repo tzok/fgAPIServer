@@ -3815,6 +3815,57 @@ class FGAPIServerDB:
         return result
 
     """
+      group_add - Add a given group
+    """
+
+    def group_add(self, group_name):
+        id = 0
+        db = None
+        cursor = None
+        safe_transaction = True 
+        count = 0
+        result = None
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('insert into fg_group (id, name, creation, modified)\n'
+                   'select if(max(id) is NULL,1,max(id)+1),\n'
+                   '       %s,\n'
+                   '       now(),\n'
+                   '       now()\n'
+                   'from fg_group;')
+            sql_data = (group_name, )
+            logging.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            sql = ('select id,\n'
+                   '       name,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(modified,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_group\n'
+                   'where name = %s')
+            sql_data = (group_name, )           
+            logging.debug(sql, sql_data)
+            cursor.execute(sql, sql_data)
+            group_record = cursor.fetchone()
+            if (group_record is not None and
+                group_name == group_record[1]):
+                result = {"id":  group_record[0],
+                          "name": group_record[1],
+                          "creation": group_record[2],
+                          "modified": group_record[3]}
+            else:
+                result = None
+            self.query_done(
+                    "Group: %s successfully created" % group_name)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
       add_user_groups - Assign to the given user, the given list of groups
     """
 
