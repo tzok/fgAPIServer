@@ -364,7 +364,7 @@ def groups():
             new_group = fgapisrv_db.group_add(group_name)
             if new_group is not None:
                 status = 201
-                response = new_group 
+                response = new_group
             else:
                 status = 400
                 response = {
@@ -404,7 +404,7 @@ def groups_group(group):
             response = {
                 'message': 'No groups found with name or id: %s' % group}
     elif request.method == 'POST':
-        response = {"message": "Not yet implemented" }
+        response = {"message": "Not yet implemented"}
     else:
         response = {"message": "Unhandled method: '%s'" % request.method}
 

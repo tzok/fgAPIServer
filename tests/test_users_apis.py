@@ -124,6 +124,15 @@ class Test_UsersAPIs(unittest.TestCase):
         self.assertEqual(user_id, '1')
         self.assertEqual(name, 'test_user')
 
+    def test_GroupAdd(self):
+        self.banner("group_add (fgapiserverdb)")
+        new_group = self.fgapisrv_db.group_add("TEST_GROUP")
+        chk_group = {'creation': '01-01-1979',
+                     'id': 1,
+                     'modified': '01-01-1970',
+                     'name': 'TEST_GROUP'}
+        self.assertEqual(chk_group, new_group)
+
     #
     # REST APIs - Following tests are functional tests
     #
@@ -165,6 +174,26 @@ class Test_UsersAPIs(unittest.TestCase):
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("6dc5ac7125d809b087b0c461ad2ba342",
+                         self.md5sum_str(result.data))
+
+    # Insert group POST groups/
+    def test_post_groups(self):
+        url = ('/v1.0/groups')
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            'name': "TEST_GROUP"
+        }
+        result = self.app.post(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("6a4376e47c877f672e47eac39e0f106e",
                          self.md5sum_str(result.data))
 
 

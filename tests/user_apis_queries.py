@@ -74,6 +74,22 @@ user_apis_queries = [
               '       from fg_token\n'
               '       where token = %s);',
      'result': [['new:DELEGATED_ACCESS_TOKEN', ], ]},
+    {'query': 'insert into fg_group (id, name, creation, modified)\n'
+              'select if(max(id) is NULL,1,max(id)+1),\n'
+              '       %s,\n'
+              '       now(),\n'
+              '       now()\n'
+              'from fg_group;',
+              'result': None},
+    {'query': 'select id,\n'
+              '       name,\n'
+              '       date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(modified,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              'from fg_group\n'
+              'where name = %s',
+     'result': [[1, 'TEST_GROUP', '01-01-1979', '01-01-1970'], ]},
 ]
 
 # user_apis tests queries

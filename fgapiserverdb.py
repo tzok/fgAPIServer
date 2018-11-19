@@ -3822,7 +3822,7 @@ class FGAPIServerDB:
         id = 0
         db = None
         cursor = None
-        safe_transaction = True 
+        safe_transaction = True
         count = 0
         result = None
         try:
@@ -3845,12 +3845,12 @@ class FGAPIServerDB:
                    '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                    'from fg_group\n'
                    'where name = %s')
-            sql_data = (group_name, )           
+            sql_data = (group_name, )
             logging.debug(sql, sql_data)
             cursor.execute(sql, sql_data)
             group_record = cursor.fetchone()
             if (group_record is not None and
-                group_name == group_record[1]):
+               group_name == group_record[1]):
                 result = {"id":  group_record[0],
                           "name": group_record[1],
                           "creation": group_record[2],
