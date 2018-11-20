@@ -2052,6 +2052,16 @@ def after_request(response):
     return response
 
 
+# IP Filtering
+filtered_ips = ('193.206.190.155', )
+
+
+@app.before_request
+def limit_remote_addr():
+    if request.remote_addr in filtered_ips:
+        abort(403)  # Forbidden
+
+
 #
 # The app starts here
 #

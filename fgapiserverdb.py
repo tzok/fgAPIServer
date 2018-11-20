@@ -524,11 +524,12 @@ class FGAPIServerDB:
       user_param_to_user_id - Retrieve the user id from an user parameter
     """
     def user_param_to_user_id(self, user):
-        if (isinstance(user, str) or
-           isinstance(user, unicode)):
-            user_id = self.get_user_id_by_name(user)
-        else:
-            user_id = user
+        user_id = None
+        if user is not None:
+            try:
+                user_id = int(user)
+            except ValueError:
+                user_id = self.get_user_id_by_name(user)
         return user_id
 
     """
@@ -565,11 +566,12 @@ class FGAPIServerDB:
     """
 
     def app_param_to_app_id(self, application):
-        if (isinstance(application, str) or
-           isinstance(application, unicode)):
-            app_id = self.get_app_id_by_name(application)
-        else:
-            app_id = application
+        app_id = None
+        if application is not None:
+            try:
+                app_id = int(application)
+            except ValueError:
+                app_id = self.get_app_id_by_name(application)
         return app_id
 
     """
@@ -606,11 +608,12 @@ class FGAPIServerDB:
     """
 
     def group_param_to_group_id(self, group):
-        if (isinstance(group, str) or
-           isinstance(group, unicode)):
-            group_id = self.get_group_id_by_name(group)
-        else:
-            group_id = group
+        group_id = None
+        if group is not None:
+            try:
+                group_id = int(group)
+            except ValueError:
+                group_id = self.get_group_id_by_name(group)
         return group_id
 
     """
