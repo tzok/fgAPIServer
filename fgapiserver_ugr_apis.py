@@ -395,10 +395,10 @@ def groups_group(group):
                                                group,
                                                request.values.to_dict()))
     if request.method == 'GET':
-        groups = fgapisrv_db.group_retrieve(group)
+        group = fgapisrv_db.group_retrieve(group)
         if groups is not None:
             status = 200
-            response = {'groups': groups}
+            response = group
         else:
             status = 401
             response = {
