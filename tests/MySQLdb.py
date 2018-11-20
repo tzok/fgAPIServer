@@ -120,7 +120,7 @@ class cursor:
                     if rank_max < rankq:
                         rank_max = rankq
                         rank_query = query['query']
-                        rank_index = query_index
+                        rank_index = query['id']
                     if sql == query['query']:
                         self.cursor_results = query['result']
                         print "Test query found, category: '%s' at %s" %\
@@ -134,7 +134,7 @@ class cursor:
             print "!!! Test query not found !!!"
             print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
             print "Procesed queries %s" % query_index
-            print "Closest query at %s is:" % rank_index
+            print "Closest query at index: '%s' is:" % rank_index
             print "'%s'" % rank_query
             print "whith score: %s" % rank_max
             self.hilight_diff(sql, rank_query, True)

@@ -28,11 +28,24 @@ __email__ = "riccardo.bruno@ct.infn.it"
 
 
 fgapiserver_queries = [
-    {'query': 'SELECT VERSION()',
+    {'id': 0,
+     'query': 'SELECT VERSION()',
      'result': [['test', ], ]},
-    {'query': 'select version from db_patches order by id desc limit 1;',
+    {'id': 1,
+     'query': 'select version from db_patches order by id desc limit 1;',
      'result': [['0.0.12a'], ]},
-    {'query': ('select '
+    {'id': 2,
+     'query': 'select id\n'
+              'from fg_user\n'
+              'where name=%s;',
+     'result': [[1], ]},
+    {'id': 3,
+     'query': 'select id\n'
+              'from application\n'
+              'where name=%s;',
+     'result': [[1], ]},
+    {'id': 4,
+     'query': ('select '
                ' id\n'
                ',status\n'
                ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
@@ -54,12 +67,14 @@ fgapiserver_queries = [
                  'WAITING',
                  'test user',
                  '/tmp/test']], },
-    {'query': ('select argument\n'
+    {'id': 5,
+     'query': ('select argument\n'
                'from task_arguments\n'
                'where task_id=%s\n'
                'order by arg_id asc;'),
      'result': [['argument'], ]},
-    {'query': ('select file\n'
+    {'id': 6,
+     'query': ('select file\n'
                '      ,if(path is null or length(path)=0,'
                '          \'NEEDED\','
                '          \'READY\') status\n'
@@ -69,13 +84,15 @@ fgapiserver_queries = [
                'order by file_id asc;'),
      'result': [['input_file_1', 'NEEDED', ''],
                 ['input_file_2', 'READY', '/tmp/test'], ]},
-    {'query': ('select file\n'
+    {'id': 7,
+     'query': ('select file\n'
                '      ,if(path is NULL,\'\',path)\n'
                'from task_output_file\n'
                'where task_id=%s\n'
                'order by file_id asc;'),
      'result': [['output_file_1', '/tmp'], ['output_file_2', '/tmp'], ]},
-    {'query': ('select '
+    {'id': 8,
+     'query': ('select '
                '  data_name\n'
                ' ,data_value\n'
                ' ,data_desc\n'
@@ -103,7 +120,8 @@ fgapiserver_queries = [
                  '1970-01-01T00:00:00',
                  '1970-01-01T00:00:00'],
                 ]},
-    {'query': ('select id\n'
+    {'id': 9,
+     'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
                '      ,outcome\n'
@@ -118,7 +136,8 @@ fgapiserver_queries = [
                  '1970-01-01T00:00:00',
                  '1'],
                 ]},
-    {'query': ('insert into infrastructure_parameter (infra_id\n'
+    {'id': 10,
+     'query': ('insert into infrastructure_parameter (infra_id\n'
                '                                     ,param_id\n'
                '                                     ,pname\n'
                '                                     ,pvalue\n'
@@ -133,7 +152,8 @@ fgapiserver_queries = [
                'where infra_id = %s;'),
      'result': [['test_param_1', 'test_param_value_1', 'test_param_desc_1'],
                 ['test_param_2', 'test_param_value_2'], None]},
-    {'query': ('select id\n'
+    {'id': 11,
+     'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
@@ -147,22 +167,26 @@ fgapiserver_queries = [
                  '1970-01-01T00:00:00',
                  'enabled',
                  'real'], ]},
-    {'query': ('select pname, pvalue\n'
+    {'id': 12,
+     'query': ('select pname, pvalue\n'
                'from infrastructure_parameter\n'
                'where infra_id=%s\n'
                'order by param_id asc;'),
      'result': [['test_infra_param_name_1', 'test_infra_param_value_1'],
                 ['test_infra_param_name_2', 'test_infra_param_value_2'], ]},
-    {'query': ('select task_id '
+    {'id': 13,
+     'query': ('select task_id '
                'from task_output_file '
                'where file=%s and path=%s;'),
      'result': ['1']},
-    {'query': ('select if((creation+expiry)-now()>0,user_id,NULL) user_id\n'
+    {'id': 14,
+     'query': ('select if((creation+expiry)-now()>0,user_id,NULL) user_id\n'
                '      ,(select name from fg_user where id=user_id) name\n'
                'from fg_token\n'
                'where token=%s;'),
      'result': [['1', 'test_user'], ]},
-    {'query': ('select task_id from task_output_file\n'
+    {'id': 15,
+     'query': ('select task_id from task_output_file\n'
                'where file=%s and path=%s\n'
                'union all\n'
                'select task_id from task_input_file\n'
@@ -170,12 +194,14 @@ fgapiserver_queries = [
                'union all\n'
                'select null;'),
      'result': ['1']},
-    {'query': ('select app_id from application_file\n'
+    {'id': 16,
+     'query': ('select app_id from application_file\n'
                'where file=%s and path=%s\n'
                'union all\n'
                'select null;'),
      'result': ['1']},
-    {'query': ('select id        \n'
+    {'id': 17,
+     'query': ('select id        \n'
                '      ,name      \n'
                '      ,password  \n'
                '      ,first_name\n'
@@ -195,10 +221,12 @@ fgapiserver_queries = [
                  'futuregateway@futuregateway',
                  '1970-01-01T00:00:00',
                  '1970-01-01T00:00:00'], ]},
-    {'query': ('select distinct id\n'
+    {'id': 18,
+     'query': ('select distinct id\n'
                'from infrastructure order by 1 asc;'),
      'result': ['1']},
-    {'query': ('select app_id,\n'
+    {'id': 19,
+     'query': ('select app_id,\n'
                '       name,\n'
                '       description,\n'
                '       date_format(creation,\n'
@@ -215,7 +243,8 @@ fgapiserver_queries = [
                  '1970-01-01T00:00:00',
                  0,
                  0]]},
-    {'query': ('select pname\n'
+    {'id': 20,
+     'query': ('select pname\n'
                '      ,pvalue\n'
                '      ,pdesc\n'
                'from infrastructure_parameter\n'
@@ -224,11 +253,13 @@ fgapiserver_queries = [
      'result': [['test_pname1', 'test_pvalue1', 'test_pdesc1'],
                 ['test_pname2', 'test_pvalue2', 'test_pdesc2'],
                 ['test_pname3', 'test_pvalue3', None], ]},
-    {'query': ('select count(*)\n'
+    {'id': 21,
+     'query': ('select count(*)\n'
                'from infrastructure\n'
                'where id = %s;'),
      'result': ['1']},
-    {'query': ('select count(*)>0      \n'
+    {'id': 22,
+     'query': ('select count(*)>0      \n'
                'from fg_user        u  \n'
                '    ,fg_group       g  \n'
                '    ,fg_user_group ug  \n'
@@ -242,7 +273,8 @@ fgapiserver_queries = [
                '  and r.id=gr.role_id  \n'
                '  and r.name = %s;'),
      'result': ['1']},
-    {'query': ('select count(*)>1               \n'
+    {'id': 23,
+     'query': ('select count(*)>1               \n'
                'from fg_user_group              \n'
                'where user_id = (select id      \n'
                '                 from fg_user   \n'
@@ -253,14 +285,16 @@ fgapiserver_queries = [
                'group by group_id               \n'
                'having count(*) > 1;'),
      'result': ['1']},
-    {'query': ('select pname\n'
+    {'id': 24,
+     'query': ('select pname\n'
                '      ,pvalue\n'
                'from application_parameter\n'
                'where app_id=%s\n'
                'order by param_id asc;'),
      'result': [['test_pname1', 'test_pvalue1'],
                 ['test_pname2', 'test_pvalue2'], ]},
-    {'query': ('insert into infrastructure (id\n'
+    {'id': 25,
+     'query': ('insert into infrastructure (id\n'
                '                           ,app_id\n'
                '                           ,name\n'
                '                           ,description\n'
@@ -277,9 +311,11 @@ fgapiserver_queries = [
                '      ,%s\n'
                'from infrastructure;'),
      'result': []},
-    {'query': ('select max(id) from infrastructure;'),
+    {'id': 26,
+     'query': ('select max(id) from infrastructure;'),
      'result': ['1']},
-    {'query': ('select count(*)\n'
+    {'id': 27,
+     'query': ('select count(*)\n'
                'from as_queue q\n'
                '    ,task t\n'
                '    ,application a\n'
@@ -291,19 +327,23 @@ fgapiserver_queries = [
                '  and q.status=\'RUNNING\'\n'
                '  and i.id = %s;'),
      'result': ['0']},
-    {'query': ('delete from infrastructure_parameter\n'
+    {'id': 28,
+     'query': ('delete from infrastructure_parameter\n'
                'where infra_id=%s;'),
      'result': []},
-    {'query': ('delete from infrastructure where id=%s;'),
+    {'id': 29,
+     'query': ('delete from infrastructure where id=%s;'),
      'result': []},
-    {'query': ('select count(*)\n'
+    {'id': 30,
+     'query': ('select count(*)\n'
                'from application a\n'
                '    ,infrastructure i\n'
                'where i.app_id=a.id\n'
                '  and a.id != 0\n'
                '  and i.id = %s;'),
      'result': ['0']},
-    {'query': ('select if(count(*)>0,\n'
+    {'id': 31,
+     'query': ('select if(count(*)>0,\n'
                '          if((select count(token)\n'
                '              from fg_token t\n'
                '              where t.subject = %s\n'
@@ -323,13 +363,15 @@ fgapiserver_queries = [
                'where u.name=%s\n'
                '  and u.password=sha(%s);'),
      'result': [['new:TEST_ACCESS_TOKEN'], ]},
-    {'query': ('insert into fg_token \n'
+    {'id': 32,
+     'query': ('insert into fg_token \n'
                '  select %s, id, now() creation, 24*60*60\n'
                '  from  fg_user \n'
                '  where name=%s \n'
                '    and fg_user.password=sha(%s);'),
      'result': []},
-    {'query': ('select count(*)>0      \n'
+    {'id': 33,
+     'query': ('select count(*)>0      \n'
                'from fg_user        u  \n'
                '    ,fg_group       g  \n'
                '    ,application    a  \n'
@@ -342,11 +384,14 @@ fgapiserver_queries = [
                '  and g.id=ug.group_id \n'
                '  and g.id=ga.group_id;'),
      'result': ['1']},
-    {'query': ('select count(*) from fg_group where lower(name)=%s;'),
+    {'id': 34,
+     'query': ('select count(*) from fg_group where lower(name)=%s;'),
      'result': ['1']},
-    {'query': ('select id, name from fg_user where name=%s;'),
+    {'id': 35,
+     'query': ('select id, name from fg_user where name=%s;'),
      'result': [[1, 'test_user'], ]},
-    {'query': ('insert into fg_user (name, \n'
+    {'id': 36,
+     'query': ('insert into fg_user (name, \n'
                '                     password,\n'
                '                     first_name,\n'
                '                     last_name,\n'
@@ -363,26 +408,30 @@ fgapiserver_queries = [
                '        now(),\n'
                '        now());'),
      'result': []},
-    {'query': ('select count(*)\n'
+    {'id': 37,
+     'query': ('select count(*)\n'
                'from task\n'
                'where id = %s\n'
                '  and user = (select name\n'
                '              from fg_user\n'
                '              where id = %s);'),
      'result': ['1']},
-    {'query': ('select file\n'
+    {'id': 38,
+     'query': ('select file\n'
                '      ,if(path is null,\'NEEDED\',\'READY\') status\n'
                'from task_input_file\n'
                'where task_id = %s;'),
      'result': [['test_ifile_1', 'READY'],
                 ['test_ifile_2', 'NEEDED'], ]},
-    {'query': ('select file\n'
+    {'id': 39,
+     'query': ('select file\n'
                '      ,if(path is null,\'waiting\',\'ready\')\n'
                'from task_output_file\n'
                'where task_id = %s;'),
      'result': [['test_ofile_1', 'ready'],
                 ['test_ofile_2', 'ready'], ]},
-    {'query': ('select file\n'
+    {'id': 40,
+     'query': ('select file\n'
                '      ,path\n'
                '      ,override\n'
                'from application_file\n'
@@ -390,9 +439,11 @@ fgapiserver_queries = [
                'order by file_id asc;'),
      'result': [['test_app_file1', '/path/to/file1', 0],
                 ['test_app_file2', '/path/to/file2', 1], ]},
-    {'query': ('select max(id) from task;'),
+    {'id': 41,
+     'query': ('select max(id) from task;'),
      'result': [[1], ]},
-    {'query': ('insert into task_output_file (task_id\n'
+    {'id': 42,
+     'query': ('insert into task_output_file (task_id\n'
                '                             ,file_id\n'
                '                             ,file)\n'
                'select %s\n'
@@ -401,26 +452,31 @@ fgapiserver_queries = [
                'from task_output_file\n'
                'where task_id=%s'),
      'result': []},
-    {'query': ('select '
+    {'id': 43,
+     'query': ('select '
                '  sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
                'from task_input_file\n'
                'where task_id=%s;'),
      'result': ['1']},
-    {'query': ('select '
+    {'id': 44,
+     'query': ('select '
                '  if(sum(override) is NULL,'
                '     TRUE,'
                '     count(*)=sum(override)) override\n'
                'from application_file\n'
                'where app_id=%s;'),
      'result': ['1']},
-    {'query': ('select iosandbox from task where id=%s;'),
+    {'id': 45,
+     'query': ('select iosandbox from task where id=%s;'),
      'result': [['/tmp/iosandbox'], ]},
-    {'query': ('update task_input_file\n'
+    {'id': 46,
+     'query': ('update task_input_file\n'
                'set path=%s\n'
                'where task_id=%s\n'
                '  and file=%s;'),
      'result': []},
-    {'query': ('select count(*)\n'
+    {'id': 47,
+     'query': ('select count(*)\n'
                'from task\n'
                'where id = %s\n'
                '  and status != \'PURGED\''
@@ -428,7 +484,8 @@ fgapiserver_queries = [
                '              from fg_user\n'
                '              where id = %s);'),
      'result': [[1], ]},
-    {'query': ('insert into as_queue (\n'
+    {'id': 48,
+     'query': ('insert into as_queue (\n'
                '   task_id\n'
                '  ,target_id\n'
                '  ,target\n'
@@ -450,10 +507,12 @@ fgapiserver_queries = [
                '          now(),\n'
                '          %s);'),
      'result': []},
-    {'query': ('update task set status=\'CANCELLED\', '
+    {'id': 49,
+     'query': ('update task set status=\'CANCELLED\', '
                'last_change=now() where id=%s;'),
      'result': []},
-    {'query': ('insert into as_queue (\n'
+    {'id': 50,
+     'query': ('insert into as_queue (\n'
                '   task_id       \n'
                '  ,target_id     \n'
                '  ,target        \n'
@@ -475,7 +534,8 @@ fgapiserver_queries = [
                '          now(),\n'
                '          %s);'),
      'result': []},
-    {'query': ('insert into task (id\n'
+    {'id': 51,
+     'query': ('insert into task (id\n'
                '                 ,creation\n'
                '                 ,last_change\n'
                '                 ,app_id\n'
@@ -493,7 +553,8 @@ fgapiserver_queries = [
                '      ,%s                              -- iosandbox\n'
                'from task;\n'),
      'result': []},
-    {'query': ('insert into task_arguments (task_id\n'
+    {'id': 52,
+     'query': ('insert into task_arguments (task_id\n'
                '                           ,arg_id\n'
                '                           ,argument)\n'
                'select %s\n'
@@ -502,10 +563,12 @@ fgapiserver_queries = [
                'from task_arguments\n'
                'where task_id=%s'),
      'result': []},
-    {'query': ('update task set status=\'SUBMIT\', \n'
+    {'id': 53,
+     'query': ('update task set status=\'SUBMIT\', \n'
                'last_change=now() where id=%s;'),
      'result': []},
-    {'query': ('insert into \n'
+    {'id': 54,
+     'query': ('insert into \n'
                'fg_token (token, subject, user_id, creation, expiry)\n'
                'select %s, %s, %s, now(), NULL\n'
                'from dual\n'
@@ -513,18 +576,21 @@ fgapiserver_queries = [
                '       from fg_token\n'
                '       where token=%s) = 0;'),
      'result': []},
-    {'query': ('select count(*)\n'
+    {'id': 55,
+     'query': ('select count(*)\n'
                'from runtime_data\n'
                'where data_name=%s\n'
                '  and task_id=%s;'),
      'result': ['1']},
-    {'query': ('update runtime_data\n'
+    {'id': 56,
+     'query': ('update runtime_data\n'
                'set data_value = %s\n'
                '   ,last_change = now()\n'
                'where data_name=%s\n'
                '  and task_id=%s;'),
      'result': []},
-    {'query': ('insert into as_queue (task_id,\n'
+    {'id': 57,
+     'query': ('insert into as_queue (task_id,\n'
                '                      action,\n'
                '                      status,\n'
                '                      target,\n'
@@ -549,15 +615,18 @@ fgapiserver_queries = [
                '        where task_id=%s\n'
                '          and action=\'SUBMIT\');'),
      'result': []},
-    {'query': ('select count(*)\n'
+    {'id': 58,
+     'query': ('select count(*)\n'
                'from application\n'
                'where id = %s;'),
      'result': ['1']},
-    {'query': ('select id\n'
+    {'id': 59,
+     'query': ('select id\n'
                'from application\n'
                'order by id asc;'),
      'result': [[1], ]},
-    {'query': ('select id\n'
+    {'id': 60,
+     'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
                '      ,outcome\n'
@@ -571,7 +640,8 @@ fgapiserver_queries = [
                  'JOB',
                  '1970-01-01T00:00:00',
                  1], ]},
-    {'query': ('select pname\n'
+    {'id': 61,
+     'query': ('select pname\n'
                '      ,pvalue\n'
                '      ,pdesc\n'
                'from application_parameter\n'
@@ -583,11 +653,13 @@ fgapiserver_queries = [
                 ['test_param_name2',
                  'test_param_value2',
                  'test_param_desc2'], ]},
-    {'query': ('select id\n'
+    {'id': 62,
+     'query': ('select id\n'
                'from infrastructure\n'
                'where app_id = %s order by id asc;'),
      'result': ['1']},
-    {'query': ('insert into application (id\n'
+    {'id': 63,
+     'query': ('insert into application (id\n'
                '                        ,name\n'
                '                        ,description\n'
                '                        ,outcome\n'
@@ -601,7 +673,8 @@ fgapiserver_queries = [
                '      ,%s                              -- enabled\n'
                'from application;'),
      'result': []},
-    {'query': ('insert into application_parameter (app_id\n'
+    {'id': 64,
+     'query': ('insert into application_parameter (app_id\n'
                '                                  ,param_id\n'
                '                                  ,pname\n'
                '                                  ,pvalue\n'
@@ -614,9 +687,11 @@ fgapiserver_queries = [
                'from application_parameter\n'
                'where app_id=%s'),
      'result': []},
-    {'query': 'select max(id) from application;',
+    {'id': 65,
+     'query': 'select max(id) from application;',
      'result': [[1], ]},
-    {'query': ('insert into application_file (app_id\n'
+    {'id': 66,
+     'query': ('insert into application_file (app_id\n'
                '                            ,file_id\n'
                '                            ,file\n'
                '                            ,path\n'
@@ -629,7 +704,8 @@ fgapiserver_queries = [
                'from application_file\n'
                'where app_id=%s'),
      'result': []},
-    {'query': ('select app_id,\n'
+    {'id': 67,
+     'query': ('select app_id,\n'
                '       name,\n'
                '       description,\n'
                '       enabled,\n'
@@ -643,7 +719,8 @@ fgapiserver_queries = [
                  'test application description',
                  1,
                  0], ]},
-    {'query':  ('insert into infrastructure (id\n'
+    {'id': 68,
+     'query':  ('insert into infrastructure (id\n'
                 '                           ,app_id\n'
                 '                           ,name\n'
                 '                           ,description\n'
@@ -659,7 +736,8 @@ fgapiserver_queries = [
                 '       ,%s    \n'
                 '       ,%s);'),
      'result': None},
-    {'query':  ('insert into infrastructure (id\n'
+    {'id': 69,
+     'query':  ('insert into infrastructure (id\n'
                 '                           ,app_id\n'
                 '                           ,name\n'
                 '                           ,description\n'
@@ -676,36 +754,43 @@ fgapiserver_queries = [
                 '      ,%s\n'
                 'from infrastructure;'),
      'result': None},
-    {'query': ('select count(*)\n'
+    {'id': 70,
+     'query': ('select count(*)\n'
                'from application_file\n'
                'where app_id = %s\n'
                '  and file = %s;'),
      'result': ['1']},
-    {'query': ('update application_file\n'
+    {'id': 71,
+     'query': ('update application_file\n'
                'set path = %s\n'
                'where app_id = %s\n'
                '  and file = %s;'),
      'result': []},
-    {'query': ('select file, path, override\n'
+    {'id': 72,
+     'query': ('select file, path, override\n'
                'from application_file\n'
                'where app_id = %s;'),
      'result': [["test_input_file", "/tmp/test", 0], ]},
-    {'query': ('select id\n'
+    {'id': 73,
+     'query': ('select id\n'
                'from task\n'
                'where status != "PURGED"\n'
                '  and user = %s\n'
                '  and app_id = %s\n'
                ';'),
      'result': [[1], ]},
-    {'query': ('select id\n'
+    {'id': 74,
+     'query': ('select id\n'
                'from task\n'
                'where status != "PURGED"\n'
                '  and user = %s\n'
                ';'),
      'result': [[1], ]},
-    {'query': 'select name from fg_user where id = %s;',
+    {'id': 75,
+     'query': 'select name from fg_user where id = %s;',
      'result': [['test_user', ], ]},
-    {'query': ('insert into as_queue (\n'
+    {'id': 76,
+     'query': ('insert into as_queue (\n'
                '   task_id\n'
                '  ,target_id\n'
                '  ,target\n'
@@ -735,14 +820,16 @@ fgapiserver_queries = [
                '         now(),\n'
                '         %s;'),
      'result': None},
-    {'query': ('update infrastructure set\n'
+    {'id': 77,
+     'query': ('update infrastructure set\n'
                '    name=%s,\n'
                '    description=%s,\n'
                '    enabled=%s,\n'
                '    vinfra=%s\n'
                'where id=%s;'),
      'result': None},
-    {'query': ('insert into infrastructure_parameter\n'
+    {'id': 78,
+     'query': ('insert into infrastructure_parameter\n'
                '    (infra_id,\n'
                '     param_id,\n'
                '     pname,\n'
@@ -757,19 +844,22 @@ fgapiserver_queries = [
                '    from infrastructure_parameter\n'
                '    where infra_id=%s;'),
      'result': None},
-    {'query': ('update application set\n'
+    {'id': 79,
+     'query': ('update application set\n'
                '    name=%s,\n'
                '    description=%s,\n'
                '    outcome=%s,\n'
                '    enabled=%s\n'
                'where id=%s;'),
      'result': None},
-    {'query': ('select file, path\n'
+    {'id': 80,
+     'query': ('select file, path\n'
                'from application_file\n'
                'where app_id = %s\n'
                '  and (path is not null or path != \'\');'),
      'result': [['test', 'test/path'], ]},
-    {'query': ('insert into application_parameter\n'
+    {'id': 81,
+     'query': ('insert into application_parameter\n'
                '    (app_id,\n'
                '     param_id,\n'
                '     pname,\n'
@@ -784,15 +874,18 @@ fgapiserver_queries = [
                '    from application_parameter\n'
                '    where app_id=%s;'),
      'result': None},
-    {'query': ('delete from application_file\n'
+    {'id': 82,
+     'query': ('delete from application_file\n'
                'where app_id=%s;'),
      'result': None},
-    {'query': ('delete from application_file\n'
+    {'id': 83,
+     'query': ('delete from application_file\n'
                'where app_id = %s\n'
                '  and file= %s\n'
                '  and path = %s;'),
      'result': None},
-    {'query': ('insert into application_file\n'
+    {'id': 84,
+     'query': ('insert into application_file\n'
                '    (app_id,\n'
                '     file_id,\n'
                '     file,\n'
@@ -807,10 +900,12 @@ fgapiserver_queries = [
                '    from application_file\n'
                '    where app_id=%s;'),
      'result': None},
-    {'query': ('delete from application_parameter\n'
+    {'id': 85,
+     'query': ('delete from application_parameter\n'
                'where app_id=%s;'),
      'result': None},
-    {'query': ('insert into application_parameter\n'
+    {'id': 86,
+     'query': ('insert into application_parameter\n'
                '    (app_id,\n'
                '     param_id,\n'
                '     pname,\n'
@@ -825,32 +920,40 @@ fgapiserver_queries = [
                '    from application_parameter\n'
                '    where app_id=%s;'),
      'result': None},
-    {'query': ('select id from infrastructure where app_id=%s;'),
+    {'id': 87,
+     'query': ('select id from infrastructure where app_id=%s;'),
      'result': [[1], ]},
-    {'query': ('select count(*)=1\n'
+    {'id': 88,
+     'query': ('select count(*)=1\n'
                'from infrastructure\n'
                'where app_id=0 and id=%s;'),
      'result': [[1], ]},
-    {'query': ('update infrastructure\n'
+    {'id': 89,
+     'query': ('update infrastructure\n'
                'set app_id = %s\n'
                'where id = %s and app_id = 0;'),
      'result': None},
-    {'query': ('select count(*)=1\n'
+    {'id': 90,
+     'query': ('select count(*)=1\n'
                'from infrastructure\n'
                'where id=%s;'),
      'result': [[1], ]},
-    {'query': ('update infrastructure\n'
+    {'id': 91,
+     'query': ('update infrastructure\n'
                'set app_id = 0\n'
                'where id=%s\n'
                '  and app_id=%s;'),
      'result': None},
-    {'query': 'BEGIN',
+    {'id': 92,
+     'query': 'BEGIN',
      'result': None},
-    {'query': 'select count(*)\n'
+    {'id': 93,
+     'query': 'select count(*)\n'
               'from fg_user\n'
-              'where name = %s;',
+              'where id=%s;',
      'result': [[1], ]},
-    {'query': 'select id,\n'
+    {'id': 94,
+     'query': 'select id,\n'
               '       name,\n'
               '       first_name,\n'
               '       last_name,\n'
@@ -870,7 +973,29 @@ fgapiserver_queries = [
                  'mail',
                  '01/01/1970',
                  '01/01/1970'], ]},
-    {'query': 'insert into fg_user (id\n'
+    {'id': 94.1,
+     'query': 'select id,\n'
+              '       name,\n'
+              '       first_name,\n'
+              '       last_name,\n'
+              '       institute,\n'
+              '       mail,\n'
+              '       date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(modified,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              'from fg_user\n'
+              'where id=%s;',
+     'result': [['1',
+                 'test_user',
+                 'test_firstname',
+                 'test_lastname',
+                 'institute',
+                 'mail',
+                 '01/01/1970',
+                 '01/01/1970'], ]},
+    {'id': 95,
+     'query': 'insert into fg_user (id\n'
               '                    ,name\n'
               '                    ,first_name\n'
               '                    ,last_name\n'
@@ -891,7 +1016,8 @@ fgapiserver_queries = [
               '      ,now()\n'
               'from fg_user;',
      'result': None},
-    {'query': 'select id,\n'
+    {'id': 96,
+     'query': 'select id,\n'
               '       name,\n'
               '       date_format(creation,\n'
               '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
@@ -899,7 +1025,8 @@ fgapiserver_queries = [
               '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
               'from fg_group;',
      'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
-    {'query': 'select g.id,\n'
+    {'id': 97,
+     'query': 'select g.id,\n'
               '       g.name,\n'
               '       date_format(g.creation,\n'
               '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
@@ -908,11 +1035,12 @@ fgapiserver_queries = [
               'from fg_group g,\n'
               '     fg_user_group ug,\n'
               '     fg_user u\n'
-              'where u.name = %s\n'
+              'where u.id = %s\n'
               '  and u.id = ug.user_id\n'
               '  and g.id = ug.group_id;',
      'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
-    {'query': 'select id,\n'
+    {'id': 98,
+     'query': 'select id,\n'
               '       name,\n'
               '       first_name,\n'
               '       last_name,\n'
@@ -939,24 +1067,26 @@ fgapiserver_queries = [
                  'mail',
                  '01/01/1970',
                  '01/01/1970'], ]},
-    {'query': 'insert into fg_user_group (user_id,\n'
+    {'id': 99,
+     'query': 'insert into fg_user_group (user_id,\n'
               '                           group_id,\n'
               '                           creation)\n'
               'select u.id, g.id, now()\n'
               'from fg_user u,\n'
               'fg_group g\n'
-              'where u.name = %s\n'
-              '  and g.id = %s\n'
+              'where u.id=%s\n'
+              '  and g.id=%s\n'
               '  and (select count(*)\n'
               '       from fg_user u1,\n'
               '            fg_group g1,\n'
               '            fg_user_group ug1\n'
-              '       where u1.name = %s\n'
-              '         and g1.id = %s\n'
+              '       where u1.id=%s\n'
+              '         and g1.id=%s\n'
               '         and ug1.user_id=u1.id\n'
               '         and ug1.group_id=g1.id) = 0;',
      'result': None},
-    {'query': 'select t.id,\n'
+    {'id': 100,
+     'query': 'select t.id,\n'
               '       date_format(t.creation,\n'
               '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
               '       date_format(t.last_change,\n'
@@ -969,7 +1099,7 @@ fgapiserver_queries = [
               'from task t,\n'
               '     fg_user u,\n'
               '     application a\n'
-              'where u.name = %s\n'
+              'where u.id=%s\n'
               '  and t.user=u.name\n'
               '  and t.app_id=a.id;',
      'result': [['1',
@@ -980,8 +1110,6 @@ fgapiserver_queries = [
                  'TEST',
                  '/tmp/test_iosandbox',
                  'test_user', ], ]},
-    {'query': None,
-     'result': None},
 ]
 
 # fgapiserver tests queries

@@ -28,12 +28,14 @@ __email__ = "riccardo.bruno@ct.infn.it"
 
 # user_apis tests queries
 user_apis_queries = [
-    {'query': 'select user_id, subject\n'
+    {'id': 0,
+     'query': 'select user_id, subject\n'
               'from fg_token\n'
               'where token = %s\n'
               '  and creation+expiry > now();',
      'result': [['1', 'test_user', ], ]},
-    {'query': 'insert into fg_token (token,\n'
+    {'id': 1,
+     'query': 'insert into fg_token (token,\n'
               '                      subject,\n'
               '                      user_id,\n'
               '                      creation,\n'
@@ -43,7 +45,8 @@ user_apis_queries = [
               '  where u.name=%s\n'
               '    and u.password=sha(%s);',
      'result': None},
-    {'query': 'insert into fg_token (token,\n'
+    {'id': 2,
+     'query': 'insert into fg_token (token,\n'
               '                      subject,\n'
               '                      user_id,\n'
               '                      creation,\n'
@@ -52,7 +55,8 @@ user_apis_queries = [
               '  from  fg_user u\n'
               '  where u.name=%s;',
      'result': None},
-    {'query': 'select if(count(*)>0,\n'
+    {'id': 3,
+     'query': 'select if(count(*)>0,\n'
               '          if((select count(token)\n'
               '              from fg_token t\n'
               '              where t.subject = %s\n'
@@ -74,14 +78,16 @@ user_apis_queries = [
               '       from fg_token\n'
               '       where token = %s);',
      'result': [['new:DELEGATED_ACCESS_TOKEN', ], ]},
-    {'query': 'insert into fg_group (id, name, creation, modified)\n'
+    {'id': 4,
+     'query': 'insert into fg_group (id, name, creation, modified)\n'
               'select if(max(id) is NULL,1,max(id)+1),\n'
               '       %s,\n'
               '       now(),\n'
               '       now()\n'
               'from fg_group;',
               'result': None},
-    {'query': 'select id,\n'
+    {'id': 5,
+     'query': 'select id,\n'
               '       name,\n'
               '       date_format(creation,\n'
               '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'

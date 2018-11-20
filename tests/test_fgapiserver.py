@@ -513,7 +513,7 @@ class Test_fgAPIServer(unittest.TestCase):
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
         assert state[0] is False
-        assert result['name'] == 'test_app'
+        assert result['name'] == 'test application'
 
     def test_dbobj_init_app(self):
         self.banner("Testing fgapiserverdb init_app")
