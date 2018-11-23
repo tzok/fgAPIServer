@@ -777,14 +777,14 @@ fgapiserver_queries = [
                'where status != "PURGED"\n'
                '  and user = %s\n'
                '  and app_id = %s\n'
-               ';'),
+               'order by id desc;'),
      'result': [[1], ]},
     {'id': 74,
      'query': ('select id\n'
                'from task\n'
                'where status != "PURGED"\n'
                '  and user = %s\n'
-               ';'),
+               'order by id desc;'),
      'result': [[1], ]},
     {'id': 75,
      'query': 'select name from fg_user where id = %s;',
