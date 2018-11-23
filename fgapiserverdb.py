@@ -1861,7 +1861,8 @@ class FGAPIServerDB:
             sql = ('select id\n'
                    'from task\n'
                    'where status != "PURGED"\n'
-                   '%s%s;'
+                   '%s%s'
+                   'order by id desc;'
                    ) % (user_clause, app_clause)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -4125,7 +4126,8 @@ class FGAPIServerDB:
                    'where u.id=%s\n' +
                    app_clause +
                    '  and t.user=u.name\n'
-                   '  and t.app_id=a.id;')
+                   '  and t.app_id=a.id\n'
+                   'order by t.id desc;')
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             for task in cursor:

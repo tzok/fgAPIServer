@@ -1101,7 +1101,8 @@ fgapiserver_queries = [
               '     application a\n'
               'where u.id=%s\n'
               '  and t.user=u.name\n'
-              '  and t.app_id=a.id;',
+              '  and t.app_id=a.id\n'
+              'order by t.id desc;',
      'result': [['1',
                  '1970-01-01T00:00:00',
                  '1970-01-01T00:00:00',
