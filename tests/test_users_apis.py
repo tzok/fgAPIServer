@@ -139,6 +139,21 @@ class Test_UsersAPIs(unittest.TestCase):
     # MD5 values are taken from the self.md5sum_str(result.data) value
     # then they are hardcoded in the assertEqual statement
 
+    # Get token info from GET token/
+    def test_get_token_info(self):
+        url = ('/v1.0/token')
+        headers = {
+            'Authorization': 'TESTSESSIONTOKEN',
+        }
+        result = self.app.get(
+            url,
+            headers=headers)
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("34fc109845dabbdf2ba6022048c9979d",
+                         self.md5sum_str(result.data))
+
     #
     # Users
     #

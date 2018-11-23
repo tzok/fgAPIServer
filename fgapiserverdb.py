@@ -336,10 +336,67 @@ class FGAPIServerDB:
         return user_id, user_name
 
     """
+      get_token_info - Retrieve information about a given session token
+    """
+
+    def get_token_info(self, sestoken):
+        db = None
+        cursor = None
+        safe_transaction = False
+        token_info = {'token': sestoken, }
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = (
+                'select user_id\n'
+                '      ,(select name from fg_user where id=user_id) name\n'
+                '      ,date_format(creation,\n'
+                '                   \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,expiry\n'
+                '      ,(creation+expiry)-now()>0\n'
+                '      ,if((creation+expiry)-now()>0,\n'
+                '          (creation+expiry)-now(),\n'
+                '          0) lasting\n'
+                'from fg_token\n'
+                'where token=%s;')
+            sql_data = (sestoken,)
+            logging.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            user_rec = cursor.fetchone()
+            if user_rec is not None:
+                token_info['user_id'] = user_rec[0]
+                token_info['user_name'] = user_rec[1]
+                token_info['creation'] = user_rec[2]
+                token_info['expiry'] = user_rec[3]
+                token_info['valid'] = user_rec[4] == 1
+                token_info['lasting'] = user_rec[5]
+            self.query_done(
+                ("session token: '%s' -> "
+                 "user_id='%s', "
+                 "user_name='%s', "
+                 "creation='%s', "
+                 "expiry='%s', "
+                 "valid='%s', "
+                 "lasting='%s'"
+                 % (sestoken,
+                    token_info['user_id'],
+                    token_info['user_name'],
+                    token_info['creation'],
+                    token_info['expiry'],
+                    token_info['valid'],
+                    token_info['lasting'])))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return token_info
+
+    """
       register_token - Register the incoming and valid token into the token
                        table. This is used by PTV which bypass APIServer
                        session tokens. The record will be written only once
     """
+
     def register_token(self, userid, token, subject):
         db = None
         cursor = None

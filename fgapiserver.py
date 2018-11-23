@@ -469,7 +469,7 @@ def load_user(request):
         logger.debug(("LoadUser: Session token disabled; "
                       "behaving has user: '%s' (%s)"
                       % (user_name, user_id)))
-        return User(int(user_info["id"]), user_info["name"])
+        return User(int(user_info["id"]), user_info["name"], '')
 
     logger.debug("LoadUser: using token")
     token = request.headers.get('Authorization')
@@ -552,7 +552,7 @@ def load_user(request):
                         logger.debug("LoadUser: '%s' - '%s'"
                                      % (fg_user[0], fg_user[1]))
                         logger.debug("LoadUser: (end)")
-                        return User(fg_user[0], fg_user[1])
+                        return User(fg_user[0], fg_user[1], token)
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
                 # file. The json contains the list of possible APIServer
@@ -643,7 +643,7 @@ def load_user(request):
                         logger.debug("LoadUser: '%s' - '%s'" %
                                      (mapped_userid, mapped_username))
                         logger.debug("LoadUser: (end)")
-                        return User(mapped_userid, mapped_username)
+                        return User(mapped_userid, mapped_username, token)
                 # No portal user and group are returned or no mapping
                 # is available returning default user
                 user_info = fgapisrv_db.\
@@ -661,7 +661,7 @@ def load_user(request):
                 logger.debug("LoadUser: '%s' - '%s'" %
                              (default_userid, default_username))
                 logger.debug("LoadUser: (end)")
-                return User(default_userid, default_username)
+                return User(default_userid, default_username, token)
             else:
                 logger.debug("LoadUser: PTV token '%s' is not valid" % token)
                 return None
@@ -676,7 +676,7 @@ def load_user(request):
                 logger.debug("LoadUser: '%s' - '%s'"
                              % (user_rec[0], user_rec[1]))
                 logger.debug("LoadUser: (end)")
-                return User(user_rec[0], user_rec[1])
+                return User(user_rec[0], user_rec[1], token)
             else:
                 logger.debug(("LoadUser: No user is associated to "
                               "session token: '%s'" % token))
@@ -836,6 +836,51 @@ def index():
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
+##
+# Token handlers
+##
+
+# token - used to extract token info
+#
+# GET - View token associated info
+
+
+@app.route('/%s/token' % fgapiver, methods=['GET', ])
+@login_required
+def token():
+    global fgapisrv_db
+    global logger
+    logger.debug('token(%s): %s' % (request.method, request.values.to_dict()))
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
+    user_token = current_user.get_token()
+    logger.debug("user_name: '%s'" % user_name)
+    logger.debug("user_id: '%s'" % user_id)
+    logger.debug("user_token: '%s'" % user_token)
+    if request.method == 'GET':
+        state = 200
+        if len(user_token) == 0:
+            response = {'user_id': user_id,
+                        'user_name': user_name,
+                        'creation': None,
+                        'expiry': None,
+                        'valid': True,
+                        'lasting': None}
+        else:
+            response = fgapisrv_db.get_token_info(user_token)
+    else:
+        state = 405
+        response = {
+            "message": "Method '%s' is not allowed for this endpoint"
+            % request.method
+        }
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=state, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    header_links(request, resp, response)
+    return resp
+
 
 ##
 # Task handlers

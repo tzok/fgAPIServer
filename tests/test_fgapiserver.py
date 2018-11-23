@@ -80,9 +80,10 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_User(self):
         self.banner("User class")
-        user = fgapiserver.User(2, 'test')
-        self.assertEqual(2, user.get_id())
+        user = fgapiserver.User(1, 'test', 'test_token')
+        self.assertEqual(1, user.get_id())
         self.assertEqual('test', user.get_name())
+        self.assertEqual('test_token', user.get_token())
 
     def test_paginate_reposnse(self):
         self.banner("paginate_response(txt,'2','3',[])")
@@ -152,6 +153,22 @@ class Test_fgAPIServer(unittest.TestCase):
         assert state[0] is False
         assert result[0] == '1'
         assert result[1] == 'test_user'
+
+    def test_get_token_info(self):
+        self.banner("Testing fgapiserverdb get_token_info")
+        result = self.fgapisrv_db.get_token_info('TESTSESSIONTOKEN')
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        expected_result = {
+            'user_id': '1',
+            'creation': None,
+            'expiry': None,
+            'token': 'TESTSESSIONTOKEN',
+            'valid': True,
+            'user_name': 'test_user',
+            'lasting': 1000}
+        assert result == expected_result
 
     def test_dbobj_register_token(self):
         self.banner("Testing fgapiserverdb register_token")
@@ -648,7 +665,7 @@ class Test_fgAPIServer(unittest.TestCase):
     #
     def test_fgapiserver_user(self):
         self.banner("Testing user")
-        user = User(1, "test_user")
+        user = User(1, "test_user", "test_token")
         assert user is not None
 
     #

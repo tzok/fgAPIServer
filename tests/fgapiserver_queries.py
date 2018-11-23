@@ -1110,6 +1110,24 @@ fgapiserver_queries = [
                  'TEST',
                  '/tmp/test_iosandbox',
                  'test_user', ], ]},
+    {'id': 101,
+     'query': 'select user_id\n'
+              '      ,(select name from fg_user where id=user_id) name\n'
+              '      ,date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation\n'
+              '      ,expiry\n'
+              '      ,(creation+expiry)-now()>0\n'
+              '      ,if((creation+expiry)-now()>0,\n'
+              '          (creation+expiry)-now(),\n'
+              '          0) lasting\n'
+              'from fg_token\n'
+              'where token=%s;',
+     'result': [['1',
+                 'test_user',
+                 None,
+                 None,
+                 1,
+                 1000, ], ]},
 ]
 
 # fgapiserver tests queries
