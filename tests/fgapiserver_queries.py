@@ -1100,6 +1100,7 @@ fgapiserver_queries = [
               '     fg_user u,\n'
               '     application a\n'
               'where u.id=%s\n'
+              '  and t.status != \'PURGED\'\n'
               '  and t.user=u.name\n'
               '  and t.app_id=a.id\n'
               'order by t.id desc;',
