@@ -3806,37 +3806,50 @@ class FGAPIServerDB:
         infra_id = -1
         result = None
         try:
-            # Insert new application record
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('insert into fg_user (id\n'
-                   '                    ,name\n'
-                   '                    ,first_name\n'
-                   '                    ,last_name\n'
-                   '                    ,institute\n'
-                   '                    ,mail\n'
-                   '                    ,password\n'
-                   '                    ,creation\n'
-                   '                    ,modified\n'
-                   '                    )\n'
-                   'select if(max(id) is NULL,1,max(id)+1)\n'
-                   '      ,%s\n'
-                   '      ,%s\n'
-                   '      ,%s\n'
-                   '      ,%s\n'
-                   '      ,%s\n'
-                   '      ,\'\'\n'
-                   '      ,now()\n'
-                   '      ,now()\n'
-                   'from fg_user;'
-                   )
+            # First check if the user already exists
+            sql = ('select count(*)\n'
+                   'from fg_user\n'
+                   'where name = %s\n'
+                   '   or mail = %s;')
             sql_data = (user_data['name'],
-                        user_data['first_name'],
-                        user_data['last_name'],
-                        user_data['institute'],
-                        user_data['mail'],)
+                        user_data['mail'])
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
+            count = cursor.fetchone()[0]
+            if count == 0:
+                # Insert the new user only if it does not exist 
+                sql = ('insert into fg_user (id\n'
+                       '                    ,name\n'
+                       '                    ,first_name\n'
+                       '                    ,last_name\n'
+                       '                    ,institute\n'
+                       '                    ,mail\n'
+                       '                    ,password\n'
+                       '                    ,creation\n'
+                       '                    ,modified\n'
+                       '                    ,enabled\n'
+                       '                    )\n'
+                       'select if(max(id) is NULL,1,max(id)+1)\n'
+                       '      ,%s\n'
+                       '      ,%s\n'
+                       '      ,%s\n'
+                       '      ,%s\n'
+                       '      ,%s\n'
+                       '      ,\'\'\n'
+                       '      ,now()\n'
+                       '      ,now()\n'
+                       '      ,true\n'
+                       'from fg_user;'
+                       )
+                sql_data = (user_data['name'],
+                            user_data['first_name'],
+                            user_data['last_name'],
+                            user_data['institute'],
+                            user_data['mail'],)
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
             # Get inserted record
             sql = ('select id,\n'
                    '       name,\n'

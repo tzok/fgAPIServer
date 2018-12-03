@@ -1004,6 +1004,7 @@ fgapiserver_queries = [
               '                    ,password\n'
               '                    ,creation\n'
               '                    ,modified\n'
+              '                    ,enabled\n'
               '                    )\n'
               'select if(max(id) is NULL,1,max(id)+1)\n'
               '      ,%s\n'
@@ -1014,6 +1015,7 @@ fgapiserver_queries = [
               '      ,\'\'\n'
               '      ,now()\n'
               '      ,now()\n'
+              '      ,true\n'
               'from fg_user;',
      'result': None},
     {'id': 96,
@@ -1130,6 +1132,12 @@ fgapiserver_queries = [
                  None,
                  1,
                  1000, ], ]},
+    {'id':102,
+     'query': 'select count(*)\n'
+              'from fg_user\n'
+              'where name = %s\n'
+              '   or mail = %s;',
+     'result': [['0'], ]},
 ]
 
 # fgapiserver tests queries
