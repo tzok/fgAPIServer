@@ -96,6 +96,16 @@ user_apis_queries = [
               'from fg_group\n'
               'where name = %s',
      'result': [[1, 'TEST_GROUP', '01-01-1979', '01-01-1970'], ]},
+    {'id': 6,
+     'query': 'select id\n'
+              'from fg_group\n'
+              'where name=%s;',
+     'result': [[1, ], ]},
+    {'id': 7,
+     'query': 'delete from fg_user_group\n'
+              'where user_id=%s\n'
+              '  and group_id=%s;',
+     'result': []},
 ]
 
 # user_apis tests queries

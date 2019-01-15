@@ -229,7 +229,8 @@ def users_user(user):
     return resp
 
 
-@ugr_apis.route('/%s/users/<user>/groups' % fgapiver, methods=['GET', 'POST'])
+@ugr_apis.route('/%s/users/<user>/groups' % fgapiver,
+                methods=['GET', 'POST', 'DELETE'])
 @login_required
 def user_groups(user):
     global fgapisrv_db
@@ -268,6 +269,34 @@ def user_groups(user):
                     response = {
                         'message':
                             'Unable to assign groups %s to user \'%s\'' %
+                            (groups, user)
+                    }
+            else:
+                status = 400
+                response = {
+                    'message': 'Missing groups'
+                }
+    elif request.method == 'DELETE':
+        if not fgapisrv_db.user_exists(user):
+            user_record = fgapisrv_db.user_retrieve(user)
+            status = 404
+            response = {
+                'message': 'User \'%s\' does not exists' % user
+            }
+        else:
+            params = request.get_json()
+            logger.debug("params: '%s'" % params)
+            if params is not None:
+                groups = params.get('groups', [])
+                deleted_groups = fgapisrv_db.delete_user_groups(user, groups)
+                if deleted_groups is not None:
+                    status = 200
+                    response = {'groups': deleted_groups}
+                else:
+                    status = 400
+                    response = {
+                        'message':
+                            'Unable to delete groups %s to user \'%s\'' %
                             (groups, user)
                     }
             else:

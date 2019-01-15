@@ -3819,7 +3819,7 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
             if count == 0:
-                # Insert the new user only if it does not exist 
+                # Insert the new user only if it does not exist
                 sql = ('insert into fg_user (id\n'
                        '                    ,name\n'
                        '                    ,first_name\n'
@@ -4095,6 +4095,39 @@ class FGAPIServerDB:
                 result += [group, ]
             self.query_done(
                 "Inserted groups '%s' for user '%s'" %
+                (result, user))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
+      delete_user_groups - Delete the given groups to the given user
+    """
+
+    def delete_user_groups(self, user, gnames_or_ids):
+        id = 0
+        db = None
+        cursor = None
+        safe_transaction = True
+        count = 0
+        result = []
+        user_id = self.user_param_to_user_id(user)
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            for group in gnames_or_ids:
+                group_id = self.group_param_to_group_id(group)
+                sql = ('delete from fg_user_group\n'
+                       'where user_id=%s\n'
+                       '  and group_id=%s;')
+                sql_data = (user_id, group_id)
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                result += [group, ]
+            self.query_done(
+                "deleted groups '%s' for user '%s'" %
                 (result, user))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)

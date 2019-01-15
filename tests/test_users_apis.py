@@ -133,6 +133,13 @@ class Test_UsersAPIs(unittest.TestCase):
                      'name': 'TEST_GROUP'}
         self.assertEqual(chk_group, new_group)
 
+    def test_DeleteGroups(self):
+        self.banner("delete_user_groups (fgapiserverdb)")
+        groups_to_delete = ["TEST_GROUP_1", "TEST_GROUP_2", "TEST_GROUP_3", ]
+        deleted_groups = self.fgapisrv_db.delete_user_groups("TEST_USER",
+                                                             groups_to_delete)
+        self.assertEqual(groups_to_delete, deleted_groups)
+
     #
     # REST APIs - Following tests are functional tests
     #
@@ -209,6 +216,28 @@ class Test_UsersAPIs(unittest.TestCase):
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("6a4376e47c877f672e47eac39e0f106e",
+                         self.md5sum_str(result.data))
+
+    # Delete group DELETE user /users/<user>/groups/
+    def test_post_groups(self):
+        url = ('/v1.0/users/test_user/groups')
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            'groups': ["TEST_GROUP1",
+                       "TEST_GROUP2",
+                       "TEST_GROUP3", ]
+        }
+        result = self.app.delete(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("1fe788c3f2420c8655e5cf2e8155e32b",
                          self.md5sum_str(result.data))
 
 

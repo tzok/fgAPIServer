@@ -1132,7 +1132,7 @@ fgapiserver_queries = [
                  None,
                  1,
                  1000, ], ]},
-    {'id':102,
+    {'id': 102,
      'query': 'select count(*)\n'
               'from fg_user\n'
               'where name = %s\n'
