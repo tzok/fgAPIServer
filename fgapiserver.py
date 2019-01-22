@@ -1672,7 +1672,7 @@ def app_id(app_id=None):
                 # 204 - NO CONTENT cause no output
                 logger.debug(response['message'])
     elif request.method == 'POST':
-        statis = 404
+        status = 404
         response = {
             "message": "Not supported method"
         }
