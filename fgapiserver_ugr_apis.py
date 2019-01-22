@@ -442,3 +442,31 @@ def groups_group(group):
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     return resp
+
+@ugr_apis.route('/%s/groups/<group>/apps' % fgapiver, methods=['GET', 'POST'])
+@login_required
+def groups_group_apps(group):
+    global fgapisrv_db
+
+    logging.debug('groups_group_apps(%s)/%s: %s' % (request.method,
+                                                    group,
+                                                    request.values.to_dict()))
+    if request.method == 'GET':
+        group_apps_info = fgapisrv_db.group_apps_retrieve(group)
+        if group_apps_info is not None:
+            status = 200
+            response = group_apps_info
+        else:
+            status = 404
+            response = {
+                'message': 'No applications found for group having name or id: %s' % group}
+    elif request.method == 'POST':
+        response = {"message": "Not yet implemented"}
+    else:
+        response = {"message": "Unhandled method: '%s'" % request.method}
+
+    logger.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp

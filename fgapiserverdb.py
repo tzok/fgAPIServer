@@ -4008,6 +4008,56 @@ class FGAPIServerDB:
         return result
 
     """
+      group_apps_retrieve - Return the list of applications associated to the given group
+    """
+
+    def group_apps_retrieve(self, group):
+        id = 0
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        result = None
+        applications = []
+        group_id = self.group_param_to_group_id(group)
+        if group_id is not None:
+            try:
+                db = self.connect(safe_transaction)
+                cursor = db.cursor()
+                sql = ('select a.id,\n'
+                       '       a.creation,\n'
+                       '       a.name,\n'
+                       '       a.description,\n'
+                       '       a.outcome,\n'
+                       '       date_format(a.creation,\n'
+                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                       '       a.enabled\n'
+                       'from fg_group_apps ga,\n'
+                       '      application a\n'
+                       'where group_id=%s\n'
+                       '  and ga.app_id=a.id;')
+                sql_data = (group_id, )
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                for app_record in cursor:
+                    applications += [
+                        {"id":  app_record[0],
+                         "creation": app_record[1],
+                         "name": app_record[2],
+                         "description": app_record[3],
+                         "outcome": app_record[4],
+                         "creation": app_record[5],
+                         "enabled": app_record[6]}]
+                result = {"applications":  applications}
+                self.query_done(
+                    "Group: %s" % result)
+            except MySQLdb.Error as e:
+                self.catch_db_error(e, db, safe_transaction)
+            finally:
+                self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
       group_add - Add a given group
     """
 
