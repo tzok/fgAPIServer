@@ -3978,32 +3978,33 @@ class FGAPIServerDB:
         count = 0
         result = None
         group_id = self.group_param_to_group_id(group)
-        try:
-            db = self.connect(safe_transaction)
-            cursor = db.cursor()
-            sql = ('select id,\n'
-                   '       name,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
-                   'from fg_group\n'
-                   'where id=%s;')
-            sql_data = (group_id, )
-            logging.debug(sql % sql_data)
-            cursor.execute(sql, sql_data)
-            group_record = cursor.fetchone()
-            if group_record is not None:
-                result = {"id":  group_record[0],
-                          "name": group_record[1],
-                          "creation": group_record[2],
-                          "modified": group_record[3]}
-            self.query_done(
-                "Group: %s" % result)
-        except MySQLdb.Error as e:
-            self.catch_db_error(e, db, safe_transaction)
-        finally:
-            self.close_db(db, cursor, safe_transaction)
+        if group_id is not None:
+            try:
+                db = self.connect(safe_transaction)
+                cursor = db.cursor()
+                sql = ('select id,\n'
+                       '       name,\n'
+                       '       date_format(creation,\n'
+                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                       '       date_format(modified,\n'
+                       '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                       'from fg_group\n'
+                       'where id=%s;')
+                sql_data = (group_id, )
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                group_record = cursor.fetchone()
+                if group_record is not None:
+                    result = {"id":  group_record[0],
+                              "name": group_record[1],
+                              "creation": group_record[2],
+                              "modified": group_record[3]}
+                self.query_done(
+                    "Group: %s" % result)
+            except MySQLdb.Error as e:
+                self.catch_db_error(e, db, safe_transaction)
+            finally:
+                self.close_db(db, cursor, safe_transaction)
         return result
 
     """

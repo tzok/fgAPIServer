@@ -424,12 +424,12 @@ def groups_group(group):
                                                group,
                                                request.values.to_dict()))
     if request.method == 'GET':
-        group = fgapisrv_db.group_retrieve(group)
-        if groups is not None:
+        group_info = fgapisrv_db.group_retrieve(group)
+        if group_info is not None:
             status = 200
-            response = group
+            response = group_info
         else:
-            status = 401
+            status = 404
             response = {
                 'message': 'No groups found with name or id: %s' % group}
     elif request.method == 'POST':
