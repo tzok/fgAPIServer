@@ -3989,6 +3989,7 @@ class FGAPIServerDB:
                    '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                    'from fg_group\n'
                    'where id=%s;')
+            sql_data = (group_id, )
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             group_record = cursor.fetchone()
