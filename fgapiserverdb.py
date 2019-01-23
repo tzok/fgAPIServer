@@ -4008,7 +4008,8 @@ class FGAPIServerDB:
         return result
 
     """
-      group_apps_retrieve - Return the list of applications associated to the given group
+      group_apps_retrieve - Return the list of applications associated to the
+                            given group
     """
 
     def group_apps_retrieve(self, group):
@@ -4025,7 +4026,6 @@ class FGAPIServerDB:
                 db = self.connect(safe_transaction)
                 cursor = db.cursor()
                 sql = ('select a.id,\n'
-                       '       a.creation,\n'
                        '       a.name,\n'
                        '       a.description,\n'
                        '       a.outcome,\n'
@@ -4042,12 +4042,11 @@ class FGAPIServerDB:
                 for app_record in cursor:
                     applications += [
                         {"id":  app_record[0],
-                         "creation": app_record[1],
-                         "name": app_record[2],
-                         "description": app_record[3],
-                         "outcome": app_record[4],
-                         "creation": app_record[5],
-                         "enabled": app_record[6]}]
+                         "name": app_record[1],
+                         "description": app_record[2],
+                         "outcome": app_record[3],
+                         "creation": app_record[4],
+                         "enabled": app_record[5]}]
                 result = {"applications":  applications}
                 self.query_done(
                     "Group: %s" % result)
@@ -4079,19 +4078,21 @@ class FGAPIServerDB:
                     cursor.execute(sql, sql_data)
                     app_exists = cursor.fetchone()
                     if app_exists > 0:
-                        sql = ('insert into fg_group_apps (group_id, app_id, creation)\n'
+                        sql = ('insert into fg_group_apps (group_id,\n'
+                               '                           app_id,\n'
+                               '                           creation)\n'
                                'values (%s, %s, now());')
                         sql_data = (group_id, app_id, )
                         logging.debug(sql % sql_data)
                         cursor.execute(sql, sql_data)
-                        result += [ app_id, ]
+                        result += [app_id, ]
                 self.query_done(
                     "Applications %s, added to group: %s" % (result, group))
             except MySQLdb.Error as e:
                 self.catch_db_error(e, db, safe_transaction)
             finally:
                 self.close_db(db, cursor, safe_transaction)
-        return result  
+        return result
 
     """
       group_add - Add a given group

@@ -445,6 +445,7 @@ def groups_group(group):
     resp.headers['Content-type'] = 'application/json'
     return resp
 
+
 @ugr_apis.route('/%s/groups/<group>/apps' % fgapiver, methods=['GET', 'POST'])
 @login_required
 def groups_group_apps(group):
@@ -461,7 +462,8 @@ def groups_group_apps(group):
         else:
             status = 404
             response = {
-                'message': 'No applications found for group having name or id: %s' % group}
+                'message': ('No applications found for group having name or '
+                            'id: %s' % group)}
     elif request.method == 'POST':
         params = request.get_json()
         if params is not None:
@@ -470,7 +472,7 @@ def groups_group_apps(group):
             new_ids = fgapisrv_db.group_apps_add(group, app_ids)
             if new_ids != []:
                 status = 201
-                response = { 'applications': new_ids }
+                response = {'applications': new_ids}
             else:
                 status = 400
                 response = {

@@ -106,6 +106,33 @@ user_apis_queries = [
               'where user_id=%s\n'
               '  and group_id=%s;',
      'result': []},
+    {'id': 8,
+     'query': 'select a.id,\n'
+              '       a.name,\n'
+              '       a.description,\n'
+              '       a.outcome,\n'
+              '       date_format(a.creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       a.enabled\n'
+              'from fg_group_apps ga,\n'
+              '      application a\n'
+              'where group_id=%s\n'
+              '  and ga.app_id=a.id;',
+     'result': [['1',
+                 'TEST_APPLICATION',
+                 'Test application',
+                 'JOB',
+                 '01-01-1970',
+                 '1'], ]},
+    {'id': 9,
+     'query': 'select count(*)>0 from application where id = %s;',
+     'result': [ [1, ]]},
+    {'id': 10,
+     'query': 'insert into fg_group_apps (group_id,\n'
+              '                           app_id,\n'
+              '                           creation)\n'
+              'values (%s, %s, now());',
+     'result': []},
 ]
 
 # user_apis tests queries
