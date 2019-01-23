@@ -954,28 +954,14 @@ def tasks():
                     }
                     break
                 else:
-                    task_array += [{
-                        "id": task_record['id'],
-                        "application": task_record['application'],
-                        "description": task_record['description'],
-                        "arguments": task_record['arguments'],
-                        "input_files": task_record['input_files'],
-                        "output_files": task_record['output_files'],
-                        "status": task_record['status'],
-                        "user": task_record['user'],
-                        "date": str(task_record['creation']),
-                        "last_change": str(task_record['last_change']),
-                        "_links": [
-                            {"rel": "self",
-                             "href": "/%s/tasks/%s"
-                                     % (fgapiver, task_id)
-                             },
-                            {"rel": "input",
-                             "href": "/%s/tasks/%s/input"
-                                     % (fgapiver, task_id)
-                             }
-                        ]},
-                    ]
+                    task_record['_links'] = [
+                       {"rel": "self",
+                        "href": "/%s/tasks/%s" % (fgapiver, task_id)
+                       },
+                       {"rel": "input",
+                        "href": "/%s/tasks/%s/input" % (fgapiver, task_id)
+                       }]
+                    task_array += [ task_record, ]
             state = 200
             paged_tasks, paged_links = paginate_response(
                 task_array,
