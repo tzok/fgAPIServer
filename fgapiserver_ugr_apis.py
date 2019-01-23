@@ -433,8 +433,10 @@ def groups_group(group):
             response = {
                 'message': 'No groups found with name or id: %s' % group}
     elif request.method == 'POST':
+        status = 404
         response = {"message": "Not yet implemented"}
     else:
+        status = 404
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
@@ -461,7 +463,27 @@ def groups_group_apps(group):
             response = {
                 'message': 'No applications found for group having name or id: %s' % group}
     elif request.method == 'POST':
-        response = {"message": "Not yet implemented"}
+        params = request.get_json()
+        if params is not None:
+            logger.debug("params: '%s'" % params)
+            app_ids = params.get('applications', [])
+            new_ids = fgapisrv_db.group_apps_add(group, app_ids)
+            if new_ids != []:
+                status = 201
+                response = { 'applications': new_ids }
+            else:
+                status = 400
+                response = {
+                    'message':
+                    ('Unable to associate applications \'%s\' '
+                     'to the group: \'%s\'' % (app_ids,
+                                               group))
+                }
+        else:
+            status = 400
+            response = {
+                'message': 'Missing group'
+            }
     else:
         response = {"message": "Unhandled method: '%s'" % request.method}
 

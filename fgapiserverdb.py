@@ -4058,6 +4058,42 @@ class FGAPIServerDB:
         return result
 
     """
+      group_apps_add - Add the given list of applications to the given group
+    """
+
+    def group_apps_add(self, group, app_ids):
+        db = None
+        cursor = None
+        safe_transaction = True
+        count = 0
+        result = []
+        group_id = self.group_param_to_group_id(group)
+        if group_id is not None:
+            try:
+                db = self.connect(safe_transaction)
+                cursor = db.cursor()
+                for app_id in app_ids:
+                    sql = ('select count(*)>0 from application where id = %s;')
+                    sql_data = (app_id, )
+                    logging.debug(sql % sql_data)
+                    cursor.execute(sql, sql_data)
+                    app_exists = cursor.fetchone()
+                    if app_exists > 0:
+                        sql = ('insert into fg_group_apps (group_id, app_id, creation)\n'
+                               'values (%s, %s, now());')
+                        sql_data = (group_id, app_id, )
+                        logging.debug(sql % sql_data)
+                        cursor.execute(sql, sql_data)
+                        result += [ app_id, ]
+                self.query_done(
+                    "Applications %s, added to group: %s" % (result, group))
+            except MySQLdb.Error as e:
+                self.catch_db_error(e, db, safe_transaction)
+            finally:
+                self.close_db(db, cursor, safe_transaction)
+        return result  
+
+    """
       group_add - Add a given group
     """
 
