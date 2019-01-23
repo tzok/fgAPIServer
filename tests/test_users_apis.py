@@ -244,7 +244,7 @@ class Test_UsersAPIs(unittest.TestCase):
         self.assertEqual("1fe788c3f2420c8655e5cf2e8155e32b",
                          self.md5sum_str(result.data))
 
-    # Get group apps GET /group/<group>/apps 
+    # Get group apps GET /group/<group>/apps
     def test_get_group_apps(self):
         headers = {
             'Authorization': 'TEST_ACCESS_TOKEN',
@@ -278,6 +278,7 @@ class Test_UsersAPIs(unittest.TestCase):
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("41e0a74c8a471c981bcb5809fdd041b2",
                          self.md5sum_str(result.data))
+
 
 if __name__ == '__main__':
     print "----------------------------------"

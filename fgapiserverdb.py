@@ -4225,8 +4225,9 @@ class FGAPIServerDB:
         return result
 
     """
-      user_tasks_retrieve - Retrieve user tasks from database and optionally
-                            an application name or id to filter output
+      user_tasks_retrieve - Retrieve ids of user tasks from database and
+                            optionally an application name or id to filter
+                            output
     """
 
     def user_tasks_retrieve(self, user, application):
@@ -4245,16 +4246,7 @@ class FGAPIServerDB:
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select t.id,\n'
-                   '       date_format(t.creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(t.last_change,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') last_change,\n'
-                   '       t.app_id,\n'
-                   '       t.description,\n'
-                   '       t.status,\n'
-                   '       t.iosandbox,\n'
-                   '       t.user\n'
+            sql = ('select t.id\n'
                    'from task t,\n'
                    '     fg_user u,\n'
                    '     application a\n'
@@ -4267,15 +4259,7 @@ class FGAPIServerDB:
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             for task in cursor:
-                tasks += [
-                    {"id":  task[0],
-                     "creation": task[1],
-                     "last_change": task[2],
-                     "application": task[3],
-                     "description": task[4],
-                     "status": task[5],
-                     "iosandbox": task[6],
-                     "user": task[7]}]
+                tasks += [task, ]
             self.query_done(
                 "Tasks for user '%s': %s" % (user_id, tasks))
         except MySQLdb.Error as e:

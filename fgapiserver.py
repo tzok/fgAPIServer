@@ -955,13 +955,11 @@ def tasks():
                     break
                 else:
                     task_record['_links'] = [
-                       {"rel": "self",
-                        "href": "/%s/tasks/%s" % (fgapiver, task_id)
-                       },
-                       {"rel": "input",
-                        "href": "/%s/tasks/%s/input" % (fgapiver, task_id)
-                       }]
-                    task_array += [ task_record, ]
+                        {"rel": "self",
+                         "href": "/%s/tasks/%s" % (fgapiver, task_id)},
+                        {"rel": "input",
+                         "href": "/%s/tasks/%s/input" % (fgapiver, task_id)}]
+                    task_array += [task_record, ]
             state = 200
             paged_tasks, paged_links = paginate_response(
                 task_array,

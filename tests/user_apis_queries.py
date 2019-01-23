@@ -126,7 +126,7 @@ user_apis_queries = [
                  '1'], ]},
     {'id': 9,
      'query': 'select count(*)>0 from application where id = %s;',
-     'result': [ [1, ]]},
+     'result': [[1, ]]},
     {'id': 10,
      'query': 'insert into fg_group_apps (group_id,\n'
               '                           app_id,\n'

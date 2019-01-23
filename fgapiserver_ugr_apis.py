@@ -326,7 +326,11 @@ def user_tasks(user):
 
     if request.method == 'GET':
         if fgapisrv_db.user_exists(user):
-            user_tasks = fgapisrv_db.user_tasks_retrieve(user, application)
+            user_tasks = []
+            user_task_ids = fgapisrv_db.user_tasks_retrieve(user, application)
+            for task_id in user_task_ids:
+                task_record = fgapisrv_db.get_task_record(task_id)
+                user_tasks += [task_record, ]
             status = 200
             response = {'tasks':  user_tasks}
         else:
