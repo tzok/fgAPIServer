@@ -4312,6 +4312,44 @@ class FGAPIServerDB:
         return result
 
     """
+          group_roles_add - Add the given list of roles to the given group
+    """
+
+    def group_apps_add(self, group, role_ids):
+        db = None
+        cursor = None
+        safe_transaction = True
+        count = 0
+        result = []
+        group_id = self.group_param_to_group_id(group)
+        if group_id is not None:
+            try:
+                db = self.connect(safe_transaction)
+                cursor = db.cursor()
+                for role_id in role_ids:
+                    sql = ('select count(*)>0 from fg_role where id = %s;')
+                    sql_data = (role_id,)
+                    logging.debug(sql % sql_data)
+                    cursor.execute(sql, sql_data)
+                    role_exists = cursor.fetchone()
+                    if role_exists > 0:
+                        sql = ('insert into fg_group_role (group_id,\n'
+                               '                           role_id,\n'
+                               '                           creation)\n'
+                               'values (%s, %s, now());')
+                        sql_data = (group_id, role_id,)
+                        logging.debug(sql % sql_data)
+                        cursor.execute(sql, sql_data)
+                        result += [role_id, ]
+                self.query_done(
+                    "Role %s, added to group: %s" % (result, group))
+            except MySQLdb.Error as e:
+                self.catch_db_error(e, db, safe_transaction)
+            finally:
+                self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
       roles_retrieve - Retrieve roles from database
     """
 

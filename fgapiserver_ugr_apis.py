@@ -527,17 +527,17 @@ def groups_group_roles(group):
         params = request.get_json()
         if params is not None:
             logger.debug("params: '%s'" % params)
-            app_ids = params.get('applications', [])
-            new_ids = fgapisrv_db.group_apps_add(group, app_ids)
-            if new_ids != []:
+            role_ids = params.get('roles', [])
+            new_roles = fgapisrv_db.group_apps_add(group, role_ids)
+            if new_roles != []:
                 status = 201
-                response = {'applications': new_ids}
+                response = {'roles': new_roles}
             else:
                 status = 400
                 response = {
                     'message':
-                    ('Unable to associate applications \'%s\' '
-                     'to the group: \'%s\'' % (app_ids,
+                    ('Unable to roles \'%s\' '
+                     'to the group: \'%s\'' % (role_list,
                                                group))
                 }
         else:

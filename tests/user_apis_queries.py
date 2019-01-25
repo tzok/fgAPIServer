@@ -126,7 +126,7 @@ user_apis_queries = [
                  '1'], ]},
     {'id': 9,
      'query': 'select count(*)>0 from application where id = %s;',
-     'result': [[1, ]]},
+     'result': [[1, ], ]},
     {'id': 10,
      'query': 'insert into fg_group_apps (group_id,\n'
               '                           app_id,\n'
@@ -143,7 +143,7 @@ user_apis_queries = [
               '  and t.user=u.name\n'
               '  and t.app_id=a.id\n'
               'order by t.id desc;',
-     'result': [[1, ]]},
+     'result': [[1, ], ]},
     {'id': 12,
      'query': 'select id,\n'
               '       name,\n'
@@ -169,6 +169,16 @@ user_apis_queries = [
      'result': [[1, 'TEST_ROLE_1', '01-01-1970', '01-01-1970'],
                 [2, 'TEST_ROLE_2', '01-01-1970', '01-01-1970'],
                 [3, 'TEST_ROLE_3', '01-01-1970', '01-01-1970'], ]},
+    {'id': 14,
+     'query': 'select count(*)>0 from fg_role where id = %s;',
+     'result': [[1, ], ]},
+    {'id': 15,
+     'query': 'insert into fg_group_role (group_id,\n'
+              '                           role_id,\n'
+              '                           creation)\n'
+              'values (%s, %s, now());',
+     'result': []},
+
 ]
 
 # user_apis tests queries

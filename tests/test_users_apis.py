@@ -146,6 +146,7 @@ class Test_UsersAPIs(unittest.TestCase):
 
     # Get token info from GET token/
     def test_get_token_info(self):
+        self.banner("API: GET token/")
         url = ('/v1.0/token')
         headers = {
             'Authorization': 'TESTSESSIONTOKEN',
@@ -153,7 +154,7 @@ class Test_UsersAPIs(unittest.TestCase):
         result = self.app.get(
             url,
             headers=headers)
-        print result
+        self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("34fc109845dabbdf2ba6022048c9979d",
@@ -165,14 +166,14 @@ class Test_UsersAPIs(unittest.TestCase):
 
     # Get access token from GET auth/ username/base64(password)
     def test_get_auth(self):
+        self.banner("API: GET auth/ username/base64(password)")
         user = 'test'
         password = base64.b64encode('testpwd')
         url = ('/v1.0/auth?username=%s&password=%s&user=delegated_user'
                % (user, password))
-
         self.banner("GET '%s'" % url)
         result = self.app.get(url)
-        print result
+        self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("d499b1c6c90550b83f4ce029fdb166c7",
@@ -180,6 +181,7 @@ class Test_UsersAPIs(unittest.TestCase):
 
     # Get access token from POST auth/ username/base64(password)
     def test_post_auth(self):
+        self.banner("API: POST auth/ username/base64(password)")
         user = 'test'
         password = base64.b64encode('testpwd')
         url = ('/v1.0/auth')
@@ -190,14 +192,14 @@ class Test_UsersAPIs(unittest.TestCase):
             url,
             content_type="application/json",
             headers=headers)
-        print result
+        self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("6dc5ac7125d809b087b0c461ad2ba342",
                          self.md5sum_str(result.data))
 
     def test_get_user_tasks(self):
-        self.banner("GET /v1.0/users/test/tasks")
+        self.banner("API: GET /users/test/tasks")
         user = 'test'
         password = base64.b64encode('testpwd')
         url = ('/v1.0/users/test/tasks')
@@ -206,8 +208,8 @@ class Test_UsersAPIs(unittest.TestCase):
         }
         result = self.app.get(url,
                               headers=headers)
-        print "API return code: %s" % result
-        print "API data: %s" % result.data
+        self.assertEqual(result.status_code, 200)
+        print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("90bb3503d6cf4d48e8de1f0de6a95e81",
                          self.md5sum_str(result.data))
@@ -218,6 +220,7 @@ class Test_UsersAPIs(unittest.TestCase):
 
     # Insert group POST groups/
     def test_post_groups(self):
+        self.banner("API: POST /groups/")
         url = ('/v1.0/groups')
         headers = {
             'Authorization': 'TEST_ACCESS_TOKEN',
@@ -230,7 +233,7 @@ class Test_UsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
+        self.assertEqual(result.status_code, 201)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("6a4376e47c877f672e47eac39e0f106e",
@@ -238,6 +241,7 @@ class Test_UsersAPIs(unittest.TestCase):
 
     # Delete group DELETE user /users/<user>/groups/
     def test_post_groups(self):
+        self.banner("API: DELETE /users/<user>/groups/")
         url = ('/v1.0/users/test_user/groups')
         headers = {
             'Authorization': 'TEST_ACCESS_TOKEN',
@@ -252,7 +256,7 @@ class Test_UsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
+        self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("1fe788c3f2420c8655e5cf2e8155e32b",
@@ -260,6 +264,7 @@ class Test_UsersAPIs(unittest.TestCase):
 
     # Get group apps GET /group/<group>/apps
     def test_get_group_apps(self):
+        self.banner("API: GET /group/<group>/apps")
         headers = {
             'Authorization': 'TEST_ACCESS_TOKEN',
         }
@@ -267,14 +272,15 @@ class Test_UsersAPIs(unittest.TestCase):
         self.banner("GET '%s'" % url)
         result = self.app.get(url,
                               headers=headers)
-        print result
+        self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("61ac839061f508f995cb371009641151",
                          self.md5sum_str(result.data))
 
     # Add group app POST /groups/<group>/apps
-    def test_post_groups(self):
+    def test_post_group_apps(self):
+        self.banner("API: POST /groups/<group>/apps")
         url = ('/v1.0/groups/test_group/apps')
         headers = {
             'Authorization': 'TEST_ACCESS_TOKEN',
@@ -287,14 +293,15 @@ class Test_UsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
+        self.assertEqual(result.status_code, 201)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("41e0a74c8a471c981bcb5809fdd041b2",
                          self.md5sum_str(result.data))
 
-    # Get group apps GET /group/<group>/apps
+    # Get group roles GET /group/<group>/roles
     def test_get_group_roles(self):
+        self.banner("API: GET /group/<group>/roles")
         headers = {
             'Authorization': 'TEST_ACCESS_TOKEN',
         }
@@ -302,18 +309,40 @@ class Test_UsersAPIs(unittest.TestCase):
         self.banner("GET '%s'" % url)
         result = self.app.get(url,
                               headers=headers)
-        print result
+        self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
+                         self.md5sum_str(result.data))
+
+    # Add group roles POST /groups/<group>/roles
+    def test_post_group_roles(self):
+        self.banner("API: POST /groups/<group>/roles")
+        url = ('/v1.0/groups/test_group/roles')
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            'roles': [1, 2, 3],
+        }
+        result = self.app.post(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        self.assertEqual(result.status_code, 201)
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("ac2771bff10d98720167fac7136ccdce",
                          self.md5sum_str(result.data))
 
     #
     # Roles
     #
 
-    # Get roles /roles/
+    # Get roles /roles
     def test_get_roles(self):
+        self.banner("API: GET /roles")
         url = ('/v1.0/roles')
         headers = {
             'Authorization': 'TEST_ACCESS_TOKEN',
@@ -321,7 +350,7 @@ class Test_UsersAPIs(unittest.TestCase):
         result = self.app.get(
             url,
             headers=headers)
-        print result
+        self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
