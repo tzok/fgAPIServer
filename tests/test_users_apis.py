@@ -39,9 +39,7 @@ __email__ = "riccardo.bruno@ct.infn.it"
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
 # soon as the first test error occurs
-stop_at_fail = os.getenv('FGTESTS_STOPATFAIL')
-if stop_at_fail is None:
-    stop_at_fail = False
+stop_at_fail = os.getenv('FGTESTS_STOPATFAIL') is not None
 
 
 class Test_UsersAPIs(unittest.TestCase):
@@ -198,6 +196,22 @@ class Test_UsersAPIs(unittest.TestCase):
         self.assertEqual("6dc5ac7125d809b087b0c461ad2ba342",
                          self.md5sum_str(result.data))
 
+    def test_get_user_tasks(self):
+        self.banner("GET /v1.0/users/test/tasks")
+        user = 'test'
+        password = base64.b64encode('testpwd')
+        url = ('/v1.0/users/test/tasks')
+        headers = {
+            'Authorization': "%s:%s" % (user, password),
+        }
+        result = self.app.get(url,
+                              headers=headers)
+        print "API return code: %s" % result
+        print "API data: %s" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("90bb3503d6cf4d48e8de1f0de6a95e81",
+                         self.md5sum_str(result.data))
+
     #
     # Groups
     #
@@ -277,6 +291,40 @@ class Test_UsersAPIs(unittest.TestCase):
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("41e0a74c8a471c981bcb5809fdd041b2",
+                         self.md5sum_str(result.data))
+
+    # Get group apps GET /group/<group>/apps
+    def test_get_group_roles(self):
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        url = ('/v1.0/groups/test_group/roles')
+        self.banner("GET '%s'" % url)
+        result = self.app.get(url,
+                              headers=headers)
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
+                         self.md5sum_str(result.data))
+
+    #
+    # Roles
+    #
+
+    # Get roles /roles/
+    def test_get_roles(self):
+        url = ('/v1.0/roles')
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        result = self.app.get(
+            url,
+            headers=headers)
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
                          self.md5sum_str(result.data))
 
 

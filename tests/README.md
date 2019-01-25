@@ -25,7 +25,7 @@ Test execution can be controlled by environment variables as listed below:
 
 |Environment variable|Description|
 |---|---|
-|**FGTESTS_STOPATFAIL**| If enabled, test execution stops as soon as the first error occurs|
+|**FGTESTS_STOPATFAIL**| If enabled, test execution stops as soon as the first error occurs, use: `export FGTESTS_STOPATFAIL=1` to enable this feature|
 
 
 ## MySQLdb

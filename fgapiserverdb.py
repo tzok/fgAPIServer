@@ -713,6 +713,7 @@ class FGAPIServerDB:
         safe_transaction = False
         user_id = self.user_param_to_user_id(user)
         app_id = self.app_param_to_app_id(application)
+        result = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -988,7 +989,6 @@ class FGAPIServerDB:
                 ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                 ',app_id\n'
                 ',description\n'
-                ',status\n'
                 ',user\n'
                 ',iosandbox\n'
                 'from task\n'
@@ -1003,15 +1003,12 @@ class FGAPIServerDB:
                     "id": str(
                         task_dbrec[0]),
                     "status": task_dbrec[1],
-                    "creation": str(
-                        task_dbrec[2]),
-                    "last_change": str(
-                        task_dbrec[3]),
+                    "creation": str(task_dbrec[2]),
+                    "last_change": str(task_dbrec[3]),
                     "application": task_dbrec[4],
                     "description": task_dbrec[5],
-                    "status": task_dbrec[6],
-                    "user": task_dbrec[7],
-                    "iosandbox": task_dbrec[8]}
+                    "user": task_dbrec[6],
+                    "iosandbox": task_dbrec[7]}
             else:
                 self.query_done("Task '%s' not found" % task_id)
                 return {}
@@ -2365,7 +2362,7 @@ class FGAPIServerDB:
                     "enabled": bool(app_dbrec[5])}
             else:
                 self.query_done(
-                    "Could not find application '%s'" % app_id_or_name)
+                    "Could not find application '%s'" % application)
                 return {}
             # Application parameters
             app_id = app_dicrec['id']
@@ -4049,7 +4046,7 @@ class FGAPIServerDB:
                          "enabled": app_record[5]}]
                 result = {"applications":  applications}
                 self.query_done(
-                    "Group: %s" % result)
+                    "Applications: %s" % result)
             except MySQLdb.Error as e:
                 self.catch_db_error(e, db, safe_transaction)
             finally:
@@ -4267,3 +4264,86 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return tasks
+
+    """
+      group_roles_retrieve - Return the list of roles associated to the
+                             given group
+    """
+
+    def group_roles_retrieve(self, group):
+        id = 0
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        result = None
+        roles = []
+        group_id = self.group_param_to_group_id(group)
+        if group_id is not None:
+            try:
+                db = self.connect(safe_transaction)
+                cursor = db.cursor()
+                sql = ('select r.id,\n'
+                       '       r.name,\n'
+                       '       date_format(r.creation,\n'
+                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                       '       date_format(r.modified,\n'
+                       '                   \'%%Y-%%m-%%dT%%TZ\') modified,\n'
+                       'from fg_group_role gr,\n'
+                       '     fg_role r\n'
+                       'where gr.group_id = %s\n'
+                       '  and gr.role_id = r.id;')
+                sql_data = (group_id,)
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                for role_record in cursor:
+                    roles += [
+                        {"id": role_record[0],
+                         "name": role_record[1],
+                         "creation": role_record[2],
+                         "modified": role_record[3]}]
+                result = {"roles": roles}
+                self.query_done(
+                    "Roles: %s" % result)
+            except MySQLdb.Error as e:
+                self.catch_db_error(e, db, safe_transaction)
+            finally:
+                self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
+      roles_retrieve - Retrieve roles from database
+    """
+
+    def roles_retrieve(self):
+        db = None
+        cursor = None
+        safe_transaction = False
+        count = 0
+        roles = []
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select id,\n'
+                   '       name,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(modified,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   'from fg_role;')
+            sql_data = ()
+            logging.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            for role_record in cursor:
+                roles += [
+                    {"id":  role_record[0],
+                     "name": role_record[1],
+                     "creation": role_record[2],
+                     "modified": role_record[3]}]
+            self.query_done(
+                "Roles: %s" % roles)
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return roles

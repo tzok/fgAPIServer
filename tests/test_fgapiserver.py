@@ -38,9 +38,7 @@ __email__ = "riccardo.bruno@ct.infn.it"
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
 # soon as the first test error occurs
-stop_at_fail = os.getenv('FGTESTS_STOPATFAIL')
-if stop_at_fail is None:
-    stop_at_fail = False
+stop_at_fail = os.getenv('FGTESTS_STOPATFAIL') is not None
 
 
 class Test_fgAPIServer(unittest.TestCase):
@@ -816,15 +814,6 @@ class Test_fgAPIServer(unittest.TestCase):
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("b8d1575a174363bfe4f586af1a224043",
-                         self.md5sum_str(result.data))
-
-    def test_get_user_tasks(self):
-        self.banner("GET /v1.0/users/test/tasks")
-        result = self.app.get('/v1.0/users/test/tasks')
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("9cd7ba5c88051e1fe5394a87964898f5",
                          self.md5sum_str(result.data))
 
 

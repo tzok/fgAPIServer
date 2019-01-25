@@ -52,19 +52,17 @@ fgapiserver_queries = [
                ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                ',app_id\n'
                ',description\n'
-               ',status\n'
                ',user\n'
                ',iosandbox\n'
                'from task\n'
                'where id=%s\n'
                '  and status != "PURGED";'),
      'result': [['1',
-                 'DONE',
+                 'WAITING',
                  '1970-01-01T00:00:00',
                  '1970-01-01T00:00:00',
                  '1',
                  'test task',
-                 'WAITING',
                  'test user',
                  '/tmp/test']], },
     {'id': 5,
@@ -1088,33 +1086,6 @@ fgapiserver_queries = [
               '         and ug1.group_id=g1.id) = 0;',
      'result': None},
     {'id': 100,
-     'query': 'select t.id,\n'
-              '       date_format(t.creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(t.last_change,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') last_change,\n'
-              '       t.app_id,\n'
-              '       t.description,\n'
-              '       t.status,\n'
-              '       t.iosandbox,\n'
-              '       t.user\n'
-              'from task t,\n'
-              '     fg_user u,\n'
-              '     application a\n'
-              'where u.id=%s\n'
-              '  and t.status != \'PURGED\'\n'
-              '  and t.user=u.name\n'
-              '  and t.app_id=a.id\n'
-              'order by t.id desc;',
-     'result': [['1',
-                 '1970-01-01T00:00:00',
-                 '1970-01-01T00:00:00',
-                 '1',
-                 'test_task',
-                 'TEST',
-                 '/tmp/test_iosandbox',
-                 'test_user', ], ]},
-    {'id': 101,
      'query': 'select user_id\n'
               '      ,(select name from fg_user where id=user_id) name\n'
               '      ,date_format(creation,\n'
@@ -1132,7 +1103,7 @@ fgapiserver_queries = [
                  None,
                  1,
                  1000, ], ]},
-    {'id': 102,
+    {'id': 101,
      'query': 'select count(*)\n'
               'from fg_user\n'
               'where name = %s\n'

@@ -154,7 +154,7 @@ def users():
             else:
                 status = 400
                 response = {
-                    'message': 'Unable to create user \'%s\'' % user
+                    'message': 'Unable to create user \'%s\'' % user_data
                 }
         else:
             status = 400
@@ -162,6 +162,7 @@ def users():
                 'message': 'Missing userdata'
             }
     else:
+        status = 400
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
@@ -220,6 +221,7 @@ def users_user(user):
                     'message': 'Missing userdata'
                 }
     else:
+        status = 400
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
@@ -240,9 +242,9 @@ def user_groups(user):
                                               request.values.to_dict()))
     if request.method == 'GET':
         if fgapisrv_db.user_exists(user):
-            user_groups = fgapisrv_db.user_groups_retrieve(user)
+            group_list = fgapisrv_db.user_groups_retrieve(user)
             status = 200
-            response = {'groups':  user_groups}
+            response = {'groups':  group_list}
         else:
             status = 404
             response = {
@@ -250,7 +252,6 @@ def user_groups(user):
             }
     elif request.method == 'POST':
         if not fgapisrv_db.user_exists(user):
-            user_record = fgapisrv_db.user_retrieve(user)
             status = 404
             response = {
                 'message': 'User \'%s\' does not exists' % user
@@ -259,8 +260,8 @@ def user_groups(user):
             params = request.get_json()
             logger.debug("params: '%s'" % params)
             if params is not None:
-                groups = params.get('groups', [])
-                inserted_groups = fgapisrv_db.add_user_groups(user, groups)
+                group_list = params.get('groups', [])
+                inserted_groups = fgapisrv_db.add_user_groups(user, group_list)
                 if inserted_groups is not None:
                     status = 201
                     response = {'groups': inserted_groups}
@@ -269,7 +270,7 @@ def user_groups(user):
                     response = {
                         'message':
                             'Unable to assign groups %s to user \'%s\'' %
-                            (groups, user)
+                            (group_list, user)
                     }
             else:
                 status = 400
@@ -278,7 +279,6 @@ def user_groups(user):
                 }
     elif request.method == 'DELETE':
         if not fgapisrv_db.user_exists(user):
-            user_record = fgapisrv_db.user_retrieve(user)
             status = 404
             response = {
                 'message': 'User \'%s\' does not exists' % user
@@ -287,8 +287,9 @@ def user_groups(user):
             params = request.get_json()
             logger.debug("params: '%s'" % params)
             if params is not None:
-                groups = params.get('groups', [])
-                deleted_groups = fgapisrv_db.delete_user_groups(user, groups)
+                group_list = params.get('groups', [])
+                deleted_groups = fgapisrv_db.delete_user_groups(user,
+                                                                group_list)
                 if deleted_groups is not None:
                     status = 200
                     response = {'groups': deleted_groups}
@@ -297,7 +298,7 @@ def user_groups(user):
                     response = {
                         'message':
                             'Unable to delete groups %s to user \'%s\'' %
-                            (groups, user)
+                            (group_list, user)
                     }
             else:
                 status = 400
@@ -305,6 +306,7 @@ def user_groups(user):
                     'message': 'Missing groups'
                 }
     else:
+        status = 400
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
@@ -326,19 +328,20 @@ def user_tasks(user):
 
     if request.method == 'GET':
         if fgapisrv_db.user_exists(user):
-            user_tasks = []
+            tasks_list = []
             user_task_ids = fgapisrv_db.user_tasks_retrieve(user, application)
             for task_id in user_task_ids:
                 task_record = fgapisrv_db.get_task_record(task_id)
-                user_tasks += [task_record, ]
+                tasks_list += [task_record, ]
             status = 200
-            response = {'tasks':  user_tasks}
+            response = {'tasks':  tasks_list}
         else:
             status = 404
             response = {
                 'message': 'User \'%s\' does not exists' % user
             }
     else:
+        status = 400
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
@@ -357,7 +360,6 @@ def user_tasks_id(user, task_id):
     logging.debug('user_tasks(%s)/%s: %s' % (request.method,
                                              user,
                                              request.values.to_dict()))
-    application = request.values.get('application')
 
     if request.method == 'GET':
         if fgapisrv_db.user_exists(user):
@@ -369,6 +371,7 @@ def user_tasks_id(user, task_id):
                 'message': 'User \'%s\' does not exists' % user
             }
     else:
+        status = 400
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
@@ -386,9 +389,9 @@ def groups():
     logging.debug('groups(%s): %s' % (request.method,
                                       request.values.to_dict()))
     if request.method == 'GET':
-        groups = fgapisrv_db.groups_retrieve()
+        group_list = fgapisrv_db.groups_retrieve()
         status = 200
-        response = {'groups': groups}
+        response = {'groups': group_list}
     elif request.method == 'POST':
         params = request.get_json()
         if params is not None:
@@ -410,6 +413,7 @@ def groups():
                 'message': 'Missing group'
             }
     else:
+        status = 400
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))
@@ -491,6 +495,80 @@ def groups_group_apps(group):
                 'message': 'Missing group'
             }
     else:
+        status = 400
+        response = {"message": "Unhandled method: '%s'" % request.method}
+
+    logger.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
+
+
+@ugr_apis.route('/%s/groups/<group>/roles' % fgapiver, methods=['GET', 'POST'])
+@login_required
+def groups_group_roles(group):
+    global fgapisrv_db
+
+    logging.debug('groups_group_roles(%s)/%s: %s' % (request.method,
+                                                     group,
+                                                     request.values.to_dict()))
+    if request.method == 'GET':
+        group_roles_info = fgapisrv_db.group_roles_retrieve(group)
+        if group_roles_info is not None:
+            status = 200
+            response = group_roles_info
+        else:
+            status = 404
+            response = {
+                'message': ('No roles found for group having name or '
+                            'id: %s' % group)}
+    elif request.method == 'POST':
+        params = request.get_json()
+        if params is not None:
+            logger.debug("params: '%s'" % params)
+            app_ids = params.get('applications', [])
+            new_ids = fgapisrv_db.group_apps_add(group, app_ids)
+            if new_ids != []:
+                status = 201
+                response = {'applications': new_ids}
+            else:
+                status = 400
+                response = {
+                    'message':
+                    ('Unable to associate applications \'%s\' '
+                     'to the group: \'%s\'' % (app_ids,
+                                               group))
+                }
+        else:
+            status = 400
+            response = {
+                'message': 'Missing group'
+            }
+    else:
+        status = 400
+        response = {"message": "Unhandled method: '%s'" % request.method}
+
+    logger.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
+
+
+@ugr_apis.route('/%s/roles' % fgapiver, methods=['GET', ])
+@login_required
+def roles():
+    global fgapisrv_db
+
+    logging.debug('groups(%s): %s' % (request.method,
+                                      request.values.to_dict()))
+    if request.method == 'GET':
+        role_list = fgapisrv_db.roles_retrieve()
+        status = 200
+        response = {'roles': role_list}
+    else:
+        status = 400
         response = {"message": "Unhandled method: '%s'" % request.method}
 
     logger.debug('message: %s' % response.get('message', 'success'))

@@ -133,6 +133,42 @@ user_apis_queries = [
               '                           creation)\n'
               'values (%s, %s, now());',
      'result': []},
+    {'id': 11,
+     'query': 'select t.id\n'
+              'from task t,\n'
+              '     fg_user u,\n'
+              '     application a\n'
+              'where u.id=%s\n'
+              '  and t.status != \'PURGED\'\n'
+              '  and t.user=u.name\n'
+              '  and t.app_id=a.id\n'
+              'order by t.id desc;',
+     'result': [[1, ]]},
+    {'id': 12,
+     'query': 'select id,\n'
+              '       name,\n'
+              '       date_format(creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(modified,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              'from fg_role;',
+     'result': [[1, 'TEST_ROLE_1', '01-01-1970', '01-01-1970'],
+                [2, 'TEST_ROLE_2', '01-01-1970', '01-01-1970'],
+                [3, 'TEST_ROLE_3', '01-01-1970', '01-01-1970'], ]},
+    {'id': 13,
+     'query': 'select r.id,\n'
+              '       r.name,\n'
+              '       date_format(r.creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(r.modified,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') modified,\n'
+              'from fg_group_role gr,\n'
+              '     fg_role r\n'
+              'where gr.group_id = %s\n'
+              '  and gr.role_id = r.id;',
+     'result': [[1, 'TEST_ROLE_1', '01-01-1970', '01-01-1970'],
+                [2, 'TEST_ROLE_2', '01-01-1970', '01-01-1970'],
+                [3, 'TEST_ROLE_3', '01-01-1970', '01-01-1970'], ]},
 ]
 
 # user_apis tests queries
