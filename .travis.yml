@@ -5,19 +5,16 @@ install:
   - pip install -r requirements.txt
   - pip install pycodestyle
 script:
-  - pycodestyle *.py &&\
-    cd tests &&\
-    pycodestyle *.py &&\
-    export FGTESTS_STOPATFAIL=1 &&\
-    mv ../fgapiserver.conf ../fgapiserver.conf_orig &&\
-    sed 's/fgapisrv_notoken    = False/fgapisrv_notoken    = True/'\
-    ../fgapiserver.conf_orig > ../fgapiserver.conf &&\
-    export PYTHONPATH=$PYTHONPATH:..:. && ./test_fgapiserver.py &&\
-    sed 's/fgapisrv_lnkptvflag = True/fgapisrv_lnkptvflag = False/'\
-    ../fgapiserver.conf_orig > ../fgapiserver.conf &&\
-    ./test_users_apis.py &&\
-    rm ../fgapiserver.conf &&\
-    mv ../fgapiserver.conf_orig ../fgapiserver.conf
+  - pycodestyle *.py
+  -  cd tests
+  -  pycodestyle *.py
+  -  export FGTESTS_STOPATFAIL=1
+  -  mv ../fgapiserver.conf ../fgapiserver.conf_orig
+  -  sed 's/fgapisrv_notoken    = False/fgapisrv_notoken    = True/' ../fgapiserver.conf_orig > ../fgapiserver.conf
+  -  export PYTHONPATH=$PYTHONPATH:..:.
+  -  ./test_fgapiserver.py
+  -  sed 's/fgapisrv_lnkptvflag = True/fgapisrv_lnkptvflag = False/' ../fgapiserver.conf_orig > ../fgapiserver.conf
+  -  ./test_users_apis.py
 branches:
   only:
     - user_api
