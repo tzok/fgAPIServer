@@ -4288,7 +4288,7 @@ class FGAPIServerDB:
                        '       date_format(r.creation,\n'
                        '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
                        '       date_format(r.modified,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') modified,\n'
+                       '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                        'from fg_group_role gr,\n'
                        '     fg_role r\n'
                        'where gr.group_id = %s\n'
