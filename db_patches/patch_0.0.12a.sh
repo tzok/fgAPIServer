@@ -38,7 +38,29 @@ create table fg_user_check (
 EOF
 asdb_file $SQLTMP
 
+out "Adding new roles necessary for user_api"
+cat >$SQLTMP <<EOF
+insert into fg_role (id,name,creation,modified) values (23,'users_view',now(),now());          -- Can view users
+insert into fg_role (id,name,creation,modified) values (24,'users_change',now(),now());        -- Can change users
+insert into fg_role (id,name,creation,modified) values (25,'users_groups_view',now(),now());   -- Can view user groups
+insert into fg_role (id,name,creation,modified) values (26,'users_groups_change',now(),now()); -- Can change user groups
+insert into fg_role (id,name,creation,modified) values (27,'users_tasks_view',now(),now());    -- Can view user tasks
+insert into fg_role (id,name,creation,modified) values (28,'groups_view',now(),now());         -- Can change groups
+insert into fg_role (id,name,creation,modified) values (29,'groups_change',now(),now());       -- Can change groups
+insert into fg_role (id,name,creation,modified) values (30,'groups_apps_view',now(),now());    -- Can view applications in groups
+insert into fg_role (id,name,creation,modified) values (31,'groups_apps_change',now(),now());  -- Can change applications in groups
+insert into fg_role (id,name,creation,modified) values (32,'groups_roles_view',now(),now());   -- Can view roles in groups
+insert into fg_role (id,name,creation,modified) values (33,'groups_roles_change',now(),now()); -- Can change roles in groups
+insert into fg_role (id,name,creation,modified) values (34,'roles_view',now(),now());          -- Can view roles
+-- Administrator roles (grant all privileges)
+insert into fg_group_role (group_id,role_id,creation)
+select 1,id,now() from fg_role where id > 22;
+EOF
+asdb_file $SQLTMP
+
+
 out "Database changed"
+out "New roles are now available, please configure groups to handle new roles to enable UGR APIs"
 out ""
 
 # Removing SQL file

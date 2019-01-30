@@ -21,24 +21,29 @@
 from flask import Flask
 from flask import request
 from flask import Response
-from flask import jsonify
-from flask_login import LoginManager, UserMixin, login_required, current_user
+from flask import abort
+# from flask import jsonify
+from flask_login import LoginManager
+# from flask_login import UserMixin
+from flask_login import login_required
+from flask_login import current_user
 from Crypto.Cipher import ARC4
-from OpenSSL import SSL
+# from OpenSSL import SSL
 from werkzeug import secure_filename
 from fgapiserverdb import FGAPIServerDB
 from fgapiserverconfig import FGApiServerConfig
 from fgapiserverptv import FGAPIServerPTV
 from fgapiserver_user import User
 from fgapiserver_ugr_apis import ugr_apis
+from fgapiserver_auth import authorize_user
 import os
 import sys
-import uuid
+# import uuid
 import time
 import json
-import ConfigParser
+# import ConfigParser
 import base64
-import logging
+# import logging
 import logging.config
 
 """
@@ -141,7 +146,7 @@ def get_fgapiserver_db():
     :return: Return the fgAPIServer database object or None if the
              database connection fails
     """
-    fgapisrv_db = FGAPIServerDB(
+    apiserver_db = FGAPIServerDB(
         db_host=fgapisrv_db_host,
         db_port=fgapisrv_db_port,
         db_user=fgapisrv_db_user,
@@ -149,7 +154,7 @@ def get_fgapiserver_db():
         db_name=fgapisrv_db_name,
         iosandbbox_dir=fgapisrv_iosandbox,
         fgapiserverappid=fgapisrv_geappid)
-    db_state = fgapisrv_db.get_state()
+    db_state = apiserver_db.get_state()
     if db_state[0] != 0:
         logger.error("Unbable to connect to the database:\n"
                      "  host: %s\n"
@@ -163,7 +168,7 @@ def get_fgapiserver_db():
                         fgapisrv_db_pass,
                         fgapisrv_db_name))
         return None
-    return fgapisrv_db
+    return apiserver_db
 
 
 def check_db_ver():
@@ -330,12 +335,10 @@ def create_session_token(**kwargs):
     """
     global fgapisrv_db
     timestamp = int(time.time())
-    sestoken = ""
     user = kwargs.get("user", "")
     logtoken = kwargs.get("logtoken", "")
     username = kwargs.get("username", "")
     password = kwargs.get("password", "")
-    sestoken = ''
     delegated_token = ''
 
     if len(logtoken) > 0:
@@ -377,73 +380,6 @@ def create_session_token(**kwargs):
                 (delegated_token, user))
 
     return sestoken, delegated_token
-
-
-def authorize_user(current_user, app_id, user, reqroles):
-    """
-    This function returns true if the given user is authorized to process the
-    requested action
-    The request will be checked against user group roles stored in the database
-
-    :param current_user: The user requesting the action
-    :param app_id: The application id (if appliable)
-    :param user: The user specified by the filter
-    :param reqroles: The requested roles: task_view, app_run, ...
-    :return:
-    """
-    logger.debug("AuthUser: (begin)")
-    global fgapisrv_db
-
-    # Return True if token management is disabled
-    # if fgapisrv_notoken:
-    #     return True, 'Authorization disabled'
-
-    message = ''
-    user_id = current_user.get_id()
-    user_name = current_user.get_name()
-    logger.debug(("AuthUser: user_id: '%s' - "
-                  "user_name: '%s'" % (user_id, user_name)))
-
-    # Check if requested action is in the user group roles
-    auth_z = fgapisrv_db.verify_user_role(user_id, reqroles)
-    logger.debug(("AuthUser: Auth for user '%s' "
-                  "with roles '%s' is %s")
-                 % (user_id, reqroles, auth_z))
-    if not auth_z:
-        message = ("User '%s' does not have requested '%s' role(s)\n"
-                   % (user_name, reqroles))
-    # Check current_user and filter user are different
-    if user_name != user:
-        logger.debug("AuthUser: User name '%s' differs from user '%s'"
-                     % (user_name, user))
-        user_impersonate = fgapisrv_db.verify_user_role(
-            user_id, 'user_impersonate')
-        if user != "@":
-            group_impersonate = fgapisrv_db.same_group(
-                user_name, user) and fgapisrv_db.verify_user_role(
-                user_id, 'group_impersonate')
-        else:
-            group_impersonate = fgapisrv_db.verify_user_role(
-                user_id, 'group_impersonate')
-        auth_z = auth_z and (user_impersonate or group_impersonate)
-        if not auth_z:
-            if user == "*":
-                user_text = "any user"
-            elif user == "@":
-                user_text = "group-wide users"
-            else:
-                user_text = "'%s' user" % user
-            message = "User '%s' cannot impersonate %s\n" % (
-                user_name, user_text)
-    # Check if app belongs to Group apps
-    if (app_id is not None):
-        logger.debug("AuthUser: checking for app_id '%s'" % app_id)
-        auth_z = auth_z and fgapisrv_db.verify_user_app(user_id, app_id)
-        if not auth_z:
-            message = ("User '%s' cannot perform any activity on application "
-                       "having id: '%s'\n") % (user_name, app_id)
-
-    return auth_z, message
 
 ##
 # flask-login
@@ -702,6 +638,15 @@ def header_links(req, resp, json):
                                          link['href'])))
         resp.headers.add('Location', req.url)
 
+
+#
+# Not allowed method common answer
+#
+def not_allowed_method():
+        return 400,\
+               {"message": "Method '%s' is not allowed for this endpoint"
+                           % request.method}
+
 ##
 # Auth handlers
 ##
@@ -870,11 +815,7 @@ def token():
         else:
             response = fgapisrv_db.get_token_info(user_token)
     else:
-        state = 405
-        response = {
-            "message": "Method '%s' is not allowed for this endpoint"
-            % request.method
-        }
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -1031,6 +972,8 @@ def tasks():
                 response = {
                     "message": ("Did not find any application description "
                                 "json input")}
+    else:
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -1204,6 +1147,8 @@ def task_id(task_id=None):
         response = {
             "message": "This method is not allowed for this endpoint"
         }
+    else:
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -1315,6 +1260,8 @@ def task_id_input(task_id=None):
                             "files": file_list,
                             "message": "uploaded",
                             "gestatus": "waiting"}
+    else:
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -1326,7 +1273,7 @@ def task_id_input(task_id=None):
 # of the task acrivity
 
 
-@app.route('/%s/callback/<task_id>' % fgapiver, methods=['GET', 'POST'])
+@app.route('/%s/callback/<task_id>' % fgapiver, methods=['POST', ])
 def task_callback(task_id=None):
     global fgapisrv_db
     global logger
@@ -1343,8 +1290,7 @@ def task_callback(task_id=None):
         fgapisrv_db.serve_callback(task_id, callback_info)
         response = {"message": "Callback for taks: %s" % task_id}
     else:
-        state = 404
-        response = {"message": "Method '%s' is not allowed" % request.method}
+        state, response = not_allowed_method()
     logger.debug(response['message'])
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
@@ -1375,14 +1321,14 @@ def file():
         app_id = fgapisrv_db.get_file_app_id(file_path, file_name)
     if request.method == 'GET':
         if app_id is None:
-            auth_state = False
-            auth_msg = 'Unexisting file: %s/%s' % (file_path, file_name)
+            status = 404
+            message = 'Unexisting file: %s/%s' % (file_path, file_name)
         else:
             auth_state, auth_msg = authorize_user(
                 current_user, app_id, user, "app_run")
         if not auth_state:
-            task_state = 402
-            file_response = {
+            status = 402
+            response = {
                 "message": "Not authorized to perform this request: %s" %
                            auth_msg}
         else:
@@ -1395,16 +1341,18 @@ def file():
                                  'attachment; filename="%s"' % file_name)
                 return resp
             except IOError:
-                file_response = {
+                response = {
                     "message": "Unable to get file: %s/%s" %
                                (file_path, file_name)}
             finally:
                 if serve_file is not None:
                     serve_file.close()
-        js = json.dumps(file_response, indent=fgjson_indent)
-        resp = Response(js, status=404)
-        resp.headers['Content-type'] = 'application/json'
-        return resp
+    else:
+        status, response = not_allowed_method()
+    js = json.dumps(response, indent=fgjson_indent)
+    resp = Response(js, status=status)
+    resp.headers['Content-type'] = 'application/json'
+    return resp
 
 
 #
@@ -1567,6 +1515,8 @@ def applications():
                     "_links": [{"rel": "input",
                                 "href": "/%s/application/%s/input"
                                         % (fgapiver, app_id)}, ]}
+    else:
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -1693,6 +1643,8 @@ def app_id(app_id=None):
                 response = {
                     "message": "Successfully changed application with id: %s" %
                                app_id}
+    else:
+        status, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -1774,6 +1726,8 @@ def app_id_input(app_id=None):
                     "application": app_id,
                     "files": file_list,
                     "message": "uploaded successfully"}
+    else:
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -1923,6 +1877,8 @@ def infrastructures():
                             "href": "/%s/infrastructure/%s" %
                                     (fgapiver,
                                      infra_record['id'])}]}
+    else:
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -2021,10 +1977,10 @@ def infra_id(infra_id=None):
                     "Successfully removed infrastructure with id: %s" %
                     infra_id}
     elif request.method == 'POST':
+        state = 404
         response = {
             "message": "Not supported method"
         }
-        infra_state = 404
     elif request.method == 'PUT':
         app_id = request.values.get('app_id', None)
         auth_state, auth_msg = authorize_user(
@@ -2060,6 +2016,8 @@ def infra_id(infra_id=None):
                     "message":
                     "Infrastructure changed correctly"
                 }
+    else:
+        state, response = not_allowed_method()
     js = json.dumps(response, indent=fgjson_indent)
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'

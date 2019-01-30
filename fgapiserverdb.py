@@ -4315,7 +4315,7 @@ class FGAPIServerDB:
           group_roles_add - Add the given list of roles to the given group
     """
 
-    def group_apps_add(self, group, role_ids):
+    def group_roles_add(self, group, role_ids):
         db = None
         cursor = None
         safe_transaction = True
