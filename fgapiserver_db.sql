@@ -3,10 +3,6 @@
 --
 -- Copyright (c) 2015:
 -- Istituto Nazionale di Fisica Nucleare (INFN), Italy
--- Consorzio COMETA (COMETA), Italy
---
--- See http://www.infn.it and and http://www.consorzio-cometa.it for details on
--- the copyright holders.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -20,7 +16,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
--- Script that creates the GridEngine based apiserver
+-- Script that creates FutureGateway APIServer
 --
 -- Author: riccardo.bruno@ct.infn.it
 -- Version: %VERSION%
@@ -28,20 +24,6 @@
 --
 drop database if exists fgapiserver;
 create database fgapiserver;
-
-create user 'fgapiserver'@'%';
-alter user 'fgapiserver'@'%' identified by "fgapiserver_password"; 
-grant all privileges
-on fgapiserver.*
-to 'fgapiserver'@'%' 
-with grant option;
-
-create user 'fgapiserver'@'localhost';
-alter user 'fgapiserver'@'localhost' identified by "fgapiserver_password"; 
-grant all privileges
-on fgapiserver.*
-to 'fgapiserver'@'localhost' 
-with grant option;
 
 use fgapiserver;
 
@@ -467,6 +449,39 @@ create table tosca_idc (
 );
 
 --
+-- Service registry
+--
+-- FutureGateway foresees the use of one or many components which presence is tracked
+-- by the FutureGateway database
+--
+create table srv_registry (
+    uuid          char(36) not null
+   ,creation      datetime      not null
+   ,last_access   datetime      not null
+   ,enabled       boolean default true
+   ,cfg_hash      varchar(1024)     
+   ,primary key(uuid)
+);
+
+-- Service configuration
+--
+-- FutureGateway uses registered services to store their configuration settings
+-- this allows safe service restarts as well as 'on the fly' change of configuration
+-- settings for all modules supporting this
+-- Configuration values are stored in the form conf_name = conf_value
+-- the field conf_enabled tells if the configuration is enabled or not
+--
+create table srv_config (
+    uuid          char(36) not null
+   ,name          varchar(256)  not null
+   ,value         varchar(4096)
+   ,enabled       boolean default true
+   ,created       datetime not null
+   ,modified      datetime not null
+   ,foreign key (uuid) references srv_registry(uuid)
+);
+
+--
 -- Patching mechanism
 --
 -- Futuregateway provides automated scripts exploiting GITHub to automatically
@@ -484,5 +499,4 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.12a','baseline setup','../fgapiserver_db.sql',now());
-
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.12b','baseline setup','../fgapiserver_db.sql',now());

@@ -9,6 +9,7 @@ Another mandatory configuration is related to the fgapiserver.conf which setting
 
 **fgapiserver**
 It tests basic fgAPIServer functionalities and does not need authentication at all
+
 ```
 fgapisrv_notoken    = True
 fgapisrv_notokenusr = test
@@ -26,7 +27,6 @@ Test execution can be controlled by environment variables as listed below:
 |Environment variable|Description|
 |---|---|
 |**FGTESTS_STOPATFAIL**| If enabled, test execution stops as soon as the first error occurs, use: `export FGTESTS_STOPATFAIL=1` to enable this feature|
-
 
 ## MySQLdb
 Test script makes use of a custom `MySQLdb` class where each SQL statement executed by the `fgapiserverdb.py` file is hardcoded.
@@ -54,6 +54,9 @@ queries += <test_suite_queries>
 ## test_fgapiserver.py
 This test script makes use of unittests and its code is splitted in two separated sections. A firt part consists of unit tests on `fgapiserver.py` code; the second part contains functional tests on developed Flask endpoints.
 In the functional tests; each returned JSON is compared through its MD5Sum value with the `assertEqual()` method. The MD5Sum value to compare is extracted during the test case development and then hardcoded inside the `assertEqual()` method.
+
+## test_fgapiserverconfig.py
+This test script makes use of unittests to perform tests on top of the FGApiServerConfig object used to store fgAPIServer configuration options.
 
 ## test_mklogtoken.py
 This script executes a simple test on mklogtoken.py code used by the baseline Authentication and Authorization.

@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
-# Consorzio COMETA (COMETA), Italy
 #
-# See http://www.infn.it and and http://www.consorzio-cometa.it for details on
-# the copyright holders.
+# See http://www.infn.it  for details on the copyrigh holder
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +18,6 @@
 
 import fgapiserver_queries
 import user_apis_queries
-
 
 #
 # MySQLdb.py emulates the MySQL module returning configurable outputs

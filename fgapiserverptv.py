@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
-# Consorzio COMETA (COMETA), Italy
 #
-# See http://www.infn.it and and http://www.consorzio-cometa.it for details on
-# the copyright holders.
+# See http://www.infn.it  for details on the copyrigh holder
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -127,8 +125,8 @@ class FGAPIServerPTV:
             response.close()
             self.log.debug("Retrieved token info:\n"
                            "%s" % token_info)
-        except requests.RequestException:
-            self.log.error("Unable to get token info")
+        except requests.ConnectionError, e:
+            self.log.error("Unable to get token info: '%s'", e)
 
         # Now fill class values
         self.portal_validate = \

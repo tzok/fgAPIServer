@@ -49,37 +49,37 @@ fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
 
 # Load configuration
 fg_config_obj = FGApiServerConfig(fgapiserver_config_file)
-fg_config = fg_config_obj.get_config()
+#fg_config_obj = fg_config_obj.get_config()
 
 # fgapiserver settings
-fgapiver = fg_config['fgapiver']
-fgapiserver_name = fg_config['fgapiserver_name']
-fgapisrv_host = fg_config['fgapisrv_host']
-fgapisrv_port = int(fg_config['fgapisrv_port'])
-fgapisrv_debug = (fg_config['fgapisrv_debug'].lower() == 'true')
-fgapisrv_iosandbox = fg_config['fgapisrv_iosandbox']
-fgapisrv_geappid = fg_config['fgapisrv_geappid']
-fgjson_indent = int(fg_config['fgjson_indent'])
-fgapisrv_key = fg_config['fgapisrv_key']
-fgapisrv_crt = fg_config['fgapisrv_crt']
-fgapisrv_logcfg = fg_config['fgapisrv_logcfg']
-fgapisrv_dbver = fg_config['fgapisrv_dbver']
-fgapisrv_secret = fg_config['fgapisrv_secret']
-fgapisrv_notoken = (fg_config['fgapisrv_notoken'].lower() == 'true')
-fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
-fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
-fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
-fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
-fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
-fgapisrv_ptvdefusr = fg_config['fgapisrv_ptvdefusr']
-fgapisrv_ptvmapfile = fg_config['fgapisrv_ptvmapfile']
+fgapiver = fg_config_obj['fgapiver']
+fgapiserver_name = fg_config_obj['fgapiserver_name']
+fgapisrv_host = fg_config_obj['fgapisrv_host']
+fgapisrv_port = fg_config_obj['fgapisrv_port']
+fgapisrv_debug = fg_config_obj['fgapisrv_debug']
+fgapisrv_iosandbox = fg_config_obj['fgapisrv_iosandbox']
+fgapisrv_geappid = fg_config_obj['fgapisrv_geappid']
+fgjson_indent = fg_config_obj['fgjson_indent']
+fgapisrv_key = fg_config_obj['fgapisrv_key']
+fgapisrv_crt = fg_config_obj['fgapisrv_crt']
+fgapisrv_logcfg = fg_config_obj['fgapisrv_logcfg']
+fgapisrv_dbver = fg_config_obj['fgapisrv_dbver']
+fgapisrv_secret = fg_config_obj['fgapisrv_secret']
+fgapisrv_notoken = fg_config_obj['fgapisrv_notoken']
+fgapisrv_notokenusr = fg_config_obj['fgapisrv_notokenusr']
+fgapisrv_lnkptvflag = fg_config_obj['fgapisrv_lnkptvflag']
+fgapisrv_ptvendpoint = fg_config_obj['fgapisrv_ptvendpoint']
+fgapisrv_ptvuser = fg_config_obj['fgapisrv_ptvuser']
+fgapisrv_ptvpass = fg_config_obj['fgapisrv_ptvpass']
+fgapisrv_ptvdefusr = fg_config_obj['fgapisrv_ptvdefusr']
+fgapisrv_ptvmapfile = fg_config_obj['fgapisrv_ptvmapfile']
 
 # fgapiserver database settings
-fgapisrv_db_host = fg_config['fgapisrv_db_host']
-fgapisrv_db_port = int(fg_config['fgapisrv_db_port'])
-fgapisrv_db_user = fg_config['fgapisrv_db_user']
-fgapisrv_db_pass = fg_config['fgapisrv_db_pass']
-fgapisrv_db_name = fg_config['fgapisrv_db_name']
+fgapisrv_db_host = fg_config_obj['fgapisrv_db_host']
+fgapisrv_db_port = fg_config_obj['fgapisrv_db_port']
+fgapisrv_db_user = fg_config_obj['fgapisrv_db_user']
+fgapisrv_db_pass = fg_config_obj['fgapisrv_db_pass']
+fgapisrv_db_name = fg_config_obj['fgapisrv_db_name']
 
 # Logging
 logging.config.fileConfig(fgapisrv_logcfg)
