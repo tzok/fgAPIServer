@@ -2,32 +2,19 @@ language: python
 python:
   - "2.7"
 install: 
-  - pip install pycrypto
-  - pip install Flask
-  - pip install flask-login
+  - pip install -r requirements.txt
+  - pip install pycodestyle
 script:
-  - export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
-  - python tests/test_mklogtoken.py
-  - |
-    cat > getlogtoken.py <<EOF
-    from mklogtoken import tokenEncode, tokenDecode, tokenInfo
-    key="0123456789ABCDEF"
-    username="futuregateway"
-    password="futuregateway"
-    print tokenEncode(key,username,password)
-    EOF
-  - ./fgapiserver.py >fgapiserver.runlog 2>fgapiserver.runlog &
-  - |
-    cat > dotest.sh <<EOF
-    LOGTK=$(python getlogtoken.py)
-    SSTKN=$(curl -H "Content-Type: application/json" -H "Authorization: Bearer $LOGTK" -X POST http://localhost:8888/v1.0/auth)
-    TASKS=$(curl -H "Authorization: $SSTKN" http://localhost:8888/v1.0/tasks)
-    echo "Token        : $LOGTK"
-    echo "Session token: $SSTKN"
-    echo "Tasks        : $TASKS"
-    EOF
-  - /bin/bash dotest.sh
-  - cat fgapiserver.runlog
+  - pycodestyle *.py
+  -  cd tests
+  -  pycodestyle *.py
+  -  export FGTESTS_STOPATFAIL=1
+  -  mv ../fgapiserver.conf ../fgapiserver.conf_orig
+  -  sed 's/fgapisrv_notoken    = False/fgapisrv_notoken    = True/' ../fgapiserver.conf_orig > ../fgapiserver.conf
+  -  export PYTHONPATH=$PYTHONPATH:..:.
+  -  ./test_fgapiserver.py
+  -  sed 's/fgapisrv_lnkptvflag = True/fgapisrv_lnkptvflag = False/' ../fgapiserver.conf_orig > ../fgapiserver.conf
+  -  ./test_users_apis.py
 branches:
   only:
-    - master
+    - user_api

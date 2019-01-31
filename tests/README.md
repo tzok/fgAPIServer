@@ -5,22 +5,51 @@ In order to test fgapiserver; the `PYTHON_PATH` environment variable must be set
 export PYTHONPATH=$PYTHONPATH:..:.
 ./test_fgapiserver.py
 ```
-Another mandatory configuration is related to the fgapiserver.conf file that must contain default development configuration settings. In particular ensure the matching of the following configuration values in `fgapiserver.conf` fie.
+Another mandatory configuration is related to the fgapiserver.conf which settings are depending from the test suite to execute as explained below:
+
+**fgapiserver**
+It tests basic fgAPIServer functionalities and does not need authentication at all
 ```
 fgapisrv_notoken    = True
 fgapisrv_notokenusr = test
 ```
 
+**user_apis**
+This test suite has been developed to test user specific APIs and it needs to enable baseline authentication
+```
+fgapisrv_notoken    = False
+fgapisrv_lnkptvflag = False
+```
+
+Test execution can be controlled by environment variables as listed below:
+
+|Environment variable|Description|
+|---|---|
+|**FGTESTS_STOPATFAIL**| If enabled, test execution stops as soon as the first error occurs, use: `export FGTESTS_STOPATFAIL=1` to enable this feature|
+
+
 ## MySQLdb
 Test script makes use of a custom `MySQLdb` class where each SQL statement executed by the `fgapiserverdb.py` file is hardcoded.
-The list of supported statements is a python vector of maps called: `queries`.
-Each map in the vector has the following structure:
+Each test suite has its own list of statements stored in a unique vector having the form:
 
-```json
-{'query': 'SELECT VERSION()',
- 'result': [['5.7.17', ], ]},
+The list of supported statements is included in a python vector of maps called: `queries`.
+This vector of maps has the following structure:
+
+```python
+queries = [
+    {'category': '<test suite>',
+     'statements': [
+         {'query': '<query statment as in fgapiserverdb.py>',
+          'result': '<query result as MySQLdb cursor expects>}, ]}, ]
 ```
-This class currently does not take in consideration query input values as defined in `sql_data`. Query results are then hardcoded inside the `result` field.
+MySQLdb does not take in consideration query input values as they are defined in `sql_data` variable. Query results are then hardcoded inside the `result` field, to best control tests executions.
+Each test suite inlcudes their own statements, importing its queries in MySQLdb code as reported below:
+
+```python
+# Load tests queries
+queries += <test_suite_queries>
+...
+```
 
 ## test_fgapiserver.py
 This test script makes use of unittests and its code is splitted in two separated sections. A firt part consists of unit tests on `fgapiserver.py` code; the second part contains functional tests on developed Flask endpoints.
@@ -30,4 +59,5 @@ In the functional tests; each returned JSON is compared through its MD5Sum value
 This script executes a simple test on mklogtoken.py code used by the baseline Authentication and Authorization.
 It starts to encrypt username/password and timestamp and retrieve back this information with decrypting method.
 
-
+## test_user_apis.py
+This test controls fgAPIServer APIs dedicated to the user management, using the baseline authentication method. For this reason it requires a specific configuration setting to work and a dedicated test case has been built to check this condition.

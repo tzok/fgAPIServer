@@ -101,7 +101,7 @@ class FGApiServerConfig:
                 def_value = self.defaults[section][conf_name]
                 try:
                     self.fgConfig[conf_name] = config.get(section, conf_name)
-                except:
+                except KeyError:
                     self.fgConfigMsg += ("[WARNING]:Couldn't find option '%s' "
                                          "in section '%s'; "
                                          "using default value '%s'"

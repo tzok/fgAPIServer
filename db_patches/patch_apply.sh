@@ -9,7 +9,7 @@
 DEFAULTDBVER="0.0.1" # Baseline setup version
 
 ts() {
-	  date +%Y%m%d%H%M%S
+  date +%Y%m%d%H%M%S
 }
 
 out() {
@@ -54,39 +54,43 @@ DBVER=$(get_dbver)
 out "Current DB version: $DBVER"
 # Build the list of patches to apply
 DBVERVAL=$(echo $DBVER | awk -F'.' '{ print 1000000*$1+1000*$2+$3 }')
-DBPATCHES=$(/bin/ls -1 *.sh |\
-            grep -E '[0-9]+\.sh' |\
-            awk -F'_' '{ print $2 }' |\
-            awk -F'.' -v dbverval=$DBVERVAL '{ if(1000000*$1+1000*$2+$3 > dbverval) print $1"."$2"."$3}')
+DBPATCHES=$(/bin/ls -1 |\
+            grep patch_[0-9*] |\
+            sort --version-sort --field-separator=_ --key=2 |\
+            awk -v dbver=$DBVER\
+                'BEGIN{ p = 0; }\
+                      { s = sprintf("patch_%s.sh", dbver);\
+                        if(p == 1) print $1;\
+                        if(s == $1) p=1;\
+                      }')
 out "Selected patch versions: '"$(echo $DBPATCHES | sed s/\ /,\ /g)"'"
 # Apply selected patches
 COUNT=0
 STOPPED=0
-for ver in $DBPATCHES
+for patch in $DBPATCHES
 do
-  out "Executing: patch_${ver}.sh"
-  chmod +x patch_${ver}.sh
-  local_exec "./patch_${ver}.sh" > ./patch_${ver}.log
+  out "Executing: ${patch}"
+  PATCH_LOG=$(echo ${patch} | sed s/.sh/.log/)
+  chmod +x ${patch}
+  local_exec "${patch}" > ./$PATCH_LOG
   # Verify patch
-  DBVER=$(get_dbver)
-  DBVERVAL=$(echo $DBVER | awk -F'.' '{ print 1000000*$1+1000*$2+$3 }')
-  PCVERVAL=$(echo $ver | awk -F'.' '{ print 1000000*$1+1000*$2+$3 }')
-  if [ "$DBVERVAL" != "$PCVERVAL" ]; then
-    err "An error occurred while applying patch $ver"
+  NEWDBVER=$(get_dbver)
+  if [ "$NEWDBVER" = "$DBVER" ]; then
+    err "An error occurred while applying patch: ${patch}"
     err "Exiting"
     STOPPED=1
     break
   else
+    DBVER=$NEWDBVER
     COUNT=$((COUNT+1))
-    DBVER=$ver
   fi
 done
 # Report about execution
 if [ $STOPPED -ne 0 ]; then
-  err "Patching has been interrupted while executing patch_$ver.sh file"
-  err "Please verify its content and the patch_$ver.log file"
+  err "Patching has been interrupted while executing ${patch} file"
+  err "Please verify its content and the $PATCH_LOG file"
   err "Then try to complete its execution manually and retry to"
-  err "apply patches"
+  err "apply further patches if needed"
 else
   out "Applied $COUNT patches"
   out "DB is now version $DBVER"

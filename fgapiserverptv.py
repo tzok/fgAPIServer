@@ -127,7 +127,7 @@ class FGAPIServerPTV:
             response.close()
             self.log.debug("Retrieved token info:\n"
                            "%s" % token_info)
-        except:
+        except requests.RequestException:
             self.log.error("Unable to get token info")
 
         # Now fill class values

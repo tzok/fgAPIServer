@@ -26,6 +26,7 @@ import os
 import shutil
 from fgapiserver import app
 from mklogtoken import token_encode, token_decode, token_info
+from fgapiserver_user import User
 
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
@@ -33,6 +34,11 @@ __license__ = "Apache"
 __version__ = "v0.0.2-30-g37540b8-37540b8-37"
 __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
+
+# FGTESTS_STOPATFAIL environment controls the execution
+# of the tests, if defined, it stops test execution as
+# soon as the first test error occurs
+stop_at_fail = os.getenv('FGTESTS_STOPATFAIL') is not None
 
 
 class Test_fgAPIServer(unittest.TestCase):
@@ -62,11 +68,20 @@ class Test_fgAPIServer(unittest.TestCase):
     # fgapiserver
     #
 
+    # Baseline authentication must be activated
+    def test_CkeckConfig(self):
+        self.banner("Check configuration settings")
+        self.assertEqual(
+            fgapiserver.fg_config['fgapisrv_notoken'].lower(), 'true')
+        self.assertEqual(
+            fgapiserver.fg_config['fgapisrv_notokenusr'].lower(), 'test')
+
     def test_User(self):
         self.banner("User class")
-        user = fgapiserver.User(2, 'test')
-        self.assertEqual(2, user.get_id())
+        user = fgapiserver.User(1, 'test', 'test_token')
+        self.assertEqual(1, user.get_id())
         self.assertEqual('test', user.get_name())
+        self.assertEqual('test_token', user.get_token())
 
     def test_paginate_reposnse(self):
         self.banner("paginate_response(txt,'2','3',[])")
@@ -94,7 +109,7 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_checkDbVer(self):
         self.banner("checkDbVer()")
-        self.assertEqual('0.0.10', fgapiserver.check_db_ver())
+        self.assertEqual('0.0.12a', fgapiserver.check_db_ver())
 
     def test_fgapiserver(self):
         self.banner("get_task_app_id(1)")
@@ -136,6 +151,22 @@ class Test_fgAPIServer(unittest.TestCase):
         assert state[0] is False
         assert result[0] == '1'
         assert result[1] == 'test_user'
+
+    def test_get_token_info(self):
+        self.banner("Testing fgapiserverdb get_token_info")
+        result = self.fgapisrv_db.get_token_info('TESTSESSIONTOKEN')
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        expected_result = {
+            'user_id': '1',
+            'creation': None,
+            'expiry': None,
+            'token': 'TESTSESSIONTOKEN',
+            'valid': True,
+            'user_name': 'test_user',
+            'lasting': 1000}
+        assert result == expected_result
 
     def test_dbobj_register_token(self):
         self.banner("Testing fgapiserverdb register_token")
@@ -282,7 +313,7 @@ class Test_fgAPIServer(unittest.TestCase):
     def create_test_json(self):
         try:
             os.stat(self.test_dir)
-        except:
+        except OSError:
             os.mkdir(self.test_dir)
         f = open('%s/1.json' % self.test_dir, 'w')
         f.write('{}')
@@ -497,7 +528,7 @@ class Test_fgAPIServer(unittest.TestCase):
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
         assert state[0] is False
-        assert result['name'] == 'test_app'
+        assert result['name'] == 'test application'
 
     def test_dbobj_init_app(self):
         self.banner("Testing fgapiserverdb init_app")
@@ -628,6 +659,14 @@ class Test_fgAPIServer(unittest.TestCase):
                                                                     password2))
 
     #
+    # fgapiserver_user
+    #
+    def test_fgapiserver_user(self):
+        self.banner("Testing user")
+        user = User(1, "test_user", "test_token")
+        assert user is not None
+
+    #
     # REST APIs - Following tests are functional tests
     #
     # MD5 values are taken from the self.md5sum_str(result.data) value
@@ -642,6 +681,10 @@ class Test_fgAPIServer(unittest.TestCase):
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("39966ce9d2fd0e8a009fab43d8cae254",
                          self.md5sum_str(result.data))
+
+    #
+    # Infrastructures
+    #
 
     def test_get_infrastructures(self):
         self.banner("GET /v1.0/infrastructures")
@@ -686,9 +729,97 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual("8ba55904600d405ea07f71e499ca3aa5",
                          self.md5sum_str(result.data))
 
+    #
+    # User
+    #
+
+    def test_get_users(self):
+        self.banner("GET /v1.0/users")
+        result = self.app.get('/v1.0/users')
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("1f6e310992a628fa7473c4f63c561ec5",
+                         self.md5sum_str(result.data))
+
+    def test_post_users(self):
+        post_data = {'name': 'test',
+                     'first_name': 'test first name',
+                     'last_name': 'test last name',
+                     'institute': 'test institute',
+                     'mail': 'test mail'}
+        self.banner("POST /v1.0/users")
+        result = self.app.post(
+            '/v1.0/users',
+            data=json.dumps(post_data),
+            content_type="application/json")
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
+                         self.md5sum_str(result.data))
+
+    def test_get_user(self):
+        self.banner("GET /v1.0/users/test")
+        result = self.app.get('/v1.0/users/test')
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
+                         self.md5sum_str(result.data))
+
+    def test_post_user(self):
+        post_data = {'name': 'test',
+                     'first_name': 'test first name',
+                     'last_name': 'test last name',
+                     'institute': 'test institute',
+                     'mail': 'test mail'}
+        self.banner("POST /v1.0/users/test")
+        result = self.app.post(
+            '/v1.0/users/test',
+            data=json.dumps(post_data),
+            content_type="application/json")
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
+                         self.md5sum_str(result.data))
+
+    def test_get_groups(self):
+        self.banner("GET /v1.0/groups")
+        result = self.app.get('/v1.0/groups')
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("30661885dc0cdeb44de575468597f446",
+                         self.md5sum_str(result.data))
+
+    def test_get_user_groups(self):
+        self.banner("GET /v1.0/users/test/groups")
+        result = self.app.get('/v1.0/users/test/groups')
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("30661885dc0cdeb44de575468597f446",
+                         self.md5sum_str(result.data))
+
+    def test_post_user_groups(self):
+        post_data = {'groups': [1]}
+        self.banner("POST /v1.0/users/test/groups")
+        result = self.app.post(
+            '/v1.0/users/test/groups',
+            data=json.dumps(post_data),
+            content_type="application/json")
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("b8d1575a174363bfe4f586af1a224043",
+                         self.md5sum_str(result.data))
+
+
 if __name__ == '__main__':
     print "----------------------------------"
     print "Starting unit tests ..."
     print "----------------------------------"
-    unittest.main()
+    unittest.main(failfast=stop_at_fail)
     print "Tests completed"

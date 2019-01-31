@@ -39,12 +39,15 @@ class User(UserMixin):
     log = None
     id = 0
     name = ''
+    token = ''
 
-    def __init__(self, id, name):
+    def __init__(self, id, name, token):
         self.log = logging.getLogger(__name__)
         self.id = id
         self.name = name
-        self.log.debug("fgUser - id: '%s' - name: '%s'" % (id, name))
+        self.token = token
+        self.log.debug("fgUser - id: '%s' - name: '%s' - token: '%s'"
+                       % (id, name, token))
 
     def get_id(self):
         """
@@ -59,3 +62,10 @@ class User(UserMixin):
         :return:  user_name
         """
         return self.name
+
+    def get_token(self):
+        """
+         Get the token
+        :return: token
+        """
+        return self.token
