@@ -56,6 +56,7 @@ def token_info(key, token):
         tinfo_fields[1].split("=")[1], \
         tinfo_fields[2].split("=")[1]
 
+
 if __name__ == "__main__":
     token = token_encode(key, username, password)
     tinfo = token_decode(key, token)

@@ -238,9 +238,18 @@ create table fg_user (
    ,last_name    varchar(128)  not null                -- last name
    ,institute    varchar(256)  not null                -- institution
    ,mail         varchar(1024) not null                -- email, more addresses as comma separated values
-   ,creation     datetime      not null                -- When user has been inserted
-   ,modified     datetime      not null                -- When user has been modified
+   ,creation     datetime      not null                -- when user has been inserted
+   ,modified     datetime      not null                -- when user has been modified
+   ,enabled      boolean       not null default true   -- user enabling flag
    ,primary key(id,name)
+);
+
+-- User activation table
+create table fg_user_check (
+    user_id        int unsigned  not null -- User id to enable
+   ,token          varchar(1024) not null -- Enabling token
+   ,token_expiry   datetime      not null -- Expiry date for enabling token
+   ,foreign key(user_id) references fg_user(id)
 );
 
 -- Users baseline values; users and passwords must be replaced with real values
@@ -277,28 +286,41 @@ create table fg_role (
 );
 
 -- Roles baseline values
-insert into fg_role (id,name,creation,modified) values ( 1,'app_install',now(),now());       -- Install an application
-insert into fg_role (id,name,creation,modified) values ( 2,'app_change',now(),now());        -- Modify an application
-insert into fg_role (id,name,creation,modified) values ( 3,'app_delete',now(),now());        -- Delete an application
-insert into fg_role (id,name,creation,modified) values ( 4,'app_view',now(),now());          -- Run an application
-insert into fg_role (id,name,creation,modified) values ( 5,'app_run',now(),now());           -- Run an application
-insert into fg_role (id,name,creation,modified) values ( 6,'infra_add',now(),now());         -- Add an infrastructure
-insert into fg_role (id,name,creation,modified) values ( 7,'infra_change',now(),now());      -- Change infrastructure
-insert into fg_role (id,name,creation,modified) values ( 8,'infra_delete',now(),now());      -- Delete an infrastructure
-insert into fg_role (id,name,creation,modified) values ( 9,'infra_view',now(),now());        -- View an infrastructure
-insert into fg_role (id,name,creation,modified) values (10,'infra_attach',now(),now());      -- Attach an infrastructure to an application
-insert into fg_role (id,name,creation,modified) values (11,'infra_detach',now(),now());      -- Detach an infrastructure from an application
-insert into fg_role (id,name,creation,modified) values (12,'task_delete',now(),now());       -- Delete a task
-insert into fg_role (id,name,creation,modified) values (13,'task_view',now(),now());         -- View a task
-insert into fg_role (id,name,creation,modified) values (14,'task_userdata',now(),now());     -- Manage userdata on task
-insert into fg_role (id,name,creation,modified) values (15,'user_add',now(),now());          -- Can add users
-insert into fg_role (id,name,creation,modified) values (16,'user_del',now(),now());          -- Can remove users
-insert into fg_role (id,name,creation,modified) values (17,'user_change',now(),now());       -- Can change users
-insert into fg_role (id,name,creation,modified) values (18,'group_change',now(),now());      -- Can change groups
-insert into fg_role (id,name,creation,modified) values (19,'role_change',now(),now());       -- Can change roles
-insert into fg_role (id,name,creation,modified) values (20,'user_impersonate',now(),now());  -- Can impersonate any other users
-insert into fg_role (id,name,creation,modified) values (21,'group_impersonate',now(),now()); -- Can impersonate other users in the same group
-insert into fg_role (id,name,creation,modified) values (22,'task_statuschange',now(),now()); -- Can change the status of a task
+insert into fg_role (id,name,creation,modified) values ( 1,'app_install',now(),now());         -- Install an application
+insert into fg_role (id,name,creation,modified) values ( 2,'app_change',now(),now());          -- Modify an application
+insert into fg_role (id,name,creation,modified) values ( 3,'app_delete',now(),now());          -- Delete an application
+insert into fg_role (id,name,creation,modified) values ( 4,'app_view',now(),now());            -- Run an application
+insert into fg_role (id,name,creation,modified) values ( 5,'app_run',now(),now());             -- Run an application
+insert into fg_role (id,name,creation,modified) values ( 6,'infra_add',now(),now());           -- Add an infrastructure
+insert into fg_role (id,name,creation,modified) values ( 7,'infra_change',now(),now());        -- Change infrastructure
+insert into fg_role (id,name,creation,modified) values ( 8,'infra_delete',now(),now());        -- Delete an infrastructure
+insert into fg_role (id,name,creation,modified) values ( 9,'infra_view',now(),now());          -- View an infrastructure
+insert into fg_role (id,name,creation,modified) values (10,'infra_attach',now(),now());        -- Attach an infrastructure to an application
+insert into fg_role (id,name,creation,modified) values (11,'infra_detach',now(),now());        -- Detach an infrastructure from an application
+insert into fg_role (id,name,creation,modified) values (12,'task_delete',now(),now());         -- Delete a task
+insert into fg_role (id,name,creation,modified) values (13,'task_view',now(),now());           -- View a task
+insert into fg_role (id,name,creation,modified) values (14,'task_userdata',now(),now());       -- Manage userdata on task
+insert into fg_role (id,name,creation,modified) values (15,'user_add',now(),now());            -- Can add users
+insert into fg_role (id,name,creation,modified) values (16,'user_del',now(),now());            -- Can remove users
+insert into fg_role (id,name,creation,modified) values (17,'user_change',now(),now());         -- Can change users
+insert into fg_role (id,name,creation,modified) values (18,'group_change',now(),now());        -- Can change groups
+insert into fg_role (id,name,creation,modified) values (19,'role_change',now(),now());         -- Can change roles
+insert into fg_role (id,name,creation,modified) values (20,'user_impersonate',now(),now());    -- Can impersonate any other users
+insert into fg_role (id,name,creation,modified) values (21,'group_impersonate',now(),now());   -- Can impersonate other users in the same group
+insert into fg_role (id,name,creation,modified) values (22,'task_statuschange',now(),now());   -- Can change the status of a task
+insert into fg_role (id,name,creation,modified) values (23,'users_view',now(),now());          -- Can view users
+insert into fg_role (id,name,creation,modified) values (24,'users_change',now(),now());        -- Can change users
+insert into fg_role (id,name,creation,modified) values (25,'users_groups_view',now(),now());   -- Can view user groups
+insert into fg_role (id,name,creation,modified) values (26,'users_groups_change',now(),now()); -- Can change user groups
+insert into fg_role (id,name,creation,modified) values (27,'users_tasks_view',now(),now());    -- Can view user tasks
+insert into fg_role (id,name,creation,modified) values (28,'groups_view',now(),now());         -- Can change groups
+insert into fg_role (id,name,creation,modified) values (29,'groups_change',now(),now());       -- Can change groups
+insert into fg_role (id,name,creation,modified) values (30,'groups_apps_view',now(),now());    -- Can view applications in groups
+insert into fg_role (id,name,creation,modified) values (31,'groups_apps_change',now(),now());  -- Can change applications in groups
+insert into fg_role (id,name,creation,modified) values (32,'groups_roles_view',now(),now());   -- Can view roles in groups
+insert into fg_role (id,name,creation,modified) values (33,'groups_roles_change',now(),now()); -- Can change roles in groups
+insert into fg_role (id,name,creation,modified) values (34,'roles_view',now(),now());          -- Can view roles
+
 --
 -- CrossTables applying Roles to Groups and Users
 --
@@ -477,5 +499,4 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.12','baseline setup','../fgapiserver_db.sql',now());
-
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.12b','baseline setup','../fgapiserver_db.sql',now());
