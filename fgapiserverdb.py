@@ -138,10 +138,10 @@ class FGAPIServerDB:
     """
 
     def query_done(self, message):
-            self.err_flag = False
-            self.err_msg = message
-            logging.debug("Query done message:\n"
-                          "%s" % message)
+        self.err_flag = False
+        self.err_msg = message
+        logging.debug("Query done message:\n"
+                      "%s" % message)
 
     """
       connect Connects to the fgapiserver database
@@ -612,9 +612,9 @@ class FGAPIServerDB:
             self.query_done(
                 "User with name: '%s' has id: %s " % (user_name, user_id))
         except MySQLdb.Error as e:
-                self.catch_db_error(e, db, safe_transaction)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-                self.close_db(db, cursor, safe_transaction)
+            self.close_db(db, cursor, safe_transaction)
         return user_id
 
     """
@@ -655,9 +655,9 @@ class FGAPIServerDB:
                 "Application with name: '%s' has id: %s "
                 % (app_name, app_id))
         except MySQLdb.Error as e:
-                self.catch_db_error(e, db, safe_transaction)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-                self.close_db(db, cursor, safe_transaction)
+            self.close_db(db, cursor, safe_transaction)
         return app_id
 
     """
@@ -698,9 +698,9 @@ class FGAPIServerDB:
                 "Group with name: '%s' has id: %s "
                 % (group_name, group_id))
         except MySQLdb.Error as e:
-                self.catch_db_error(e, db, safe_transaction)
+            self.catch_db_error(e, db, safe_transaction)
         finally:
-                self.close_db(db, cursor, safe_transaction)
+            self.close_db(db, cursor, safe_transaction)
         return group_id
 
     """

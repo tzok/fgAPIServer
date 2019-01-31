@@ -643,9 +643,9 @@ def header_links(req, resp, json):
 # Not allowed method common answer
 #
 def not_allowed_method():
-        return 400,\
-               {"message": "Method '%s' is not allowed for this endpoint"
-                           % request.method}
+    return 400,\
+           {"message": "Method '%s' is not allowed for this endpoint"
+                       % request.method}
 
 ##
 # Auth handlers
