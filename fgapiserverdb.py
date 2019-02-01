@@ -3056,7 +3056,7 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             sql = (
                 'delete from infrastructure_parameter\n'
-                'where infra_id in (select id \n'
+                'where infra_id in (select id\n'
                 '                   from infrastructure \n'
                 '                   where app_id=%s);')
             sql_data = (app_id,)

@@ -1139,6 +1139,27 @@ fgapiserver_queries = [
      'query': 'insert into fg_group_apps (group_id, app_id, creation)\n'
               'values (%s, %s, now())',
      'result': None},
+    {'id': 109,
+     'query': 'delete from fg_group_apps where app_id=%s;',
+     'result': None},
+    {'id': 110,
+     'query': 'delete from infrastructure_parameter\n'
+              'where infra_id in (select id\n'
+              '                   from infrastructure \n'
+              '                   where app_id=%s);',
+     'result': None},
+    {'id': 111,
+     'query': 'delete from infrastructure where app_id=%s;',
+     'result': None},
+    {'id': 112,
+     'query': 'delete from application_file where app_id=%s;',
+     'result': None},
+    {'id': 113,
+     'query': 'delete from application_parameter where app_id=%s;',
+     'result': None},
+    {'id': 114,
+     'query': 'delete from application where id=%s;',
+     'result': None},
 ]
 
 # fgapiserver tests queries
