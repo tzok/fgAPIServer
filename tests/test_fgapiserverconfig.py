@@ -29,26 +29,29 @@ __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
 
 
-class Test_fgAPIServerConfig(unittest.TestCase):
+class TestfgAPIServerConfig(unittest.TestCase):
 
     def setUp(self):
         pass
 
-    def banner(self, test_name):
+    @staticmethod
+    def banner(test_name):
         print ""
         print "------------------------------------------------"
         print " Testing: %s" % test_name
         print "------------------------------------------------"
 
-    def md5sum(self, filename, blocksize=65536):
-        hash = hashlib.md5()
+    @staticmethod
+    def md5sum(filename, blocksize=65536):
+        hash_value = hashlib.md5()
         with open(filename, "rb") as f:
             for block in iter(lambda: f.read(blocksize), b""):
-                hash.update(block)
-        return hash.hexdigest()
+                hash_value.update(block)
+        return hash_value.hexdigest()
 
-    def md5sum_str(self, str):
-        return hashlib.md5(str).hexdigest()
+    @staticmethod
+    def md5sum_str(string):
+        return hashlib.md5(string).hexdigest()
 
     #
     # fgapiserverconfig
@@ -68,7 +71,8 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                     if key == def_key:
                         print ("cfg['%s'] = '%s' <-> "
                                "cfg.defaults['%s']['%s'] = '%s'") \
-                              % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
+                              % (key, cfg[key], sec, def_key,
+                                 cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
                             # fgapisrv_notokenusr param is 'test' for Tests
@@ -90,7 +94,7 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                                 cfg.defaults[sec][def_key].lower() == 'true')
                             break
                         else:
-                            print "Unexpected type: '%s' for parameter: '%s'" \
+                            print "Unexpected type: '%s' for parameter: '%s'"\
                                   % (type(cfg[key]), key)
                             self.assertEqual(0, 1)
                         print "Reached end while scanning keys"
@@ -108,8 +112,9 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                 for def_key in cfg.defaults[sec]:
                     if key == def_key:
                         print ("cfg['%s'] = '%s' <-> "
-                               "cfg.defaults['%s']['%s'] = '%s'") \
-                              % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
+                               "cfg.defaults['%s']['%s'] = '%s'")\
+                              % (key, cfg[key], sec, def_key,
+                                 cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
                             # fgapisrv_notokenusr param is 'test' for Tests
@@ -131,7 +136,7 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                                 cfg.defaults[sec][def_key].lower() == 'true')
                             break
                         else:
-                            print "Unexpected type: '%s' for parameter: '%s'" \
+                            print "Unexpected type: '%s' for parameter: '%s'"\
                                   % (type(cfg[key]), key)
                             self.assertEqual(0, 1)
                         print "Reached end while scanning keys"
@@ -151,7 +156,8 @@ class Test_fgAPIServerConfig(unittest.TestCase):
                     if key == def_key:
                         print ("cfg['%s'] = '%s' <-> "
                                "cfg.defaults['%s']['%s'] = '%s'") \
-                              % (key, cfg[key], sec, def_key, cfg.defaults[sec][def_key])
+                              % (key, cfg[key], sec, def_key,
+                                 cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
                             # fgapisrv_notokenusr param is 'test' for Tests
@@ -225,7 +231,8 @@ class Test_fgAPIServerConfig(unittest.TestCase):
         self.assertEqual("%s" % cfg['fgapisrv_ptvpass'], 'ptvpass')
         self.assertEqual("%s" % cfg['fgapisrv_ptvdefusr'], 'futuregateway')
         self.assertEqual("%s" % cfg['fgapisrv_ptvdefgrp'], 'administrator')
-        self.assertEqual("%s" % cfg['fgapisrv_ptvmapfile'], 'fgapiserver_ptvmap.json')
+        self.assertEqual("%s" % cfg['fgapisrv_ptvmapfile'],
+                         'fgapiserver_ptvmap.json')
 
     def test_ConfigTypes(self):
         """

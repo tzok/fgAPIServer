@@ -35,7 +35,7 @@ __email__ = "riccardo.bruno@ct.infn.it"
 class FGApiServerConfig(dict):
     """
     FutureGateway API Server configuration values class
-    
+
     This class inherits from dict class aiming to store all configutation
     values of the FutureGateway module fgAPIServer.  The class internally
     stores all available configuration settings and their related default
@@ -46,7 +46,7 @@ class FGApiServerConfig(dict):
     # Configuration file
     config_file = None
 
-    # Default values for configuration settings  
+    # Default values for configuration settings
     def_api_ver = '1.0'
     def_fg_ver = __version__
 
@@ -90,7 +90,7 @@ class FGApiServerConfig(dict):
             'utdb_user': 'localhost',
             'utdb_pass': 'fgapiserver_password',
             'utdb_name': 'fgapiserver',
-            'fgapisrv_geappid': '10000'} 
+            'fgapisrv_geappid': '10000'}
     }
 
     # Configuration data types
@@ -119,7 +119,7 @@ class FGApiServerConfig(dict):
         # Parse configuration file
         config = ConfigParser.ConfigParser()
         if (config_file is None or
-            len(config.read(config_file)) == 0):
+                len(config.read(config_file)) == 0):
             self.fgConfigMsg += (
                     "[WARNING]: Couldn't find configuration file '%s'; "
                     " default options will be used\n" % config_file)
@@ -155,12 +155,10 @@ class FGApiServerConfig(dict):
 
     def __getitem__(self, key):
         conf_value = dict.__getitem__(self, key)
- 
-        if key in self.bool_types: 
+        if key in self.bool_types:
             conf_value = (str(conf_value).lower() == 'true')
         if key in self.int_types:
             conf_value = int(conf_value)
-        
         return conf_value
 
     def __repr__(self):
@@ -183,7 +181,7 @@ class FGApiServerConfig(dict):
         """
         config = {}
         for section in self.defaults.keys():
-            section_config = {} 
+            section_config = {}
             for key in self.defaults[section]:
                 section_config[key] = self[key]
             config[section] = section_config

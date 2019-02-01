@@ -47,42 +47,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
 
 # Load configuration
-fg_config_obj = FGApiServerConfig(fgapiserver_config_file)
-fg_config = fg_config_obj.get_config()
-
-# fgapiserver settings
-fgapiver = fg_config['fgapiver']
-fgapiserver_name = fg_config['fgapiserver_name']
-fgapisrv_host = fg_config['fgapisrv_host']
-fgapisrv_port = int(fg_config['fgapisrv_port'])
-fgapisrv_debug = fg_config['fgapisrv_debug'].lower() == 'true'
-fgapisrv_iosandbox = fg_config['fgapisrv_iosandbox']
-fgapisrv_geappid = int(fg_config['fgapisrv_geappid'])
-fgjson_indent = int(fg_config['fgjson_indent'])
-fgapisrv_key = fg_config['fgapisrv_key']
-fgapisrv_crt = fg_config['fgapisrv_crt']
-fgapisrv_logcfg = fg_config['fgapisrv_logcfg']
-fgapisrv_dbver = fg_config['fgapisrv_dbver']
-fgapisrv_secret = fg_config['fgapisrv_secret']
-fgapisrv_notoken = fg_config['fgapisrv_notoken'].lower() == 'true'
-fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
-fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
-fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
-fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
-fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
-fgapisrv_ptvdefusr = fg_config['fgapisrv_ptvdefusr']
-fgapisrv_ptvdefgrp = fg_config['fgapisrv_ptvdefgrp']
-fgapisrv_ptvmapfile = fg_config['fgapisrv_ptvmapfile']
-
-# fgapiserver database settings
-fgapisrv_db_host = fg_config['fgapisrv_db_host']
-fgapisrv_db_port = int(fg_config['fgapisrv_db_port'])
-fgapisrv_db_user = fg_config['fgapisrv_db_user']
-fgapisrv_db_pass = fg_config['fgapisrv_db_pass']
-fgapisrv_db_name = fg_config['fgapisrv_db_name']
+fg_config = FGApiServerConfig(fgapiserver_config_file)
 
 # Logging
-logging.config.fileConfig(fgapisrv_logcfg)
+logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
 logger = logging.getLogger(__name__)
 
 
@@ -93,14 +61,22 @@ def get_fgapiserver_db():
     :return: Return the fgAPIServer database object or None if the
              database connection fails
     """
+    db_host = fg_config['fgapisrv_db_host']
+    db_port = fg_config['fgapisrv_db_port']
+    db_user = fg_config['fgapisrv_db_user']
+    db_pass = fg_config['fgapisrv_db_pass']
+    db_name = fg_config['fgapisrv_db_name']
+    iosandbbox_dir = fg_config['fgapisrv_iosandbox']
+    fgapiserverappid = fg_config['fgapisrv_geappid']
+
     apiserver_db = FGAPIServerDB(
-        db_host=fgapisrv_db_host,
-        db_port=fgapisrv_db_port,
-        db_user=fgapisrv_db_user,
-        db_pass=fgapisrv_db_pass,
-        db_name=fgapisrv_db_name,
-        iosandbbox_dir=fgapisrv_iosandbox,
-        fgapiserverappid=fgapisrv_geappid)
+        db_host=db_host,
+        db_port=db_port,
+        db_user=db_user,
+        db_pass=db_pass,
+        db_name=db_name,
+        iosandbbox_dir=iosandbbox_dir,
+        fgapiserverappid=fgapiserverappid)
     db_state = apiserver_db.get_state()
     if db_state[0] != 0:
         logger.error("Unbable to connect to the database:\n"
@@ -109,11 +85,11 @@ def get_fgapiserver_db():
                      "  user: %s\n"
                      "  pass: %s\n"
                      "  name: %s\n"
-                     % (fgapisrv_db_host,
-                        fgapisrv_db_port,
-                        fgapisrv_db_user,
-                        fgapisrv_db_pass,
-                        fgapisrv_db_name))
+                     % (db_host,
+                        db_port,
+                        db_user,
+                        db_pass,
+                        db_name))
         return None
     return apiserver_db
 

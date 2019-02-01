@@ -42,6 +42,7 @@ def token_encode(key, username, password):
             (username, password, int(
                 time.time()))))
 
+
 # Decode
 def token_decode(key, token):
     obj = ARC4.new(key)

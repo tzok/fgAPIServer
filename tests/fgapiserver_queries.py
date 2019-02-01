@@ -33,7 +33,7 @@ fgapiserver_queries = [
      'result': [['test', ], ]},
     {'id': 1,
      'query': 'select version from db_patches order by id desc limit 1;',
-     'result': [['0.0.12a'], ]},
+     'result': [['0.0.12b'], ]},
     {'id': 2,
      'query': 'select id\n'
               'from fg_user\n'
@@ -310,7 +310,7 @@ fgapiserver_queries = [
                'from infrastructure;'),
      'result': []},
     {'id': 26,
-     'query': ('select max(id) from infrastructure;'),
+     'query': 'select max(id) from infrastructure;',
      'result': ['1']},
     {'id': 27,
      'query': ('select count(*)\n'
@@ -330,7 +330,7 @@ fgapiserver_queries = [
                'where infra_id=%s;'),
      'result': []},
     {'id': 29,
-     'query': ('delete from infrastructure where id=%s;'),
+     'query': 'delete from infrastructure where id=%s;',
      'result': []},
     {'id': 30,
      'query': ('select count(*)\n'
@@ -383,10 +383,10 @@ fgapiserver_queries = [
                '  and g.id=ga.group_id;'),
      'result': ['1']},
     {'id': 34,
-     'query': ('select count(*) from fg_group where lower(name)=%s;'),
+     'query': 'select count(*) from fg_group where lower(name)=%s;',
      'result': ['1']},
     {'id': 35,
-     'query': ('select id, name from fg_user where name=%s;'),
+     'query': 'select id, name from fg_user where name=%s;',
      'result': [[1, 'test_user'], ]},
     {'id': 36,
      'query': ('insert into fg_user (name, \n'
@@ -438,7 +438,7 @@ fgapiserver_queries = [
      'result': [['test_app_file1', '/path/to/file1', 0],
                 ['test_app_file2', '/path/to/file2', 1], ]},
     {'id': 41,
-     'query': ('select max(id) from task;'),
+     'query': 'select max(id) from task;',
      'result': [[1], ]},
     {'id': 42,
      'query': ('insert into task_output_file (task_id\n'
@@ -451,10 +451,10 @@ fgapiserver_queries = [
                'where task_id=%s'),
      'result': []},
     {'id': 43,
-     'query': ('select '
-               '  sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
-               'from task_input_file\n'
-               'where task_id=%s;'),
+     'query': 'select '
+              '  sum(if(path is NULL,0,1))=count(*) or count(*)=0 sb_ready\n'
+              'from task_input_file\n'
+              'where task_id=%s;',
      'result': ['1']},
     {'id': 44,
      'query': ('select '
@@ -465,13 +465,13 @@ fgapiserver_queries = [
                'where app_id=%s;'),
      'result': ['1']},
     {'id': 45,
-     'query': ('select iosandbox from task where id=%s;'),
+     'query': 'select iosandbox from task where id=%s;',
      'result': [['/tmp/iosandbox'], ]},
     {'id': 46,
-     'query': ('update task_input_file\n'
-               'set path=%s\n'
-               'where task_id=%s\n'
-               '  and file=%s;'),
+     'query': 'update task_input_file\n'
+              'set path=%s\n'
+              'where task_id=%s\n'
+              '  and file=%s;',
      'result': []},
     {'id': 47,
      'query': ('select count(*)\n'
@@ -919,7 +919,7 @@ fgapiserver_queries = [
                '    where app_id=%s;'),
      'result': None},
     {'id': 87,
-     'query': ('select id from infrastructure where app_id=%s;'),
+     'query': 'select id from infrastructure where app_id=%s;',
      'result': [[1], ]},
     {'id': 88,
      'query': ('select count(*)=1\n'
@@ -1109,6 +1109,36 @@ fgapiserver_queries = [
               'where name = %s\n'
               '   or mail = %s;',
      'result': [['0'], ]},
+    {'id': 102,
+     'query': 'select count(*)>0 from srv_registry where uuid = %s;',
+     'result': [[1], ]},
+    {'id': 103,
+     'query': 'select cfg_hash srv_hash\n'
+              'from srv_registry\n'
+              'where uuid=%s;',
+     'result': [['TEST_CFG_HASH', 'TEST_SRV_HASH'], ]},
+    {'id': 104,
+     'query': 'select md5(group_concat(value)) cfg_hash\n'
+              'from srv_config\n'
+              'where uuid = %s\n'
+              'group by uuid;',
+     'result': [['TEST_MDG_GROUP_CONTACT_VALUE'], ]},
+    {'id': 105,
+     'query': 'select name,\n'
+              '       value\n'
+              'from srv_config\n'
+              'where uuid=%s and enabled=%s;',
+     'result': [['TEST_CFG_NAME', 'TEST_CFG_VALUE'], ]},
+    {'id': 106,
+     'query': 'update srv_registry set cfg_hash = %s where uuid = %s;',
+     'result': None},
+    {'id': 107,
+     'query': 'select group_id from fg_user_group where user_id = %s',
+     'result': [[1], ]},
+    {'id': 108,
+     'query': 'insert into fg_group_apps (group_id, app_id, creation)\n'
+              'values (%s, %s, now())',
+     'result': None},
 ]
 
 # fgapiserver tests queries

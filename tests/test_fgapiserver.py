@@ -25,6 +25,7 @@ import shutil
 from fgapiserver import app
 from mklogtoken import token_encode, token_decode, token_info
 from fgapiserver_user import User
+from fgapiserver_tools import get_fgapiserver_db
 
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
@@ -39,28 +40,31 @@ __email__ = "riccardo.bruno@ct.infn.it"
 stop_at_fail = os.getenv('FGTESTS_STOPATFAIL') is not None
 
 
-class Test_fgAPIServer(unittest.TestCase):
+class TestfgAPIServer(unittest.TestCase):
 
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
         self.app.debug = True
 
-    def banner(self, test_name):
+    @staticmethod
+    def banner(test_name):
         print ""
         print "------------------------------------------------"
         print " Testing: %s" % test_name
         print "------------------------------------------------"
 
-    def md5sum(self, filename, blocksize=65536):
-        hash = hashlib.md5()
+    @staticmethod
+    def md5sum(filename, blocksize=65536):
+        hash_value = hashlib.md5()
         with open(filename, "rb") as f:
             for block in iter(lambda: f.read(blocksize), b""):
-                hash.update(block)
-        return hash.hexdigest()
+                hash_value.update(block)
+        return hash_value.hexdigest()
 
-    def md5sum_str(self, str):
-        return hashlib.md5(str).hexdigest()
+    @staticmethod
+    def md5sum_str(string):
+        return hashlib.md5(string).hexdigest()
 
     #
     # fgapiserver
@@ -70,7 +74,7 @@ class Test_fgAPIServer(unittest.TestCase):
     def test_CkeckConfig(self):
         self.banner("Check configuration settings")
         self.assertEqual(
-            fgapiserver.fg_config['fgapisrv_notoken'].lower(), 'true')
+            fgapiserver.fg_config['fgapisrv_notoken'], True)
         self.assertEqual(
             fgapiserver.fg_config['fgapisrv_notokenusr'].lower(), 'test')
 
@@ -116,7 +120,7 @@ class Test_fgAPIServer(unittest.TestCase):
     #
     # fgapiserverdb
     #
-    fgapisrv_db = fgapiserver.get_fgapiserver_db()
+    fgapisrv_db = get_fgapiserver_db()
 
     def test_dbobject(self):
         self.banner("Testing fgapiserverdb get DB object")
@@ -129,8 +133,9 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_dbobj_test(self):
         self.banner("Testing fgapiserverdb test")
-        test = self.fgapisrv_db.test()
+        result = self.fgapisrv_db.test()
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -170,6 +175,7 @@ class Test_fgAPIServer(unittest.TestCase):
         self.banner("Testing fgapiserverdb register_token")
         result = self.fgapisrv_db.register_token(1, 'TESTSESSIONTOKEN', 'SUBJ')
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -355,6 +361,7 @@ class Test_fgAPIServer(unittest.TestCase):
                                                             'test_file1',
                                                             '/path/to/file')
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -501,6 +508,7 @@ class Test_fgAPIServer(unittest.TestCase):
         self.banner("Testing fgapiserverdb status_change")
         result = self.fgapisrv_db.status_change(1, 'TEST')
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -728,7 +736,6 @@ class Test_fgAPIServer(unittest.TestCase):
         self.assertEqual("8ba55904600d405ea07f71e499ca3aa5",
                          self.md5sum_str(result.data))
 
-
     """
     APPLICATIONS
     """
@@ -738,7 +745,7 @@ class Test_fgAPIServer(unittest.TestCase):
         print "Result: '%s'" % result
         print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("fb956b4f02083ac51b2344cc071263cb",
+        self.assertEqual("bf6dd500b7a7a72510139484c9588da6",
                          self.md5sum_str(result.data))
 
     def test_get_application(self):
@@ -747,7 +754,7 @@ class Test_fgAPIServer(unittest.TestCase):
         print "Result: '%s'" % result
         print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("5fab72b2d734d0b4bfd8821a575abc17",
+        self.assertEqual("473edf1da15f42eaf32992a3d759e631",
                          self.md5sum_str(result.data))
 
     def test_post_application(self):
@@ -763,7 +770,7 @@ class Test_fgAPIServer(unittest.TestCase):
         print "Result: '%s'" % result
         print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("9c56994575a0fee624366c3f592d2c28",
+        self.assertEqual("ac77cfbce136e375e4692d07212cb725",
                          self.md5sum_str(result.data))
 
     def test_delete_application(self):
@@ -778,14 +785,14 @@ class Test_fgAPIServer(unittest.TestCase):
     """
     TASKS
     """
-    
+
     def test_get_tasks(self):
         self.banner("GET /v1.0/tasks")
         result = self.app.get('/v1.0/tasks')
         print "Result: '%s'" % result
         print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4afc5c655ea93bdb34e21d9d18101076",
+        self.assertEqual("cb8f131e1ec4fb565710a3b1b7d8a233",
                          self.md5sum_str(result.data))
 
     def test_get_task(self):
@@ -820,6 +827,7 @@ class Test_fgAPIServer(unittest.TestCase):
         print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
+                         self.md5sum_str(result.data))
 
 
 if __name__ == '__main__':
@@ -828,4 +836,3 @@ if __name__ == '__main__':
     print "----------------------------------"
     unittest.main(failfast=stop_at_fail)
     print "Tests completed"
-

@@ -10,7 +10,7 @@
 # Include functions
 . ./patch_functions.sh
 
-PATCH="0.0.12"
+PATCH="0.0.12b"
 PATCH_DESC="EnvConfig"
 check_patch $PATCH
 

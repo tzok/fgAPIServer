@@ -16,6 +16,7 @@ script:
   - python -m unittest test_fgapiserverconfig
   - python -m unittest test_fgapiserver
   - export FGAPISRV_NOTOKEN=False
+  - export FGAPISRV_LNKPTVFLAG=False
   - python -m unittest test_users_apis
 branches:
   only:

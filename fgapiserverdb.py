@@ -19,12 +19,10 @@
 import MySQLdb
 import uuid
 import os
-import random
 import urllib
 import shutil
 import logging
 import json
-from fgapiserverconfig import FGApiServerConfig
 
 """
   GridEngine API Server database
@@ -51,6 +49,52 @@ def_db_name = 'fgapiserver'
 """
 def_iosandbbox_dir = '/tmp'
 def_geapiserverappid = '10000'  # GridEngine sees API server as an application
+
+
+"""
+Retrieve the fgAPIServer database object
+
+:return: Return the fgAPIServer database object or None if the
+         database connection fails
+"""
+
+
+def get_db(**kwargs):
+    args = {}
+    if kwargs is not None:
+        for key, value in kwargs.iteritems():
+            args[key] = value
+    db_host = args.get('db_host', def_db_host)
+    db_port = args.get('db_port', def_db_port)
+    db_user = args.get('db_user', def_db_user)
+    db_pass = args.get('db_pass', def_db_pass)
+    db_name = args.get('db_name', def_db_name)
+    io_sbox = args.get('iosandbbox_dir', def_iosandbbox_dir)
+    ge_apid = args.get('iosandbbox_dir', def_geapiserverappid)
+    fgapiserver_db = FGAPIServerDB(
+        db_host=db_host,
+        db_port=db_port,
+        db_user=db_user,
+        db_pass=db_pass,
+        db_name=db_name,
+        iosandbbox_dir=io_sbox,
+        fgapiserverappid=ge_apid)
+    db_state = fgapiserver_db.get_state()
+    if db_state[0] != 0:
+        message = ("Unbable to connect to the database:\n"
+                   "  host: %s\n"
+                   "  port: %s\n"
+                   "  user: %s\n"
+                   "  pass: %s\n"
+                   "  name: %s\n"
+                   % (db_host,
+                      db_port,
+                      db_user,
+                      db_pass,
+                      db_name))
+        return None, message
+    return fgapiserver_db, None
+
 
 """
   fgapiserver_db Class contain any call interacting with fgapiserver database
@@ -246,7 +290,7 @@ class FGAPIServerDB:
         return is_reg
 
     """
-      srv_register - Register the given server and stores its current 
+      srv_register - Register the given server and stores its current
                      configuration
     """
 
@@ -303,7 +347,7 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             # Service registration queries executed
             self.query_done("Service with uuid: '%s' has been registered"
-                            "and configuration parameters saved." 
+                            "and configuration parameters saved."
                             % fgapisrv_uuid)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
@@ -405,12 +449,14 @@ class FGAPIServerDB:
                 self.log.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 self.query_done("Configuration settings for service having "
-                                "uuid: '%s' have been changed." % fgapisrv_uuid)
+                                "uuid: '%s' have been changed." %
+                                fgapisrv_uuid)
             else:
                 # Service configuration unchanged
                 fg_config = None
                 self.query_done("Configuration settings for service having "
-                                "uuid: '%s' have not been changed." % fgapisrv_uuid)
+                                "uuid: '%s' have not been changed."
+                                % fgapisrv_uuid)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -3050,22 +3096,22 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        group_ids = []
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Task record
-            sql = ('select group_id from fg_user_group where user_id = %s')
+            sql = ("select group_id from fg_user_group where user_id = %s")
             sql_data = (user_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            for group_id in cursor:
-                group_ids.append(group_id[0])
+            group_ids = []
+            for group_id_record in cursor:
+                group_ids.append(group_id_record[0])
             for group_id in group_ids:
                 sql = (
                     "insert into fg_group_apps (group_id, app_id, creation)\n"
                     "values (%s, %s, now())")
-                sql_data = (group_id[0], app_id)
+                sql_data = (group_id, app_id)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             self.query_done(
@@ -4567,7 +4613,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         roles = []
         try:
             db = self.connect(safe_transaction)

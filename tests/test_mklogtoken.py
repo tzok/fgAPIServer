@@ -27,7 +27,7 @@ __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
 
 
-class Test_MkLogToken(unittest.TestCase):
+class TestMkLogToken(unittest.TestCase):
 
     def setUp(self):
         pass
@@ -37,7 +37,11 @@ class Test_MkLogToken(unittest.TestCase):
         username = "test"
         password = "test"
         token = token_encode(key, username, password)
-        tinfo = token_decode(key, token)
+        # Check decoded token
+        decoded_token = token_decode(key, token).split(':')
+        self.assertEqual(username, decoded_token[0].split('=')[1])
+        self.assertEqual(password, decoded_token[1].split('=')[1])
+        #  Check token_info
         tusrnm, tpaswd, tkntms = token_info(key, token)
         self.assertEqual(username, tusrnm)
         self.assertEqual(password, tpaswd)
