@@ -479,6 +479,7 @@ def index(apiver=fg_config['fgapiver']):
                      "build:": __version__},)
         response = {
             "versions": versions,
+            "config": fg_config,
             "_links": ({"rel": "self",
                         "href": "/"},)
         }

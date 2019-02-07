@@ -685,8 +685,9 @@ class TestfgAPIServer(unittest.TestCase):
         print "Result: '%s'" % result
         print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("39966ce9d2fd0e8a009fab43d8cae254",
-                         self.md5sum_str(result.data))
+        result_data = json.loads(result.data)
+        self.assertEqual('versions' in result_data, True)
+        self.assertEqual('config' in result_data, True)
 
     """
     INFRASTRUCTURES
