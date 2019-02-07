@@ -57,8 +57,6 @@ Retrieve the fgAPIServer database object
 :return: Return the fgAPIServer database object or None if the
          database connection fails
 """
-
-
 def get_db(**kwargs):
     args = {}
     if kwargs is not None:
@@ -3057,7 +3055,7 @@ class FGAPIServerDB:
             sql = (
                 'delete from infrastructure_parameter\n'
                 'where infra_id in (select id\n'
-                '                   from infrastructure \n'
+                '                   from infrastructure\n'
                 '                   where app_id=%s);')
             sql_data = (app_id,)
             logging.debug(sql % sql_data)

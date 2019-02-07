@@ -1145,7 +1145,7 @@ fgapiserver_queries = [
     {'id': 110,
      'query': 'delete from infrastructure_parameter\n'
               'where infra_id in (select id\n'
-              '                   from infrastructure \n'
+              '                   from infrastructure\n'
               '                   where app_id=%s);',
      'result': None},
     {'id': 111,

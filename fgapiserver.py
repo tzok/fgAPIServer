@@ -1781,7 +1781,9 @@ filtered_ips = ('193.206.190.155', )
 def limit_remote_addr():
     if request.remote_addr in filtered_ips:
         abort(403)  # Forbidden
-    check_db_cfg()
+    newconfig = check_db_cfg()
+    if newconfig is not None:
+        fg_config.load_config(newconfig)
 
 
 #

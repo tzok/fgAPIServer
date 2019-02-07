@@ -187,8 +187,8 @@ def check_db_cfg():
     fgapisrv_uuid = srv_uuid()
     fg_dbconfig = fgapisrv_db.srv_config_check(fgapisrv_uuid)
     if fg_dbconfig is not None:
-        fg_config.load_config(fg_dbconfig)
         logger.debug('Configuration change detected:\n%s\n' % fg_dbconfig)
+    return fg_dbconfig
 
 
 def check_db_reg():
