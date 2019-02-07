@@ -51,13 +51,13 @@ def_iosandbbox_dir = '/tmp'
 def_geapiserverappid = '10000'  # GridEngine sees API server as an application
 
 
-"""
-Retrieve the fgAPIServer database object
-
-:return: Return the fgAPIServer database object or None if the
-         database connection fails
-"""
 def get_db(**kwargs):
+    """
+    Retrieve the fgAPIServer database object
+
+    :return: Return the fgAPIServer database object or None if the
+             database connection fails
+    """
     args = {}
     if kwargs is not None:
         for key, value in kwargs.iteritems():
