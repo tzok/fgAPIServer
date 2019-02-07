@@ -43,8 +43,7 @@ from fgapiserver_tools import get_fgapiserver_db,\
                               json_bool,\
                               check_api_ver,\
                               check_db_ver,\
-                              check_db_cfg,\
-                              check_db_reg,\
+                              srv_uuid,\
                               paginate_response,\
                               get_task_app_id,\
                               create_session_token,\
@@ -611,7 +610,8 @@ def tasks(apiver=fg_config['fgapiver']):
                         {"rel": "input",
                          "href": "/%s/tasks/%s/input" % (apiver, taskid)}]
                     task_array += [task_record, ]
-            state = 200
+            if state != 403:
+                state = 200
             paged_tasks, paged_links = paginate_response(
                 task_array,
                 page,
@@ -713,7 +713,6 @@ def task_id(apiver=fg_config['fgapiver'], taskid=None):
     appid = get_task_app_id(taskid)
     user = request.values.get('user', user_name)
     api_support, state, message = check_api_ver(apiver)
-    response = {}
     if not api_support:
         response = {"message": message}
     elif request.method == 'GET':
@@ -883,7 +882,6 @@ def task_id_input(apiver=fg_config['fgapiver'], taskid=None):
     userid = current_user.get_id()
     appid = get_task_app_id(taskid)
     user = request.values.get('user', user_name)
-    response = {}
     api_support, state, message = check_api_ver(apiver)
     if not api_support:
         response = {"message": message}
@@ -1029,7 +1027,6 @@ def getfile(apiver=fg_config['fgapiver']):
     file_path = request.values.get('path', None)
     file_name = request.values.get('name', None)
     taskid = fgapisrv_db.get_file_task_id(file_name, file_path)
-    response = {}
     if taskid is not None:
         appid = get_task_app_id(taskid)
     else:
@@ -1264,7 +1261,6 @@ def app_id(apiver=fg_config['fgapiver'], appid=None):
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
-    response = {}
     api_support, state, message = check_api_ver(apiver)
     if not api_support:
         response = {"message": message}
@@ -1639,7 +1635,6 @@ def infra_id(apiver=fg_config['fgapiver'], infraid=None):
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
-    response = {}
     api_support, state, message = check_api_ver(apiver)
     if not api_support:
         response = {"message": message}
@@ -1782,10 +1777,61 @@ filtered_ips = ('193.206.190.155', )
 def limit_remote_addr():
     if request.remote_addr in filtered_ips:
         abort(403)  # Forbidden
-    newconfig = check_db_cfg()
-    if newconfig is not None:
-        fg_config.load_config(newconfig)
+    check_db_cfg()
 
+#
+# Envconfig DB config  and registry functions
+#
+
+
+def check_db_cfg():
+    """
+    Check configuration changes
+
+    :return: This function checks configuration changes, returning
+             configuration settings in chase their values have been
+             modified since last check
+    """
+
+    fgapisrv_uuid = srv_uuid()
+    fg_config = fgapisrv_db.srv_config_check(fgapisrv_uuid)
+    if fg_config is not None:
+        logger.debug('Configuration change detected:\n%s\n' % fg_config)
+
+
+def check_db_reg():
+    """
+    Running server registration check
+
+    :return: This fucntion checks if this running server has been registered
+             into the database. If the registration is not yet done, the
+             registration will be performed and the current configuration
+             registered. If the server has been registered return the
+             configuration saved from the registration.
+    """
+
+    # Retrieve the service UUID
+    fgapisrv_uuid = srv_uuid()
+    if not fgapisrv_db.is_srv_reg(fgapisrv_uuid):
+        # The service is not registered
+        # Register the service and its configuration variables taken from
+        # the configuration file and overwritten by environment variables
+        logger.debug("Server has uuid: '%s' and it results not yet registered"
+                     % fgapisrv_uuid)
+        fgapisrv_db.srv_register(fgapisrv_uuid, fg_config)
+        db_state = fgapisrv_db.get_state()
+        if db_state[0] != 0:
+            msg = ("Unable to register service under uuid: '%s'"
+                   % fgapisrv_uuid)
+            logger.error(msg)
+            print(msg)
+            sys.exit(1)
+    else:
+        # Registered service checks for database configuration
+        logger.debug("Service with uuid: '%s' is already registered")
+        newconfig = check_db_cfg()
+        if newconfig is not None:
+            fg_config = newconfig
 
 #
 # The fgAPIServer app starts here

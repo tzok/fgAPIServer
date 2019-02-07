@@ -175,55 +175,6 @@ def srv_uuid():
     return uuid.uuid3(uuid.NAMESPACE_DNS, socket.gethostname())
 
 
-def check_db_cfg():
-    """
-    Check configuration changes
-
-    :return: This function checks configuration changes, reloading
-             configuration settings in chase their values have been
-             modified since last check
-    """
-
-    fgapisrv_uuid = srv_uuid()
-    fg_dbconfig = fgapisrv_db.srv_config_check(fgapisrv_uuid)
-    if fg_dbconfig is not None:
-        logger.debug('Configuration change detected:\n%s\n' % fg_dbconfig)
-    return fg_dbconfig
-
-
-def check_db_reg():
-    """
-    Running server registration check
-
-    :return: This fucntion checks if this running server has been registered
-             into the database. If the registration is not yet done, the
-             registration will be performed and the current configuration
-             registered. If the server has been registered retrieve the
-             configuration saved from the registration.
-    """
-
-    # Retrieve the service UUID
-    fgapisrv_uuid = srv_uuid()
-    if not fgapisrv_db.is_srv_reg(fgapisrv_uuid):
-        # The service is not registered
-        # Register the service and its configuration variables taken from
-        # the configuration file and overwritten by environment variables
-        logger.debug("Server has uuid: '%s' and it results not yet registered"
-                     % fgapisrv_uuid)
-        fgapisrv_db.srv_register(fgapisrv_uuid, fg_config)
-        db_state = fgapisrv_db.get_state()
-        if db_state[0] != 0:
-            msg = ("Unable to register service under uuid: '%s'"
-                   % fgapisrv_uuid)
-            logger.error(msg)
-            print(msg)
-            sys.exit(1)
-    else:
-        # Registered service checks for database configuration
-        check_db_cfg()
-    logger.debug("Check service registry passed")
-
-
 def paginate_response(response, page, per_page, page_url):
     """
     Paginate the incoming response json vector, accordinlgly to page and

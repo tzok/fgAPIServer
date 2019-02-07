@@ -19,10 +19,12 @@
 import MySQLdb
 import uuid
 import os
+import sys
 import urllib
 import shutil
 import logging
 import json
+from fgapiserverconfig import FGApiServerConfig
 
 """
   GridEngine API Server database
@@ -49,6 +51,20 @@ def_db_name = 'fgapiserver'
 """
 def_iosandbbox_dir = '/tmp'
 def_geapiserverappid = '10000'  # GridEngine sees API server as an application
+
+# setup path
+fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# fgapiserver configuration file
+fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
+
+# Load configuration
+fg_config = FGApiServerConfig(fgapiserver_config_file)
+
+# Logging
+logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
+logger = logging.getLogger(__name__)
 
 
 def get_db(**kwargs):
@@ -129,7 +145,6 @@ class FGAPIServerDB:
 
         :rtype:
         """
-        self.log = logging.getLogger(__name__)
         self.db_host = kwargs.get('db_host', def_db_host)
         self.db_port = kwargs.get('db_port', def_db_port)
         self.db_user = kwargs.get('db_user', def_db_user)
@@ -276,7 +291,7 @@ class FGAPIServerDB:
             cursor = db.cursor()
             sql = ('select count(*)>0 from srv_registry where uuid = %s;')
             sql_data = (uuid,)
-            self.log.debug(sql % sql_data)
+            logger.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             is_reg = cursor.fetchone()[0]
             self.query_done("Service registration '%s' is '%s'"
@@ -308,7 +323,7 @@ class FGAPIServerDB:
                 'values (%s,now(),now(),%s);'
             )
             sql_data = (fgapisrv_uuid, True)
-            self.log.debug(sql % sql_data)
+            logger.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             # Now save configuration settings
             for key in fg_config.keys():
@@ -323,7 +338,7 @@ class FGAPIServerDB:
                     'values (%s, %s, %s, %s, now(), now());'
                 )
                 sql_data = (fgapisrv_uuid, key, key_value, True)
-                self.log.debug(sql % sql_data)
+                logger.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             # Calculate configuration hash
             sql = (
@@ -333,7 +348,7 @@ class FGAPIServerDB:
                 'group by uuid;'
             )
             sql_data = (fgapisrv_uuid,)
-            self.log.debug(sql % sql_data)
+            logger.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             cfg_hash = cursor.fetchone()[0]
             # Register calculated hash
@@ -341,7 +356,7 @@ class FGAPIServerDB:
                 'update srv_registry set cfg_hash = %s where uuid = %s;'
             )
             sql_data = (cfg_hash, fgapisrv_uuid)
-            self.log.debug(sql % sql_data)
+            logger.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             # Service registration queries executed
             self.query_done("Service with uuid: '%s' has been registered"
@@ -411,7 +426,7 @@ class FGAPIServerDB:
                 'where uuid=%s;'
             )
             sql_data = (fgapisrv_uuid,)
-            self.log.debug(sql % sql_data)
+            logger.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             srv_hash = cursor.fetchone()[0]
             # Calculate new configuration hash
@@ -422,7 +437,7 @@ class FGAPIServerDB:
                 'group by uuid;'
             )
             sql_data = (fgapisrv_uuid,)
-            self.log.debug(sql % sql_data)
+            logger.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             cfg_hash = cursor.fetchone()[0]
             if cfg_hash != srv_hash:
@@ -434,7 +449,7 @@ class FGAPIServerDB:
                     'where uuid=%s and enabled=%s;'
                 )
                 sql_data = (fgapisrv_uuid, True)
-                self.log.debug(sql % sql_data)
+                logger.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 for config in cursor:
                     kname = config[0]
@@ -444,7 +459,7 @@ class FGAPIServerDB:
                     'update srv_registry set cfg_hash = %s where uuid = %s;'
                 )
                 sql_data = (cfg_hash, fgapisrv_uuid)
-                self.log.debug(sql % sql_data)
+                logger.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 self.query_done("Configuration settings for service having "
                                 "uuid: '%s' have been changed." %
