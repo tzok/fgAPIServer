@@ -1364,9 +1364,9 @@ def app_id(apiver=fg_config['fgapiver'], appid=None):
 @app.route('/<apiver>/applications/<app_id>/input',
            methods=['GET', 'POST'])
 @login_required
-def app_id_input(apiver=fg_config['fgapiver'], appid=None):
+def app_id_input(apiver=fg_config['fgapiver'], app_id=None):
     logger.debug('index(%s)/%s/input: %s' % (request.method,
-                                             appid,
+                                             app_id,
                                              request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
@@ -1377,7 +1377,7 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
         response = {"message": message}
     elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, appid, user, "app_view")
+            current_user, app_id, user, "app_view")
         if not auth_state:
             state = 402
             response = {
@@ -1385,11 +1385,11 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                            (auth_msg, user_id)}
         else:
             # Display app_input_file details
-            if not fgapisrv_db.app_exists(appid):
+            if not fgapisrv_db.app_exists(app_id):
                 state = 404
                 response = {
                     "message": ("Unable to find application with id: %s"
-                                % appid)
+                                % app_id)
                 }
             else:
                 state = 200
@@ -1397,7 +1397,7 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                     fgapisrv_db.get_app_record(app_id)['files']
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
-            current_user, appid, user, "app_install")
+            current_user, app_id, user, "app_install")
         if not auth_state:
             state = 402
             response = {
@@ -1405,7 +1405,7 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                            auth_msg}
         else:
             # First determine IO Sandbox location for this task
-            if not fgapisrv_db.app_exists(appid):
+            if not fgapisrv_db.app_exists(app_id):
                 state = 404
                 response = {
                     "message": ("Unable to find application with id: %s"
@@ -1413,7 +1413,7 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                 }
             else:
                 # Now process files to upload
-                app_dir = 'apps/%s' % appid
+                app_dir = 'apps/%s' % app_id
                 try:
                     os.stat(app_dir)
                     logger.debug("App dir: '%s' exists" % app_dir)
@@ -1428,13 +1428,13 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                             filename = secure_filename(f.filename)
                             logger.debug("%s -> %s" % (filename, app_dir))
                             f.save(os.path.join(app_dir, filename))
-                            fgapisrv_db.insert_or_update_app_file(appid,
+                            fgapisrv_db.insert_or_update_app_file(app_id,
                                                                   filename,
                                                                   app_dir)
                             file_list += (filename,)
                         state = 200
                         response = {
-                            "application": appid,
+                            "application": app_id,
                             "files": file_list,
                             "message": "uploaded successfully"}
                     except OSError as e:

@@ -21,7 +21,7 @@ import requests
 import json
 import logging
 import logging.config
-from fgapiserverdb import FGAPIServerDB
+from fgapiserver_db import FGAPIServerDB
 from fgapiserver_user import User
 
 __author__ = "Riccardo Bruno"

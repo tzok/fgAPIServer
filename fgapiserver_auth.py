@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fgapiserverdb import FGAPIServerDB
+from fgapiserver_db import FGAPIServerDB
 from fgapiserverconfig import FGApiServerConfig
 
 import os

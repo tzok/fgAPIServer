@@ -23,7 +23,7 @@ import uuid
 
 from Crypto.Cipher import ARC4
 from fgapiserver_config import FGApiServerConfig
-from fgapiserverdb import get_db
+from fgapiserver_db import get_db
 import os
 import sys
 import time
