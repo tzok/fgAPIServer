@@ -758,6 +758,15 @@ class TestfgAPIServer(unittest.TestCase):
         self.assertEqual("473edf1da15f42eaf32992a3d759e631",
                          self.md5sum_str(result.data))
 
+    def test_get_application_input(self):
+        self.banner("GET /v1.0/applications/1/input")
+        result = self.app.get('/v1.0/applications/1/input')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("b51fdff5c6e13ef4c4ed7a9b4bacd153",
+                         self.md5sum_str(result.data))
+
     def test_post_application(self):
         post_data = {'name': 'Test application',
                      'description': 'Test application description',
