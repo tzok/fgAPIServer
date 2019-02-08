@@ -135,7 +135,7 @@ class FGApiServerConfig(dict):
                     self.fg_config_messages +=\
                         ("[WARNING]:Couldn't find option '%s' "
                          "in section '%s'; "
-                         "using default value '%s'"
+                         "using default value '%s'\n"
                          % (conf_name, section, def_value))
                 # The use of environment varialbes override any default or
                 # configuration setting present in the configuration file

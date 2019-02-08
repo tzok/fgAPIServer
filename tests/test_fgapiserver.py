@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import shutil
+from StringIO import StringIO
 from fgapiserver import app
 from mklogtoken import token_encode, token_decode, token_info
 from fgapiserver_user import User
@@ -758,15 +759,6 @@ class TestfgAPIServer(unittest.TestCase):
         self.assertEqual("473edf1da15f42eaf32992a3d759e631",
                          self.md5sum_str(result.data))
 
-    def test_get_application_input(self):
-        self.banner("GET /v1.0/applications/1/input")
-        result = self.app.get('/v1.0/applications/1/input')
-        print "Result: '%s'" % result
-        print "Result data: '%s'" % result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("b51fdff5c6e13ef4c4ed7a9b4bacd153",
-                         self.md5sum_str(result.data))
-
     def test_post_application(self):
         post_data = {'name': 'Test application',
                      'description': 'Test application description',
@@ -790,6 +782,42 @@ class TestfgAPIServer(unittest.TestCase):
         print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
+                         self.md5sum_str(result.data))
+
+    def test_get_application_input(self):
+        self.banner("GET /v1.0/applications/1/input")
+        result = self.app.get('/v1.0/applications/1/input')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("b51fdff5c6e13ef4c4ed7a9b4bacd153",
+                         self.md5sum_str(result.data))
+
+    def test_post_application_input(self):
+        self.banner("POST /v1.0/applications/1/input")
+        # Upolad a file
+        data = {
+            'file[]': (StringIO('Test file stream 1'), 'test_file_1'),
+        }
+        result = self.app.post('/v1.0/applications/1/input',
+                               data=data,
+                               content_type='multipart/form-data')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        # Now upolad another file
+        self.assertEqual("eb546a7dc4a23c03b65eca8bfb74ced1",
+                         self.md5sum_str(result.data))
+        data = {
+            'file[]': (StringIO('Test file stream 2'), 'test_file_2'),
+        }
+        result = self.app.post('/v1.0/applications/1/input',
+                               data=data,
+                               content_type='multipart/form-data')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("f5173aca7b43f3895d63313dd6eaec21",
                          self.md5sum_str(result.data))
 
     """

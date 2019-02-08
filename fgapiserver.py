@@ -1414,6 +1414,7 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
             else:
                 # Now process files to upload
                 app_dir = 'apps/%s' % appid
+                uploaded_files = request.files.getlist('file[]')
                 try:
                     os.stat(app_dir)
                     logger.debug("App dir: '%s' exists" % app_dir)
@@ -1421,22 +1422,6 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                     logger.debug("Creating app dir: '%s'" % app_dir)
                     try:
                         os.makedirs(app_dir)
-                        uploaded_files = request.files.getlist('file[]')
-                        file_list = ()
-                        logger.debug("uploading file(s):")
-                        for f in uploaded_files:
-                            filename = secure_filename(f.filename)
-                            logger.debug("%s -> %s" % (filename, app_dir))
-                            f.save(os.path.join(app_dir, filename))
-                            fgapisrv_db.insert_or_update_app_file(appid,
-                                                                  filename,
-                                                                  app_dir)
-                            file_list += (filename,)
-                        state = 200
-                        response = {
-                            "application": appid,
-                            "files": file_list,
-                            "message": "uploaded successfully"}
                     except OSError as e:
                         os.error(
                             "Error creating application directory '%s'\n%s" %
@@ -1444,6 +1429,23 @@ def app_id_input(apiver=fg_config['fgapiver'], appid=None):
                         state = 404
                         response = {"message": ("Unable to create application "
                                                 "directory '%s'" % app_dir)}
+                if state != 404:
+                    file_list = ()
+                    logger.debug("uploading file(s):")
+                    for f in uploaded_files:
+                        filename = secure_filename(f.filename)
+                        logger.debug(" File: '%s' -> Dir: '%s'"
+                                     % (filename, app_dir))
+                        f.save(os.path.join(app_dir, filename))
+                        fgapisrv_db.insert_or_update_app_file(appid,
+                                                              filename,
+                                                              app_dir)
+                        file_list += (filename,)
+                    state = 200
+                    response = {
+                        "application": appid,
+                        "files": file_list,
+                        "message": "uploaded successfully"}
     else:
         state, response = not_allowed_method()
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
