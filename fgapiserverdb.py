@@ -24,7 +24,7 @@ import urllib
 import shutil
 import logging
 import json
-from fgapiserverconfig import FGApiServerConfig
+from fgapiserver_config import FGApiServerConfig
 
 """
   GridEngine API Server database
@@ -64,7 +64,6 @@ fg_config = FGApiServerConfig(fgapiserver_config_file)
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
-logger = logging.getLogger(__name__)
 
 
 def get_db(**kwargs):
@@ -140,7 +139,7 @@ class FGAPIServerDB:
                       values defined at the top of the file
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """
 
         :rtype:
@@ -185,7 +184,8 @@ class FGAPIServerDB:
       close_db - common operatoins performed closing DB query/transaction
     """
 
-    def close_db(self, db, cursor, commit):
+    @staticmethod
+    def close_db(db, cursor, commit):
         if cursor is not None:
             cursor.close()
         if db is not None:
@@ -265,7 +265,7 @@ class FGAPIServerDB:
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select version from db_patches order by id desc limit 1;')
+            sql = 'select version from db_patches order by id desc limit 1;'
             sql_data = ()
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -281,7 +281,7 @@ class FGAPIServerDB:
       is_srv_reg - Return true if the service is registered
     """
 
-    def is_srv_reg(self, uuid):
+    def is_srv_reg(self, service_uuid):
         db = None
         cursor = None
         safe_transaction = False
@@ -289,13 +289,13 @@ class FGAPIServerDB:
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select count(*)>0 from srv_registry where uuid = %s;')
-            sql_data = (uuid,)
-            logger.debug(sql % sql_data)
+            sql = 'select count(*)>0 from srv_registry where uuid = %s;'
+            sql_data = (service_uuid,)
+            logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             is_reg = cursor.fetchone()[0]
             self.query_done("Service registration '%s' is '%s'"
-                            % (uuid, is_reg))
+                            % (service_uuid, is_reg))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -307,11 +307,10 @@ class FGAPIServerDB:
                      configuration
     """
 
-    def srv_register(self, fgapisrv_uuid, fg_config):
+    def srv_register(self, fgapisrv_uuid, config):
         db = None
         cursor = None
         safe_transaction = True
-        cfg_hash = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -323,11 +322,11 @@ class FGAPIServerDB:
                 'values (%s,now(),now(),%s);'
             )
             sql_data = (fgapisrv_uuid, True)
-            logger.debug(sql % sql_data)
+            logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             # Now save configuration settings
-            for key in fg_config.keys():
-                key_value = fg_config[key]
+            for key in config.keys():
+                key_value = "%s" % config[key]
                 sql = (
                     'insert into srv_config (uuid,\n'
                     '                        name,\n'
@@ -338,7 +337,7 @@ class FGAPIServerDB:
                     'values (%s, %s, %s, %s, now(), now());'
                 )
                 sql_data = (fgapisrv_uuid, key, key_value, True)
-                logger.debug(sql % sql_data)
+                logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             # Calculate configuration hash
             sql = (
@@ -348,15 +347,13 @@ class FGAPIServerDB:
                 'group by uuid;'
             )
             sql_data = (fgapisrv_uuid,)
-            logger.debug(sql % sql_data)
+            logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             cfg_hash = cursor.fetchone()[0]
             # Register calculated hash
-            sql = (
-                'update srv_registry set cfg_hash = %s where uuid = %s;'
-            )
+            sql = 'update srv_registry set cfg_hash = %s where uuid = %s;'
             sql_data = (cfg_hash, fgapisrv_uuid)
-            logger.debug(sql % sql_data)
+            logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             # Service registration queries executed
             self.query_done("Service with uuid: '%s' has been registered"
@@ -367,109 +364,34 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
 
-#    """
-#      srv_config - returns a dictionary containing configuration settings
-#                   of the service using its uuid value
-#    """
-#
-#    def srv_config(self, fgapisrv_uuid):
-#        db = None
-#        cursor = None
-#        safe_transaction = False
-#        fg_config = {}
-#        try:
-#            db = self.connect(safe_transaction)
-#            cursor = db.cursor()
-#            sql = (
-#                'select name,\n'
-#                '       value\n'
-#                'from srv_config\n'
-#                'where uuid=%s and enabled=%s;'
-#            )
-#            sql_data = (fgapisrv_uuid, True)
-#            self.log.debug(sql % sql_data)
-#            cursor.execute(sql, sql_data)
-#            for config in cursor:
-#                kname = config[0]
-#                kvalue = config[1]
-#                fg_config[kname] = kvalue
-#            self.query_done("Configuration settings for service having "
-#                            "uuid: '%s' have been retrieved." % fgapisrv_uuid)
-#        except MySQLdb.Error as e:
-#            self.catch_db_error(e, db, safe_transaction)
-#        finally:
-#            self.close_db(db, cursor, safe_transaction)
-#        return fg_config
-
     """
-      srv_config_check - Check if configuration settings have been changed for
-                         the given service uuid and returns the new setting
-                         in case the configuration has been changed or None
-                         otherwise. The new hash will be resigteded in case
-                         it has been changed.
+      srv_config - returns a dictionary containing configuration settings
+                   of the service using its uuid value
     """
 
-    def srv_config_check(self, fgapisrv_uuid):
+    def srv_config(self, fgapisrv_uuid):
+        global fg_config
         db = None
         cursor = None
-        safe_transaction = True
-        cfg_hash = None
-        srv_hash = None
-        fg_config = {}
+        safe_transaction = False
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            # Get configuration hash from registry
             sql = (
-                'select cfg_hash srv_hash\n'
-                'from srv_registry\n'
-                'where uuid=%s;'
-            )
-            sql_data = (fgapisrv_uuid,)
-            logger.debug(sql % sql_data)
-            cursor.execute(sql, sql_data)
-            srv_hash = cursor.fetchone()[0]
-            # Calculate new configuration hash
-            sql = (
-                'select md5(group_concat(value)) cfg_hash\n'
+                'select name,\n'
+                '       value\n'
                 'from srv_config\n'
-                'where uuid = %s\n'
-                'group by uuid;'
+                'where uuid=%s and enabled=%s;'
             )
-            sql_data = (fgapisrv_uuid,)
-            logger.debug(sql % sql_data)
+            sql_data = (fgapisrv_uuid, True)
+            logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            cfg_hash = cursor.fetchone()[0]
-            if cfg_hash != srv_hash:
-                # Service configuration changed
-                sql = (
-                    'select name,\n'
-                    '       value\n'
-                    'from srv_config\n'
-                    'where uuid=%s and enabled=%s;'
-                )
-                sql_data = (fgapisrv_uuid, True)
-                logger.debug(sql % sql_data)
-                cursor.execute(sql, sql_data)
-                for config in cursor:
-                    kname = config[0]
-                    kvalue = config[1]
-                    fg_config[kname] = kvalue
-                sql = (
-                    'update srv_registry set cfg_hash = %s where uuid = %s;'
-                )
-                sql_data = (cfg_hash, fgapisrv_uuid)
-                logger.debug(sql % sql_data)
-                cursor.execute(sql, sql_data)
-                self.query_done("Configuration settings for service having "
-                                "uuid: '%s' have been changed." %
-                                fgapisrv_uuid)
-            else:
-                # Service configuration unchanged
-                fg_config = None
-                self.query_done("Configuration settings for service having "
-                                "uuid: '%s' have not been changed."
-                                % fgapisrv_uuid)
+            for config in cursor:
+                kname = config[0]
+                kvalue = config[1]
+                fg_config[kname] = kvalue
+            self.query_done("Configuration settings for service having "
+                            "uuid: '%s' have been retrieved." % fgapisrv_uuid)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -485,7 +407,7 @@ class FGAPIServerDB:
 
         :rtype:
         """
-        return (self.err_flag, self.err_msg)
+        return self.err_flag, self.err_msg
 
     """
       create_session_token - Starting from the given triple
@@ -500,8 +422,6 @@ class FGAPIServerDB:
         cursor = None
         safe_transaction = True
         sestoken = ''
-        token_record = ''
-        token_fields = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -665,7 +585,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        sestoken = ''
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -733,8 +652,6 @@ class FGAPIServerDB:
         cursor = None
         safe_transaction = True
         sestoken = ''
-        token_record = ''
-        token_fields = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -1106,7 +1023,7 @@ class FGAPIServerDB:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             for group in portal_groups:
-                sql = ('select count(*) from fg_group where lower(name)=%s;')
+                sql = 'select count(*) from fg_group where lower(name)=%s;'
                 sql_data = (group,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
@@ -1139,7 +1056,7 @@ class FGAPIServerDB:
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select id, name from fg_user where name=%s;')
+            sql = 'select id, name from fg_user where name=%s;'
             sql_data = (portal_user,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1148,7 +1065,7 @@ class FGAPIServerDB:
                 self.query_done(
                     "PTV user '%s' record: '%s'" % (portal_user,
                                                     user_record))
-                return (user_record[0], user_record[1])
+                return user_record[0], user_record[1]
             # The ptv subject does not exists
             # register it as new user using groups
             # information to associate correct groups
@@ -1173,14 +1090,14 @@ class FGAPIServerDB:
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             # Retrieve the inserted user_id
-            sql = ('select max(id) from fg_user;')
+            sql = 'select max(id) from fg_user;'
             sql_data = ()
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             user_id = cursor.fetchone()[0]
             # Associate groups
             for group_name in fg_groups:
-                sql = ('select id from fg_group where name=%s;')
+                sql = 'select id from fg_group where name=%s;'
                 sql_data = (group_name,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
@@ -1215,7 +1132,7 @@ class FGAPIServerDB:
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select name from fg_user where id = %s;')
+            sql = 'select name from fg_user where id = %s;'
             sql_data = (user_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1517,7 +1434,6 @@ class FGAPIServerDB:
                 app_parameters += [parameter, ]
             app_detail['parameters'] = app_parameters
             # Get now application ifnrastructures with their params
-            infrastructures = ()
             sql = (
                 'select id\n'
                 '      ,name\n'
@@ -1685,7 +1601,7 @@ class FGAPIServerDB:
             cursor.execute(sql)
             task_id = cursor.fetchone()[0]
             # Insert Task arguments
-            if arguments != []:
+            if arguments is not []:
                 for arg in arguments:
                     sql = (
                         'insert into task_arguments (task_id\n'
@@ -1715,11 +1631,11 @@ class FGAPIServerDB:
             #   for user input
             logging.debug("Input files processing")
             task_input_files = []
-            for file in input_files:
-                logging.debug("file: %s" % file)
+            for input_file in input_files:
+                logging.debug("file: %s" % input_file)
                 skip_file = False
                 for app_file in app_files:
-                    if file['name'] == app_file['file']:
+                    if input_file['name'] == app_file['file']:
                         skip_file = True
                         if app_file['override'] is True:
                             break
@@ -1729,7 +1645,7 @@ class FGAPIServerDB:
                 if not skip_file:
                     # The file is not in app_file
                     task_input_files += [{"path": None,
-                                          "file": file['name']}, ]
+                                          "file": input_file['name']}, ]
 
             # Files can be registered in task_input_files
             for inpfile in app_files + task_input_files:
@@ -1821,7 +1737,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        iosandbox = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -2094,7 +2009,6 @@ class FGAPIServerDB:
             sql_data = ()
             user_filter = user[0]
             if user_filter == '*':
-                user_name = user[1:]
                 user_clause = ''
             elif user_filter == '@':
                 user_name = user[1:]
@@ -2239,49 +2153,51 @@ class FGAPIServerDB:
                                     % task_id)
                 else:
                     data_count = result[0]
-                if data_count == 0:
-                    # First data insertion
-                    sql = (
-                        'insert into runtime_data (task_id\n'
-                        '                         ,data_id\n'
-                        '                         ,data_name\n'
-                        '                         ,data_value\n'
-                        '                         ,data_desc\n'
-                        '                         ,data_type\n'
-                        '                         ,data_proto\n'
-                        '                         ,creation\n'
-                        '                         ,last_change)\n'
-                        'select %s\n'
-                        '      ,(select '
-                        '          if(max(data_id) is NULL,1,max(data_id)+1)\n'
-                        '        from runtime_data\n'
-                        '        where task_id=%s)\n'
-                        '      ,%s\n'
-                        '      ,%s\n'
-                        '      ,%s\n'
-                        '      ,%s\n'
-                        '      ,%s\n'
-                        '      ,now()\n'
-                        '      ,now();\n')
-                    sql_data = (task_id, task_id,
-                                data_name,
-                                data_value,
-                                data_desc,
-                                data_type,
-                                data_proto)
-                    logging.debug(sql % sql_data)
-                    cursor.execute(sql, sql_data)
-                    status = True
-                else:
-                    sql = ('update runtime_data\n'
-                           'set data_value = %s\n'
-                           '   ,last_change = now()\n'
-                           'where data_name=%s\n'
-                           '  and task_id=%s;')
-                    sql_data = (data_value, data_name, task_id)
-                    logging.debug(sql % sql_data)
-                    cursor.execute(sql, sql_data)
-                    status = True
+                    if data_count == 0:
+                        # First data insertion
+                        sql = (
+                            'insert into runtime_data (task_id\n'
+                            '                         ,data_id\n'
+                            '                         ,data_name\n'
+                            '                         ,data_value\n'
+                            '                         ,data_desc\n'
+                            '                         ,data_type\n'
+                            '                         ,data_proto\n'
+                            '                         ,creation\n'
+                            '                         ,last_change)\n'
+                            'select %s\n'
+                            '      ,(select '
+                            '          if(max(data_id) is NULL,\n'
+                            '             1,\n'
+                            '             max(data_id)+1)\n'
+                            '        from runtime_data\n'
+                            '        where task_id=%s)\n'
+                            '      ,%s\n'
+                            '      ,%s\n'
+                            '      ,%s\n'
+                            '      ,%s\n'
+                            '      ,%s\n'
+                            '      ,now()\n'
+                            '      ,now();\n')
+                        sql_data = (task_id, task_id,
+                                    data_name,
+                                    data_value,
+                                    data_desc,
+                                    data_type,
+                                    data_proto)
+                        logging.debug(sql % sql_data)
+                        cursor.execute(sql, sql_data)
+                        status = True
+                    else:
+                        sql = ('update runtime_data\n'
+                               'set data_value = %s\n'
+                               '   ,last_change = now()\n'
+                               'where data_name=%s\n'
+                               '  and task_id=%s;')
+                        sql_data = (data_value, data_name, task_id)
+                        logging.debug(sql % sql_data)
+                        cursor.execute(sql, sql_data)
+                        status = True
             self.query_done(
                 ("Runtime data '%s' successfully updated"
                  " on task '%s'" % (runtime_data, task_id)))
@@ -2371,7 +2287,7 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = False
-        task_id = None
+        app_id = None
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -2453,6 +2369,7 @@ class FGAPIServerDB:
         # Create a file containing callback_info
         # Callback info filename will be stored in action_info dir
         # and the file name will be: callback.task_id
+        callback_filename = ''
         callback_f = None
         try:
             callback_filename = '%s/callback.%s' % (task_record['iosandbox'],
@@ -2474,7 +2391,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        count = 0
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -2754,7 +2670,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        app_id = -1
         try:
             # Insert new application record
             db = self.connect(safe_transaction)
@@ -2782,7 +2697,7 @@ class FGAPIServerDB:
             cursor.execute(sql)
             app_id = cursor.fetchone()[0]
             # Insert Application parameters
-            if parameters != []:
+            if parameters is not []:
                 for param in parameters:
                     sql = (
                         'insert into application_parameter (app_id\n'
@@ -2830,7 +2745,7 @@ class FGAPIServerDB:
             # Application files behave differently they have forced override
             # flag and do not have path information until application/input
             # API call is executed
-            for file in files:
+            for app_file in files:
                 sql = (
                     'insert into application_file (app_id\n'
                     '                            ,file_id\n'
@@ -2844,7 +2759,7 @@ class FGAPIServerDB:
                     '      ,TRUE\n'
                     'from application_file\n'
                     'where app_id=%s')
-                sql_data = (app_id, file, app_id)
+                sql_data = (app_id, app_file, app_id)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             # Insert Application infrastructures
@@ -3063,7 +2978,7 @@ class FGAPIServerDB:
             #    id (infra_id in parameters); a check is
             #    necessary here ...
             #
-            sql = ('delete from fg_group_apps where app_id=%s;')
+            sql = 'delete from fg_group_apps where app_id=%s;'
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -3075,19 +2990,19 @@ class FGAPIServerDB:
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            sql = ('delete from infrastructure where app_id=%s;')
+            sql = 'delete from infrastructure where app_id=%s;'
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            sql = ('delete from application_file where app_id=%s;')
+            sql = 'delete from application_file where app_id=%s;'
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            sql = ('delete from application_parameter where app_id=%s;')
+            sql = 'delete from application_parameter where app_id=%s;'
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            sql = ('delete from application where id=%s;')
+            sql = 'delete from application where id=%s;'
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -3113,7 +3028,7 @@ class FGAPIServerDB:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             # Task record
-            sql = ("select group_id from fg_user_group where user_id = %s")
+            sql = "select group_id from fg_user_group where user_id = %s"
             sql_data = (user_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -3360,7 +3275,6 @@ class FGAPIServerDB:
                 "Infrastructure successfully created with id '%s'" % infra_id)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
-            app_id = 0
         finally:
             self.close_db(db, cursor, safe_transaction)
         return infra_id
@@ -3445,7 +3359,7 @@ class FGAPIServerDB:
                 sql_data = (app_id, infra_id)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
-                sql = ('delete from infrastructure where app_id=%s;')
+                sql = 'delete from infrastructure where app_id=%s;'
                 sql_data = (app_id,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
@@ -3490,7 +3404,7 @@ class FGAPIServerDB:
                 # (!) In the future here should be handled the
                 #     infrastructure_task table
                 #
-                sql = ('delete from infrastructure where id=%s;')
+                sql = 'delete from infrastructure where id=%s;'
                 sql_data = (infra_id,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
@@ -3733,7 +3647,7 @@ class FGAPIServerDB:
             if json_infras is not None:
                 # Get the list of current infrastructure ids
                 app_infras = []
-                sql = ('select id from infrastructure where app_id=%s;')
+                sql = 'select id from infrastructure where app_id=%s;'
                 sql_data = (app_id,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
@@ -3769,7 +3683,7 @@ class FGAPIServerDB:
                         logging.debug(sql % sql_data)
                         cursor.execute(sql, sql_data)
                         # Get inserted infrastructure_id
-                        sql = ('select max(id) from infrastructure')
+                        sql = 'select max(id) from infrastructure'
                         sql_data = ()
                         logging.debug(sql % sql_data)
                         cursor.execute(sql)
@@ -3975,7 +3889,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         result = []
         try:
             db = self.connect(safe_transaction)
@@ -4020,7 +3933,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         result = None
         user_id = self.user_param_to_user_id(user)
         try:
@@ -4053,7 +3965,7 @@ class FGAPIServerDB:
                     'creation': record[6],
                     'modified': record[7], }
             self.query_done(
-                "User \'%s\' values: %s" % (user, result > 0))
+                "User \'%s\' values: %s" % (user, result))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -4069,7 +3981,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        infra_id = -1
         result = None
         try:
             db = self.connect(safe_transaction)
@@ -4160,7 +4071,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         groups = []
         try:
             db = self.connect(safe_transaction)
@@ -4197,7 +4107,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         groups = []
         user_id = self.user_param_to_user_id(user)
         try:
@@ -4237,11 +4146,9 @@ class FGAPIServerDB:
     """
 
     def group_retrieve(self, group):
-        id = 0
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         result = None
         group_id = self.group_param_to_group_id(group)
         if group_id is not None:
@@ -4279,11 +4186,9 @@ class FGAPIServerDB:
     """
 
     def group_apps_retrieve(self, group):
-        id = 0
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         result = None
         applications = []
         group_id = self.group_param_to_group_id(group)
@@ -4330,7 +4235,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        count = 0
         result = []
         group_id = self.group_param_to_group_id(group)
         if group_id is not None:
@@ -4338,7 +4242,7 @@ class FGAPIServerDB:
                 db = self.connect(safe_transaction)
                 cursor = db.cursor()
                 for app_id in app_ids:
-                    sql = ('select count(*)>0 from application where id = %s;')
+                    sql = 'select count(*)>0 from application where id = %s;'
                     sql_data = (app_id, )
                     logging.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
@@ -4365,11 +4269,9 @@ class FGAPIServerDB:
     """
 
     def group_add(self, group_name):
-        id = 0
         db = None
         cursor = None
         safe_transaction = True
-        count = 0
         result = None
         try:
             db = self.connect(safe_transaction)
@@ -4416,11 +4318,9 @@ class FGAPIServerDB:
     """
 
     def add_user_groups(self, user, gnames_or_ids):
-        id = 0
         db = None
         cursor = None
         safe_transaction = True
-        count = 0
         result = []
         user_id = self.user_param_to_user_id(user)
         try:
@@ -4462,11 +4362,9 @@ class FGAPIServerDB:
     """
 
     def delete_user_groups(self, user, gnames_or_ids):
-        id = 0
         db = None
         cursor = None
         safe_transaction = True
-        count = 0
         result = []
         user_id = self.user_param_to_user_id(user)
         try:
@@ -4500,7 +4398,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         tasks = []
         app_clause = ''
         user_id = self.user_param_to_user_id(user)
@@ -4540,11 +4437,9 @@ class FGAPIServerDB:
     """
 
     def group_roles_retrieve(self, group):
-        id = 0
         db = None
         cursor = None
         safe_transaction = False
-        count = 0
         result = None
         roles = []
         group_id = self.group_param_to_group_id(group)
@@ -4588,7 +4483,6 @@ class FGAPIServerDB:
         db = None
         cursor = None
         safe_transaction = True
-        count = 0
         result = []
         group_id = self.group_param_to_group_id(group)
         if group_id is not None:
@@ -4596,7 +4490,7 @@ class FGAPIServerDB:
                 db = self.connect(safe_transaction)
                 cursor = db.cursor()
                 for role_id in role_ids:
-                    sql = ('select count(*)>0 from fg_role where id = %s;')
+                    sql = 'select count(*)>0 from fg_role where id = %s;'
                     sql_data = (role_id,)
                     logging.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)

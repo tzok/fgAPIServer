@@ -19,7 +19,7 @@
 import unittest
 import hashlib
 import os
-from fgapiserverconfig import FGApiServerConfig
+from fgapiserver_config import FGApiServerConfig
 
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
@@ -350,7 +350,7 @@ class TestfgAPIServerConfig(unittest.TestCase):
             "fgapisrv_ptvuser": "fgapisrv_ptvuser",
             "fgapisrv_crt": "fgapisrv_crt",
             "fgapisrv_iosandbox": "fgapisrv_iosandbox",
-            "fgapisrv_logcfg": "fgapisrv_logcfg",
+            "fgapisrv_logcfg": "fgapiserver_log.conf",  # This must be '='
             "fgapisrv_host": "fgapisrv_host",
             "fgapisrv_ptvdefgrp": "fgapisrv_ptvdefgrp",
             "fgapisrv_secret": "fgapisrv_secret",

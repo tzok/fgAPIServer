@@ -19,6 +19,7 @@
 import os
 import json
 import ConfigParser
+import logging
 
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
@@ -26,9 +27,6 @@ __license__ = "Apache"
 __version__ = "v0.0.7-1"
 __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
-
-
-# GridEngine API Server configuration
 
 
 class FGApiServerConfig(dict):
@@ -106,7 +104,7 @@ class FGApiServerConfig(dict):
 
     # Configuration messages informs about the loading
     # of configuration values
-    fgConfigMsg = "Configuration messages ...\n"
+    fg_config_messages = "Configuration messages ...\n"
 
     def __init__(self, config_file):
         """
@@ -119,7 +117,7 @@ class FGApiServerConfig(dict):
         config = ConfigParser.ConfigParser()
         if (config_file is None or
                 len(config.read(config_file)) == 0):
-            self.fgConfigMsg += (
+            self.fg_config_messages += (
                     "[WARNING]: Couldn't find configuration file '%s'; "
                     " default options will be used\n" % config_file)
         else:
@@ -134,23 +132,29 @@ class FGApiServerConfig(dict):
                     self[conf_name] = config.get(section, conf_name)
                 except ConfigParser.Error:
                     self[conf_name] = def_value
-                    self.fgConfigMsg += ("[WARNING]:Couldn't find option '%s' "
-                                         "in section '%s'; "
-                                         "using default value '%s'"
-                                         % (conf_name, section, def_value))
+                    self.fg_config_messages +=\
+                        ("[WARNING]:Couldn't find option '%s' "
+                         "in section '%s'; "
+                         "using default value '%s'"
+                         % (conf_name, section, def_value))
                 # The use of environment varialbes override any default or
                 # configuration setting present in the configuration file
                 try:
                     env_value = os.environ[conf_name.upper()]
-                    self.fgConfigMsg += \
+                    self.fg_config_messages += \
                         ("Environment bypass of '%s': '%s' <- '%s'\n" %
                          (conf_name, self[conf_name], env_value))
                     self[conf_name] = env_value
                 except KeyError:
+                    # Corresponding environment variable not exists
                     pass
+        # Logging
+        logging.config.fileConfig(self['fgapisrv_logcfg'])
         # Show configuration in Msg variable
         if self['fgapisrv_debug']:
-            self.fgConfigMsg += self.show_conf()
+            self.fg_config_messages += self.show_conf()
+            logging.debug("Initialized configuration object")
+            logging.debug("Messages: %s" % self.fg_config_messages)
 
     def __getitem__(self, key):
         conf_value = dict.__getitem__(self, key)
@@ -159,6 +163,15 @@ class FGApiServerConfig(dict):
         if key in self.int_types:
             conf_value = int(conf_value)
         return conf_value
+
+    def __setitem__(self, key, value):
+        if key in self.bool_types:
+            conf_value = (str(value).lower() == 'true')
+        elif key in self.int_types:
+            conf_value = int(value)
+        else:
+            conf_value = value
+        dict.__setitem__(self, key, conf_value)
 
     def __repr__(self):
         """
@@ -194,7 +207,7 @@ class FGApiServerConfig(dict):
         """
         Return the messages created during configuration loading
         """
-        return self.fgConfigMsg
+        return self.fg_config_messages
 
     def load_config(self, cfg_dict):
         """

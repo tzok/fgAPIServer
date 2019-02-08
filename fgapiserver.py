@@ -16,16 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import base64
-import json
 import logging.config
-import os
-import socket
-import sys
-import time
-import uuid
-
-from Crypto.Cipher import ARC4
 from flask import Flask
 from flask import Response
 from flask import abort
@@ -34,7 +25,7 @@ from flask_login import LoginManager
 from flask_login import login_required
 from flask_login import current_user
 from werkzeug import secure_filename
-from fgapiserverconfig import FGApiServerConfig
+from fgapiserver_config import FGApiServerConfig
 from fgapiserverptv import FGAPIServerPTV
 from fgapiserver_user import User
 from fgapiserver_ugr_apis import ugr_apis
@@ -43,7 +34,8 @@ from fgapiserver_tools import get_fgapiserver_db,\
                               json_bool,\
                               check_api_ver,\
                               check_db_ver,\
-                              srv_uuid,\
+                              check_db_reg,\
+                              update_db_config,\
                               paginate_response,\
                               get_task_app_id,\
                               create_session_token,\
@@ -51,12 +43,8 @@ from fgapiserver_tools import get_fgapiserver_db,\
                               not_allowed_method
 import os
 import sys
-# import uuid
-import time
 import json
-# import ConfigParser
 import base64
-# import logging
 import logging.config
 
 """
@@ -115,7 +103,6 @@ login_manager.init_app(app)
 
 @login_manager.request_loader
 def load_user(req):
-
     logger.debug("LoadUser: begin")
     # Login manager could be disabled in conf file
     if fg_config['fgapisrv_notoken']:
@@ -130,19 +117,19 @@ def load_user(req):
         return User(int(user_info["id"]), user_info["name"], '')
 
     logger.debug("LoadUser: using token")
-    token = req.headers.get('Authorization')
-    if token is None:
-        token = req.args.get('token')
-    logger.debug("LoadUser: token is '%s'" % token)
+    auth_token = req.headers.get('Authorization')
+    if auth_token is None:
+        auth_token = req.args.get('token')
+    logger.debug("LoadUser: token is '%s'" % auth_token)
 
-    if token is not None:
+    if auth_token is not None:
         # Check for Portal Token verification  (PTV) method
         if fg_config['fgapisrv_lnkptvflag']:
             logger.debug("LoadUser: (PTV)")
-            token_fields = token.split()
+            token_fields = auth_token.split()
             if token_fields[0] == "Bearer":
                 try:
-                    token = token_fields[1]
+                    auth_token = token_fields[1]
                 except IndexError:
                     logger.debug("Passed empty Bearer token")
                     return None
@@ -150,20 +137,21 @@ def load_user(req):
                 # Task token management
                 # Not available
                 try:
-                    token = token_fields[1]
-                    logger.debug("Task token '%s' (not yet supported)" % token)
+                    auth_token = token_fields[1]
+                    logger.debug("Task token '%s' (not yet supported)"
+                                 % auth_token)
                 except IndexError:
                     logger.debug("Passed empty Task token")
                     return None
                 logger.debug("Task token not yet implemented")
                 return None
             else:
-                token = token_fields[0]
-            logger.debug("LoadUser: token field is '%s'" % token)
+                auth_token = token_fields[0]
+            logger.debug("LoadUser: token field is '%s'" % auth_token)
             ptv = FGAPIServerPTV(endpoint=fg_config['fgapisrv_ptvendpoint'],
                                  tv_user=fg_config['fgapisrv_ptvuser'],
                                  tv_password=fg_config['fgapisrv_ptvpass'])
-            result = ptv.validate_token(token)
+            result = ptv.validate_token(auth_token)
             logger.debug("LoadUser: validate_token: '%s'" % result)
             # result: valid/invalid and optionally portal username and/or
             # its group from result map the corresponding APIServer username
@@ -204,12 +192,12 @@ def load_user(req):
                                                                fg_groups)
                     if fg_user != ():
                         fgapisrv_db.register_token(fg_user[0],
-                                                   token,
+                                                   auth_token,
                                                    portal_subject)
                         logger.debug("LoadUser: '%s' - '%s'"
                                      % (fg_user[0], fg_user[1]))
                         logger.debug("LoadUser: (end)")
-                        return User(fg_user[0], fg_user[1], token)
+                        return User(fg_user[0], fg_user[1], auth_token)
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
                 # file. The json contains the list of possible APIServer
@@ -298,12 +286,12 @@ def load_user(req):
                                       "user_rec(0): '%s',user_rec(1): '%s'")
                                      % (mapped_userid, mapped_username))
                         fgapisrv_db.register_token(mapped_userid,
-                                                   token,
+                                                   auth_token,
                                                    portal_subject)
                         logger.debug("LoadUser: '%s' - '%s'" %
                                      (mapped_userid, mapped_username))
                         logger.debug("LoadUser: (end)")
-                        return User(mapped_userid, mapped_username, token)
+                        return User(mapped_userid, mapped_username, auth_token)
                 # No portal user and group are returned or no mapping
                 # is available returning default user
                 user_info = fgapisrv_db. \
@@ -316,30 +304,31 @@ def load_user(req):
                               "user_id: '%s',user_name: '%s'"
                               % (default_userid, default_username)))
                 fgapisrv_db.register_token(default_userid,
-                                           token,
+                                           auth_token,
                                            portal_subject)
                 logger.debug("LoadUser: '%s' - '%s'" %
                              (default_userid, default_username))
                 logger.debug("LoadUser: (end)")
-                return User(default_userid, default_username, token)
+                return User(default_userid, default_username, auth_token)
             else:
-                logger.debug("LoadUser: PTV token '%s' is not valid" % token)
+                logger.debug("LoadUser: PTV token '%s' is not valid"
+                             % auth_token)
                 return None
         else:
             logger.debug(("LoadUser: Verifying token with "
                           "baseline token management"))
-            user_rec = fgapisrv_db.verify_session_token(token)
+            user_rec = fgapisrv_db.verify_session_token(auth_token)
             logger.debug("LoadUser: user_id: '%s',user_name: '%s'"
                          % (user_rec[0], user_rec[1]))
             if user_rec is not None and user_rec[0] is not None:
-                fgapisrv_db.register_token(user_rec[0], token, None)
+                fgapisrv_db.register_token(user_rec[0], auth_token, None)
                 logger.debug("LoadUser: '%s' - '%s'"
                              % (user_rec[0], user_rec[1]))
                 logger.debug("LoadUser: (end)")
-                return User(user_rec[0], user_rec[1], token)
+                return User(user_rec[0], user_rec[1], auth_token)
             else:
                 logger.debug(("LoadUser: No user is associated to "
-                              "session token: '%s'" % token))
+                              "session token: '%s'" % auth_token))
                 logger.debug("LoadUser: (end)")
                 return None
     else:
@@ -361,73 +350,75 @@ def load_user(req):
 def auth(apiver=fg_config['fgapiver']):
 
     logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
-    token = ""
+    session_token = ""
     delegated_token = ""
-    message = ""
+    response = {}
     user = request.values.get('user', '')
     logtoken = request.values.get('token', '')
     username = request.values.get('username', '')
     password = request.values.get('password', '')
-    if request.method == 'GET':
-        if len(token) > 0:
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
+        if len(session_token) > 0:
             # Retrieve access token from an login token
-            token, delegated_token = create_session_token(
+            session_token, delegated_token = create_session_token(
                 logtoken=logtoken,
                 user=user)
         elif (len(username) > 0 and
               len(password) > 0):
             # Retrieve token from given username and password
-            token, delegated_token = create_session_token(
+            session_token, delegated_token = create_session_token(
                 username=username,
                 password=base64.b64decode(password),
                 user=user)
         else:
             message = "No credentials found!"
-        logger.debug('session token: %s' % token)
+        logger.debug('session token: %s' % session_token)
     elif request.method == 'POST':
-        auth = request.headers.get('Authorization')
+        auth_request = request.headers.get('Authorization')
         # auth may be in the form:
         #     'Bearer TOKEN'
         #     'Username/Password' or 'Username:Password'
-        auth_bearer = auth.split(" ")
+        auth_bearer = auth_request.split(" ")
         if auth_bearer[0] == "Bearer":
             try:
-                token = auth_bearer[1]
+                session_token = auth_bearer[1]
             except IndexError:
-                token = ''
-            if token != '':
+                session_token = ''
+            if session_token != '':
                 # Retrieve access token from a login token
-                token, delegated_token = create_session_token(
-                    logtoken=token,
+                session_token, delegated_token = create_session_token(
+                    logtoken=session_token,
                     user=user)
-        auth_usrnpass = auth.split(":")
+        auth_usrnpass = auth_request.split(":")
         if len(auth_usrnpass) > 1:
-            token, delegated_token = create_session_token(
+            session_token, delegated_token = create_session_token(
                 username=auth_usrnpass[0],
                 password=base64.b64decode(auth_usrnpass[1]),
                 user=user)
-        auth_usrnpass = auth.split("/")
+        auth_usrnpass = auth_request.split("/")
         if len(auth_usrnpass) > 1:
-            token, delegated_token = create_session_token(
+            session_token, delegated_token = create_session_token(
                 username=auth_usrnpass[0],
                 password=base64.b64decode(auth_usrnpass[1]),
                 user=user)
         else:
             # No credentials found
             message = "No credentials found!"
-        logger.debug('session token: %s' % token)
+        logger.debug('session token: %s' % session_token)
     else:
-        message = "Unhandled method: '%s'" % request.method
-        logger.debug(message)
+        state, response = not_allowed_method()
     if len(delegated_token) == 0:
         message += "Delegated token not created"
-        if len(token) == 0:
+        if len(session_token) == 0:
             if len(message) > 0:
                 message += " "
             message += "Token not created"
-    if len(token) > 0:
+    if len(session_token) > 0:
         response = {
-            "token": token
+            "token": session_token
         }
         state = 200
         if len(user) > 0:
@@ -437,11 +428,6 @@ def auth(apiver=fg_config['fgapiver']):
                 response['message'] = (
                     "Delegated token for user '%s' not created" % user)
                 state = 203
-    else:
-        response = {
-            "message": message
-        }
-        state = 404
     # include _links part
     response["_links"] = [{"rel": "self", "href": "/auth"}, ]
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
@@ -511,7 +497,10 @@ def token(apiver=fg_config['fgapiver']):
     logger.debug("user_name: '%s'" % user_name)
     logger.debug("user_id: '%s'" % user_id)
     logger.debug("user_token: '%s'" % user_token)
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         state = 200
         if len(user_token) == 0:
             response = {'user_id': user_id,
@@ -552,7 +541,7 @@ def tasks(apiver=fg_config['fgapiver']):
     logger.debug("user_id: '%s'" % user_id)
     page = request.values.get('page')
     per_page = request.values.get('per_page')
-    status = request.values.get('status')
+    status = request.values.get('status', None)
     user = request.values.get('user', user_name)
     appid = request.values.get('application')
     response = {}
@@ -604,21 +593,23 @@ def tasks(apiver=fg_config['fgapiver']):
                     }
                     break
                 else:
-                    task_record['_links'] = [
-                        {"rel": "self",
-                         "href": "/%s/tasks/%s" % (apiver, taskid)},
-                        {"rel": "input",
-                         "href": "/%s/tasks/%s/input" % (apiver, taskid)}]
-                    task_array += [task_record, ]
+                    if status is None or task_record['status'] == status:
+                        task_record['_links'] = [
+                            {"rel": "self",
+                             "href": "/%s/tasks/%s" % (apiver, taskid)},
+                            {"rel": "input",
+                             "href": "/%s/tasks/%s/input" % (apiver, taskid)}]
+                        task_array += [task_record, ]
             if state != 403:
                 state = 200
-            paged_tasks, paged_links = paginate_response(
-                task_array,
-                page,
-                per_page,
-                request.url)
-            response = {"tasks": paged_tasks,
-                        "_links": paged_links}
+                paged_tasks, paged_links =\
+                    paginate_response(
+                        task_array,
+                        page,
+                        per_page,
+                        request.url)
+                response = {"tasks": paged_tasks,
+                            "_links": paged_links}
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
             current_user, appid, user, "app_run")
@@ -1775,63 +1766,13 @@ filtered_ips = ('193.206.190.155', )
 # Common check for requests
 @app.before_request
 def limit_remote_addr():
+    global fg_config
+    # Block blacklisted IPs
     if request.remote_addr in filtered_ips:
         abort(403)  # Forbidden
-    check_db_cfg()
+    # Override configuration settings from the database
+    fg_config = update_db_config(fg_config)
 
-#
-# Envconfig DB config  and registry functions
-#
-
-
-def check_db_cfg():
-    """
-    Check configuration changes
-
-    :return: This function checks configuration changes, returning
-             configuration settings in chase their values have been
-             modified since last check
-    """
-
-    fgapisrv_uuid = srv_uuid()
-    fg_config = fgapisrv_db.srv_config_check(fgapisrv_uuid)
-    if fg_config is not None:
-        logger.debug('Configuration change detected:\n%s\n' % fg_config)
-
-
-def check_db_reg():
-    """
-    Running server registration check
-
-    :return: This fucntion checks if this running server has been registered
-             into the database. If the registration is not yet done, the
-             registration will be performed and the current configuration
-             registered. If the server has been registered return the
-             configuration saved from the registration.
-    """
-
-    # Retrieve the service UUID
-    fgapisrv_uuid = srv_uuid()
-    if not fgapisrv_db.is_srv_reg(fgapisrv_uuid):
-        # The service is not registered
-        # Register the service and its configuration variables taken from
-        # the configuration file and overwritten by environment variables
-        logger.debug("Server has uuid: '%s' and it results not yet registered"
-                     % fgapisrv_uuid)
-        fgapisrv_db.srv_register(fgapisrv_uuid, fg_config)
-        db_state = fgapisrv_db.get_state()
-        if db_state[0] != 0:
-            msg = ("Unable to register service under uuid: '%s'"
-                   % fgapisrv_uuid)
-            logger.error(msg)
-            print(msg)
-            sys.exit(1)
-    else:
-        # Registered service checks for database configuration
-        logger.debug("Service with uuid: '%s' is already registered")
-        newconfig = check_db_cfg()
-        if newconfig is not None:
-            fg_config = newconfig
 
 #
 # The fgAPIServer app starts here
@@ -1842,7 +1783,7 @@ def check_db_reg():
 check_db_ver()
 
 # Server registration and configuration from fgdb
-check_db_reg()
+check_db_reg(fg_config)
 
 # Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":

@@ -22,13 +22,13 @@ import socket
 import uuid
 
 from Crypto.Cipher import ARC4
-from fgapiserverconfig import FGApiServerConfig
+from fgapiserver_config import FGApiServerConfig
 from fgapiserverdb import get_db
 import os
 import sys
 import time
 import base64
-import logging.config
+import logging
 
 """
   FutureGateway APIServer tools
@@ -57,14 +57,8 @@ fg_config = FGApiServerConfig(fgapiserver_config_file)
 # FutureGateway database object
 fgapisrv_db = None
 
-# Load configuration
-logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
-
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
-logger = logging.getLogger(__name__)
-logger.debug("fgAPIServer is starting ...")
-logger.debug(fg_config.get_messages())
 
 #
 # Tooling functions commonly used by fgapiserber_ source codes
@@ -105,7 +99,7 @@ def get_fgapiserver_db():
         iosandbbox_dir=fg_config['fgapisrv_iosandbox'],
         fgapiserverappid=fg_config['fgapisrv_geappid'])
     if db is None:
-        logger.error(message)
+        logging.error(message)
     return db
 
 
@@ -141,7 +135,7 @@ def check_db_ver():
     fgapisrv_db = get_fgapiserver_db()
     if fgapisrv_db is None:
         msg = "Unable to connect to the database!"
-        logger.error(msg)
+        logging.error(msg)
         print msg
         sys.exit(1)
     else:
@@ -156,10 +150,10 @@ def check_db_ver():
                    "It is suggested to update your database applying "
                    "new available patches."
                    % (db_ver, fg_config['fgapisrv_dbver']))
-            logger.error(msg)
+            logging.error(msg)
             print msg
             sys.exit(1)
-    logger.debug("Check database version passed")
+    logging.debug("Check database version passed")
     return db_ver
 
 
@@ -231,10 +225,10 @@ def get_task_app_id(taskid):
     task_info = fgapisrv_db.get_task_info(taskid)
     app_record = task_info.get('application', None)
     if app_record is not None:
-        logger.debug("Found app_id: '%s' for task_id: '%s'"
-                     % (app_record['id'], taskid))
+        logging.debug("Found app_id: '%s' for task_id: '%s'"
+                      % (app_record['id'], taskid))
         return app_record['id']
-    logger.warn("Could not find app_id for task_id: '%s'" % taskid)
+    logging.warn("Could not find app_id for task_id: '%s'" % taskid)
     return None
 
 
@@ -284,13 +278,13 @@ def process_log_token(logtoken):
         username = credfields[0].split("=")[1]
         password = credfields[1].split("=")[1]
         timestamp = credfields[2].split("=")[1]
-    logger.debug("Logtoken: '%s'\n"
-                 "    User: '%s'\n"
-                 "    Password: '%s'\n"
-                 "    Timestamp: '%s'" % (logtoken,
-                                          username,
-                                          password,
-                                          timestamp))
+    logging.debug("Logtoken: '%s'\n"
+                  "    User: '%s'\n"
+                  "    Password: '%s'\n"
+                  "    Timestamp: '%s'" % (logtoken,
+                                           username,
+                                           password,
+                                           timestamp))
     return username, password, timestamp
 
 
@@ -326,14 +320,14 @@ def create_session_token(**kwargs):
         return '', ''
 
     # Log token info
-    logger.debug("Session token is:\n"
-                 "logtoken: '%s'\n"
-                 "username: '%s'\n"
-                 "password: '%s'\n"
-                 "timestamp: '%s'\n" % (sestoken,
-                                        logtoken,
-                                        username,
-                                        password))
+    logging.debug("Session token is:\n"
+                  "logtoken: '%s'\n"
+                  "username: '%s'\n"
+                  "password: '%s'\n"
+                  "timestamp: '%s'\n" % (sestoken,
+                                         logtoken,
+                                         username,
+                                         password))
 
     # Verify is delegated user is provided
     if len(sestoken) > 0 and len(user) > 0:
@@ -346,7 +340,7 @@ def create_session_token(**kwargs):
            fgapisrv_db.verify_user_role(user_token['id'], 'user_impersonate'):
             delegated_token = fgapisrv_db.create_delegated_token(sestoken,
                                                                  user)
-            logger.debug(
+            logging.debug(
                 "Delegated token is: '%s' for user: '%s'" %
                 (delegated_token, user))
 
@@ -375,3 +369,61 @@ def not_allowed_method():
     return 400,\
            {"message": "Method '%s' is not allowed for this endpoint"
                        % request.method}
+
+
+#
+# Envconfig DB config  and registry functions
+#
+
+
+def check_db_reg(config):
+    """
+    Running server registration check
+
+    :return: This fucntion checks if this running server has been registered
+             into the database. If the registration is not yet done, the
+             registration will be performed and the current configuration
+             registered. If the server has been registered return the
+             configuration saved from the registration.
+    """
+
+    # Retrieve the service UUID
+    fgapisrv_uuid = srv_uuid()
+    if not fgapisrv_db.is_srv_reg(fgapisrv_uuid):
+        # The service is not registered
+        # Register the service and its configuration variables taken from
+        # the configuration file and overwritten by environment variables
+        logging.debug("Server has uuid: '%s' and it results not yet registered"
+                      % fgapisrv_uuid)
+        fgapisrv_db.srv_register(fgapisrv_uuid, config)
+        db_state = fgapisrv_db.get_state()
+        if db_state[0] != 0:
+            msg = ("Unable to register service under uuid: '%s'"
+                   % fgapisrv_uuid)
+            logging.error(msg)
+            print(msg)
+            sys.exit(1)
+    else:
+        # Registered service checks for database configuration
+        logging.debug("Service with uuid: '%s' is already registered"
+                      % fgapisrv_uuid)
+
+
+def update_db_config(config):
+    """
+        Update given configuration with registered service configuration
+
+        :return: When this function is called the service is already registered
+                 and passed configuration values are compared with database
+                 settings that will have highest priority. Returned value
+                 will be the setting extracted from the DB if enabled.
+    """
+    # Retrieve the service UUID
+    fgapisrv_uuid = srv_uuid()
+    db_config = fgapisrv_db.srv_config(fgapisrv_uuid)
+    for key in config.keys():
+        if config[key] != db_config[key]:
+            logging.debug("DB configuration overload: conf(%s)= <-"
+                          % (key, config[key], db_config[key]))
+            config[key] = db_config[key]
+    return config

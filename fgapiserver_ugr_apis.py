@@ -22,15 +22,14 @@ from flask import request
 from flask import Response
 from flask import Blueprint
 from flask_login import login_required, current_user
-from fgapiserverconfig import FGApiServerConfig
-from fgapiserverdb import FGAPIServerDB
+from fgapiserver_config import FGApiServerConfig
 from fgapiserver_auth import authorize_user
-from fgapiserver_tools import check_api_ver
+from fgapiserver_tools import check_api_ver,\
+                              get_fgapiserver_db
 import os
 import sys
 import json
 import logging
-import logging.config
 
 """
   FutureGateway APIServer User, Group and Roles APIs
@@ -54,48 +53,6 @@ fg_config = FGApiServerConfig(fgapiserver_config_file)
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
-logger = logging.getLogger(__name__)
-
-
-def get_fgapiserver_db():
-    """
-    Retrieve the fgAPIServer database object
-
-    :return: Return the fgAPIServer database object or None if the
-             database connection fails
-    """
-    db_host = fg_config['fgapisrv_db_host']
-    db_port = fg_config['fgapisrv_db_port']
-    db_user = fg_config['fgapisrv_db_user']
-    db_pass = fg_config['fgapisrv_db_pass']
-    db_name = fg_config['fgapisrv_db_name']
-    iosandbbox_dir = fg_config['fgapisrv_iosandbox']
-    fgapiserverappid = fg_config['fgapisrv_geappid']
-
-    apiserver_db = FGAPIServerDB(
-        db_host=db_host,
-        db_port=db_port,
-        db_user=db_user,
-        db_pass=db_pass,
-        db_name=db_name,
-        iosandbbox_dir=iosandbbox_dir,
-        fgapiserverappid=fgapiserverappid)
-    db_state = apiserver_db.get_state()
-    if db_state[0] != 0:
-        logger.error("Unbable to connect to the database:\n"
-                     "  host: %s\n"
-                     "  port: %s\n"
-                     "  user: %s\n"
-                     "  pass: %s\n"
-                     "  name: %s\n"
-                     % (db_host,
-                        db_port,
-                        db_user,
-                        db_pass,
-                        db_name))
-        return None
-    return apiserver_db
-
 
 # Define Blueprint for user groups and roles APIs
 ugr_apis = Blueprint('ugr_apis', __name__, template_folder='templates')
@@ -138,7 +95,7 @@ def users(apiver=fg_config['fgapiver']):
                 authorize_user(current_user, None, user, "users_change")
             if auth_state is True:
                 params = request.get_json()
-                logger.debug("params: '%s'" % params)
+                logging.debug("params: '%s'" % params)
                 new_users = []
                 if params is not None:
                     user_records = params.get('users', [])
@@ -169,7 +126,7 @@ def users(apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -222,7 +179,7 @@ def users_user(user, apiver=fg_config['fgapiver']):
                     response = user_record
                 else:
                     params = request.get_json()
-                    logger.debug("params: '%s'" % params)
+                    logging.debug("params: '%s'" % params)
                     if params is not None:
                         user_data = {
                             'first_name': params.get('first_name', ''),
@@ -254,7 +211,7 @@ def users_user(user, apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -309,7 +266,7 @@ def user_groups(user, apiver=fg_config['fgapiver']):
                     }
                 else:
                     params = request.get_json()
-                    logger.debug("params: '%s'" % params)
+                    logging.debug("params: '%s'" % params)
                     if params is not None:
                         group_list = params.get('groups', [])
                         inserted_groups =\
@@ -346,7 +303,7 @@ def user_groups(user, apiver=fg_config['fgapiver']):
                     }
                 else:
                     params = request.get_json()
-                    logger.debug("params: '%s'" % params)
+                    logging.debug("params: '%s'" % params)
                     if params is not None:
                         group_list = params.get('groups', [])
                         deleted_groups =\
@@ -375,7 +332,7 @@ def user_groups(user, apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -427,7 +384,7 @@ def user_tasks(user, apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -473,7 +430,7 @@ def user_tasks_id(user, task_id, apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -515,7 +472,7 @@ def groups(apiver=fg_config['fgapiver']):
             if auth_state is True:
                 params = request.get_json()
                 if params is not None:
-                    logger.debug("params: '%s'" % params)
+                    logging.debug("params: '%s'" % params)
                     group_name = params.get('name', '')
                     new_group = fgapisrv_db.group_add(group_name)
                     if new_group is not None:
@@ -540,7 +497,7 @@ def groups(apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -589,7 +546,7 @@ def groups_group(group, apiver=fg_config['fgapiver']):
         else:
             status = 404
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -639,7 +596,7 @@ def groups_group_apps(group, apiver=fg_config['fgapiver']):
             if auth_state is True:
                 params = request.get_json()
                 if params is not None:
-                    logger.debug("params: '%s'" % params)
+                    logging.debug("params: '%s'" % params)
                     app_ids = params.get('applications', [])
                     new_ids = fgapisrv_db.group_apps_add(group, app_ids)
                     if new_ids is not []:
@@ -666,7 +623,7 @@ def groups_group_apps(group, apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -715,7 +672,7 @@ def groups_group_roles(group, apiver=fg_config['fgapiver']):
             if auth_state is True:
                 params = request.get_json()
                 if params is not None:
-                    logger.debug("params: '%s'" % params)
+                    logging.debug("params: '%s'" % params)
                     role_ids = params.get('roles', [])
                     new_roles = fgapisrv_db.group_roles_add(group, role_ids)
                     if new_roles is not []:
@@ -742,7 +699,7 @@ def groups_group_roles(group, apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -781,7 +738,7 @@ def roles(apiver=fg_config['fgapiver']):
         else:
             status = 400
             response = {"message": "Unhandled method: '%s'" % request.method}
-    logger.debug('message: %s' % response.get('message', 'success'))
+    logging.debug('message: %s' % response.get('message', 'success'))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
