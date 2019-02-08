@@ -423,7 +423,7 @@ def update_db_config(config):
     db_config = fgapisrv_db.srv_config(fgapisrv_uuid)
     for key in config.keys():
         if config[key] != db_config[key]:
-            logging.debug("DB configuration overload: conf(%s)= <-"
+            logging.debug("DB configuration overload: conf(%s)='%s'<-'%s'"
                           % (key, config[key], db_config[key]))
             config[key] = db_config[key]
     return config
