@@ -20,6 +20,7 @@ import os
 import json
 import ConfigParser
 import logging
+import logging.config
 
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"

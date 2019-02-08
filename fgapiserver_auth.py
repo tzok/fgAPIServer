@@ -19,7 +19,7 @@
 # limitations under the License.
 
 from fgapiserver_db import FGAPIServerDB
-from fgapiserverconfig import FGApiServerConfig
+from fgapiserver_config import FGApiServerConfig
 
 import os
 import sys
