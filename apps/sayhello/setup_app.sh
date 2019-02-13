@@ -8,9 +8,9 @@
 # Author: Riccardo Bruno <riccardo.bruno@ct.infn.it>
 #
 TKN="<place token here>"
-API_URL="http://localhost:8888/v1.0"
+API_URL=http://localhost/v1.0
 HDR_APPJSON="-H \"Content-Type: application/json\""
-HDR_AUTHBRR="-H \"Authorization: Bearer ${TKN}\""
+HDR_AUTHBRR="-H \"Authorization:  ${TKN}\""
 JSON_OUT=$(mktemp)
 POST_DATA=$(mktemp)
 cat >$POST_DATA <<EOF
@@ -34,11 +34,8 @@ cat >$POST_DATA <<EOF
 		"description": ""
 	}],
 	"enabled": true,
-	"files": [{
-		"name": "sayhello.sh"
-	}, {
-		"name": "sayhello.txt"
-	}],
+	"files": [ "sayhello.sh",
+                   "sayhello.txt" ],
 	"name": "sayhello",
 	"description": "sayhello tester application"
 }
@@ -82,12 +79,16 @@ echo "Output: '"$(cat $JSON_OUT)"'"
 # Print how to submit the app
 HEADERS=$HDR_APPJSON" "$HDR_AUTHBRR
 cat >$POST_DATA <<EOF
-{"application":"${APP_ID}", "description":"sayhello ${APP_ID} test run", "arguments": ["this is the argument"], "output_files": [{"name": "sayhello.data"}]}
+{"application":"${APP_ID}",
+ "description":"sayhello ${APP_ID} test run",
+ "arguments": ["this is the argument"],
+ "output_files": [{"name": "sayhello.data"}]}
 EOF
 CMD="curl $HEADERS -X POST -d '"$(cat $POST_DATA)"' $API_URL/tasks"
 echo ""
 echo "To execute the application with id: $APP_ID, use:"
 echo $CMD
+
 # Print how to view task info
 HEADERS=$HDR_AUTHBRR
 CMD="curl $HEADERS $API_URL/tasks/<task_id>"
