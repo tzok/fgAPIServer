@@ -357,6 +357,7 @@ def auth(apiver=fg_config['fgapiver']):
     logtoken = request.values.get('token', '')
     username = request.values.get('username', '')
     password = request.values.get('password', '')
+    auth_request = request.headers.get('Authorization')
     api_support, state, message = check_api_ver(apiver)
     if not api_support:
         response = {"message": message}
@@ -373,11 +374,20 @@ def auth(apiver=fg_config['fgapiver']):
                 username=username,
                 password=base64.b64decode(password),
                 user=user)
+        elif (len(logtoken) > 0 or
+              len(auth_request) > 0):
+            auth_bearer = auth_request.split(" ")
+            if auth_bearer[0] == "Bearer":
+                try:
+                    session_token = auth_bearer[1]
+                except IndexError:
+                    session_token = ''
+            else:
+                session_token = auth_request
         else:
             message = "No credentials found!"
         logger.debug('session token: %s' % session_token)
     elif request.method == 'POST':
-        auth_request = request.headers.get('Authorization')
         # auth may be in the form:
         #     'Bearer TOKEN'
         #     'Username/Password' or 'Username:Password'
@@ -417,8 +427,12 @@ def auth(apiver=fg_config['fgapiver']):
                 message += " "
             message += "Token not created"
     if len(session_token) > 0:
+        # Provide user info from session token
+        token_info = fgapisrv_db.get_token_info(session_token)
+        del token_info['token']
         response = {
-            "token": session_token
+            "token": session_token,
+            "token_info": token_info
         }
         state = 200
         if len(user) > 0:
