@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
-# Consorzio COMETA (COMETA), Italy
 #
-# See http://www.infn.it and and http://www.consorzio-cometa.it for details on
-# the copyright holders.
+# See http://www.infn.it  for details on the copyrigh holder
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,21 +42,21 @@ def token_encode(key, username, password):
             (username, password, int(
                 time.time()))))
 
+
 # Decode
-
-
 def token_decode(key, token):
     obj = ARC4.new(key)
     return obj.decrypt(base64.b64decode(token))
 
 
-def token_info(token):
+def token_info(key, token):
     tinfo = token_decode(key, token)
     tinfo_fields = tinfo.split(':')
     return \
         tinfo_fields[0].split("=")[1], \
         tinfo_fields[1].split("=")[1], \
         tinfo_fields[2].split("=")[1]
+
 
 if __name__ == "__main__":
     token = token_encode(key, username, password)

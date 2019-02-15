@@ -22,12 +22,12 @@ from flask import Flask
 from flask import request
 from flask import Response
 from functools import wraps
-from OpenSSL import SSL
 from fgapiserverconfig import FGApiServerConfig
 import os
 import sys
 import json
 import logging.config
+from fgapiserver_tools import check_api_ver
 
 """
   FutureGateway APIServer front-end
@@ -48,43 +48,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
 
 # Load configuration
-fg_config_obj = FGApiServerConfig(fgapiserver_config_file)
-fg_config = fg_config_obj.get_config()
-
-# fgapiserver settings
-fgapiver = fg_config['fgapiver']
-fgapiserver_name = fg_config['fgapiserver_name']
-fgapisrv_host = fg_config['fgapisrv_host']
-fgapisrv_port = int(fg_config['fgapisrv_port'])
-fgapisrv_debug = (fg_config['fgapisrv_debug'].lower() == 'true')
-fgapisrv_iosandbox = fg_config['fgapisrv_iosandbox']
-fgapisrv_geappid = fg_config['fgapisrv_geappid']
-fgjson_indent = int(fg_config['fgjson_indent'])
-fgapisrv_key = fg_config['fgapisrv_key']
-fgapisrv_crt = fg_config['fgapisrv_crt']
-fgapisrv_logcfg = fg_config['fgapisrv_logcfg']
-fgapisrv_dbver = fg_config['fgapisrv_dbver']
-fgapisrv_secret = fg_config['fgapisrv_secret']
-fgapisrv_notoken = (fg_config['fgapisrv_notoken'].lower() == 'true')
-fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
-fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
-fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
-fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
-fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
-fgapisrv_ptvdefusr = fg_config['fgapisrv_ptvdefusr']
-fgapisrv_ptvmapfile = fg_config['fgapisrv_ptvmapfile']
-
-# fgapiserver database settings
-fgapisrv_db_host = fg_config['fgapisrv_db_host']
-fgapisrv_db_port = int(fg_config['fgapisrv_db_port'])
-fgapisrv_db_user = fg_config['fgapisrv_db_user']
-fgapisrv_db_pass = fg_config['fgapisrv_db_pass']
-fgapisrv_db_name = fg_config['fgapisrv_db_name']
+fg_config = FGApiServerConfig(fgapiserver_config_file)
 
 # Logging
-logging.config.fileConfig(fgapisrv_logcfg)
+logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
 logger = logging.getLogger(__name__)
-logger.debug(fg_config_obj.get_messages())
 
 # setup Flask app
 app = Flask(__name__)
@@ -94,12 +62,14 @@ app = Flask(__name__)
 #  Authentication
 ##
 
+
 def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
     print "Ckecking for: %s - %s" % (username, password)
-    return username == fgapisrv_ptvuser and fgapisrv_ptvpass == password
+    return (username == fg_config['fgapisrv_ptvuser'] and
+            password == fg_config['fgapisrv_ptvpass'])
 
 
 def authenticate():
@@ -136,49 +106,51 @@ default_token = ("eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIzYTJkN"
                  "InefF0LzAlMj4-iQQw-kAavKgvA00sO8cww9Hzx6Thfw")
 
 
-def get_token_file(token_file):
+def get_token_file(tokenfile):
     """This function returns the token stored in the given token_file"""
     token = default_token
     try:
-        tkn_f = open(token_file, 'rt')
+        tkn_f = open(tokenfile, 'rt')
         token = tkn_f.read()[:-1]
         tkn_f.close()
     except IOError:
         print ("Token file '%s' could not be accessed; using default"
-               % token_file)
+               % tokenfile)
     return token
+
 
 subject_file = '.iam/subject'
 default_subject = '98e3009e-e39b-11e6-bcba-5eef910c8578'
 
 
-def get_subject_file(subject_file):
+def get_subject_file(subjectfile):
     """This function returns the subject stored in the given subject_file"""
     subject = default_subject
     try:
-        sbj_f = open(subject_file)
+        sbj_f = open(subjectfile)
         subject = sbj_f.read()[:-1]
         sbj_f.close()
     except IOError:
         print ("Subject file '%s' could not be accessed; using default"
-               % subject_file)
+               % subjectfile)
     return subject
+
 
 groups_file = '.iam/groups'
 default_groups = ['Admin',
                   'Developers']
 
 
-def get_groups_file(groups_file):
+def get_groups_file(groupsfile):
     """This function returns the groups stored in the given groups file"""
     groups = default_groups
     try:
-        grp_f = open(groups_file)
+        grp_f = open(groupsfile)
         groups = [grp[:-1] for grp in grp_f]
         grp_f.close()
     except IOError:
         print ("Groups file '%s' could not be accessed; using default"
-               % groups_file)
+               % groupsfile)
     return groups
 
 ##
@@ -200,31 +172,36 @@ def get_groups_file(groups_file):
 # subject field initially returned by the checktoken/ call
 #
 @app.route('/get-token', methods=['GET', 'POST'])
-@app.route('/%s/get-token' % fgapiver, methods=['GET', 'POST'])
+@app.route('/<apiver>/get-token', methods=['GET', 'POST'])
 @requires_auth
-def get_token():
-    response = {}
-    subject = request.values.get('subject')
-    if request.method == 'GET':
-        message = "Unhandled method: '%s'" % request.method
-        response["error"] = message
-        ctk_status = 400
-    elif request.method == 'POST':
-        response = {
-            "error": None,
-            "groups": get_groups_file(groups_file),
-            "subject": subject,
-            "token": get_token_file(token_file)
-        }
-        ctk_status = 200
+def get_token(apiver=fg_config['fgapiver']):
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        status = 400
+        response = {"message": message}
     else:
-        message = "Unhandled method: '%s'" % request.method
-        response["error"] = message
-        ctk_status = 400
-    # include _links part
-    response["_links"] = [{"rel": "self", "href": "/get-token"}, ]
-    js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=ctk_status, mimetype='application/json')
+        response = {}
+        subject = request.values.get('subject')
+        if request.method == 'GET':
+            message = "Unhandled method: '%s'" % request.method
+            response["error"] = message
+            status = 400
+        elif request.method == 'POST':
+            response = {
+                "error": None,
+                "groups": get_groups_file(groups_file),
+                "subject": subject,
+                "token": get_token_file(token_file)
+            }
+            status = 200
+        else:
+            message = "Unhandled method: '%s'" % request.method
+            response["error"] = message
+            status = 400
+        # include _links part
+        response["_links"] = [{"rel": "self", "href": "/get-token"}, ]
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     return resp
 
@@ -241,42 +218,50 @@ def get_token():
 # (username/password) contained in the request form
 #
 @app.route('/get-token-info', methods=['GET', 'POST'])
-@app.route('/%s/get-token-info' % fgapiver, methods=['GET', 'POST'])
+@app.route('/<apiver>/get-token-info', methods=['GET', 'POST'])
 @app.route('/checktoken', methods=['GET', 'POST'])
-@app.route('/%s/checktoken' % fgapiver, methods=['GET', 'POST'])
+@app.route('/<apiver>/checktoken', methods=['GET', 'POST'])
 @requires_auth
-def checktoken():
-    response = {}
-    token = request.values.get('token')
-    if request.method == 'GET':
-        message = "Unhandled method: '%s'" % request.method
-        response["error"] = message
-        ctk_status = 400
-    elif request.method == 'POST':
-        # response = {
-        #    "token_status": "valid",
-        #    # you may specify:
-        #    #  portal_user - A portal user that can be mapped by
-        #    #                fgapiserver_ptvmap.json map file
-        #    #  portal_group - A portal group that can be mapped by
-        #    #                 fgapiserver_ptvmap.json map file
-        #    # "portal_user": fgapisrv_ptvdefusr
-        #    "portal_group": "admin"
-        # }
-        response = {
-            "error": None,
-            "groups": get_groups_file(groups_file),
-            "subject": get_subject_file(subject_file)
-        }
-        ctk_status = 200
+def checktoken(apiver=fg_config['fgapiver']):
+    logger.debug('Tocken check(%s): %s'
+                 % (request.method, request.values.to_dict()))
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        status = 400
+        response = {"message": message}
     else:
-        message = "Unhandled method: '%s'" % request.method
-        response["error"] = message
-        ctk_status = 400
+        response = {}
+        token = request.values.get('token')
+        if request.method == 'GET':
+            message = "Unhandled method: '%s'" % request.method
+            response["error"] = message
+            status = 400
+        elif request.method == 'POST':
+            # response = {
+            #    "token_status": "valid",
+            #    # you may specify:
+            #    #  portal_user - A portal user that can be mapped by
+            #    #                fgapiserver_ptvmap.json map file
+            #    #  portal_group - A portal group that can be mapped by
+            #    #                 fgapiserver_ptvmap.json map file
+            #    # "portal_user": fgapisrv_ptvdefusr
+            #    "portal_group": "admin"
+            # }
+            response = {
+                "error": None,
+                "groups": get_groups_file(groups_file),
+                "subject": get_subject_file(subject_file),
+                "token": token
+            }
+            status = 200
+        else:
+            message = "Unhandled method: '%s'" % request.method
+            response["error"] = message
+            status = 400
     # include _links part
     response["_links"] = [{"rel": "self", "href": "/checktoken"}, ]
-    js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=ctk_status, mimetype='application/json')
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     return resp
 
@@ -450,7 +435,7 @@ def orchestrator_deployments_get(uuid):
         dep_status = 404
         response = {"error": "Method not yet implemented"}
     print "response: '%s'" % response
-    js = json.dumps(response, indent=fgjson_indent)
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=dep_status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     return resp
@@ -473,7 +458,7 @@ def orchestrator_deployments():
         # Enable below lnes for failed request due to bad request
         # response, dep_status = create_badreq()
         # print "Returned bad request: '%s' (%s)" % (response, dep_status)
-    js = json.dumps(response, indent=fgjson_indent)
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=dep_status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     return resp
@@ -490,7 +475,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                          'GET,PUT,POST,DELETE,PATCH')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Server', fgapiserver_name)
+    response.headers.add('Server', fg_config['fgapiserver_name'])
     return response
 
 
@@ -500,11 +485,15 @@ def after_request(response):
 
 # Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":
-    if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
-        context = SSL.Context(SSL.SSLv23_METHOD)
-        context.use_privatekey_file(fgapisrv_key)
-        context.use_certificate_file(fgapisrv_crt)
-        app.run(host=fgapisrv_host, port=fgapisrv_port,
-                ssl_context=context, debug=fgapisrv_debug)
+    if len(fg_config['fgapisrv_crt']) > 0 and \
+            len(fg_config['fgapisrv_key']) > 0:
+        context = (fg_config['fgapisrv_crt'],
+                   fg_config['fgapisrv_key'])
+        app.run(host=fg_config['fgapisrv_host'],
+                port=fg_config['fgapisrv_port']+1,
+                ssl_context=context,
+                debug=fg_config['fgapisrv_debug'])
     else:
-        app.run(host=fgapisrv_host, port=fgapisrv_port+1, debug=fgapisrv_debug)
+        app.run(host=fg_config['fgapisrv_host'],
+                port=fg_config['fgapisrv_port']+1,
+                debug=fg_config['fgapisrv_debug'])

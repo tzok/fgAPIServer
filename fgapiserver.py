@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
-# Consorzio COMETA (COMETA), Italy
 #
-# See http://www.infn.it and and http://www.consorzio-cometa.it for details on
-# the copyright holders.
+# See http://www.infn.it  for details on the copyrigh holder
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,26 +16,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging.config
 from flask import Flask
-from flask import request
 from flask import Response
-from flask import jsonify
-from flask_login import LoginManager, UserMixin, login_required, current_user
-from Crypto.Cipher import ARC4
-from OpenSSL import SSL
+from flask import abort
+from flask import request
+from flask_login import LoginManager
+from flask_login import login_required
+from flask_login import current_user
 from werkzeug import secure_filename
-from fgapiserverdb import FGAPIServerDB
-from fgapiserverconfig import FGApiServerConfig
+from fgapiserver_config import FGApiServerConfig
 from fgapiserverptv import FGAPIServerPTV
 from fgapiserver_user import User
+from fgapiserver_ugr_apis import ugr_apis
+from fgapiserver_auth import authorize_user
+from fgapiserver_tools import get_fgapiserver_db,\
+                              json_bool,\
+                              check_api_ver,\
+                              check_db_ver,\
+                              check_db_reg,\
+                              update_db_config,\
+                              paginate_response,\
+                              get_task_app_id,\
+                              create_session_token,\
+                              header_links,\
+                              not_allowed_method
 import os
 import sys
-import uuid
-import time
 import json
-import ConfigParser
 import base64
-import logging
 import logging.config
 
 """
@@ -53,6 +60,7 @@ __email__ = "riccardo.bruno@ct.infn.it"
 __status__ = "release"
 __update__ = "23-05-2017 17:23:15"
 
+
 # setup path
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -61,361 +69,26 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
 
 # Load configuration
-fg_config_obj = FGApiServerConfig(fgapiserver_config_file)
-fg_config = fg_config_obj.get_config()
+fg_config = FGApiServerConfig(fgapiserver_config_file)
 
-# fgapiserver settings
-fgapiver = fg_config['fgapiver']
-fgapiserver_name = fg_config['fgapiserver_name']
-fgapisrv_host = fg_config['fgapisrv_host']
-fgapisrv_port = int(fg_config['fgapisrv_port'])
-fgapisrv_debug = fg_config['fgapisrv_debug'].lower() == 'true'
-fgapisrv_iosandbox = fg_config['fgapisrv_iosandbox']
-fgapisrv_geappid = int(fg_config['fgapisrv_geappid'])
-fgjson_indent = int(fg_config['fgjson_indent'])
-fgapisrv_key = fg_config['fgapisrv_key']
-fgapisrv_crt = fg_config['fgapisrv_crt']
-fgapisrv_logcfg = fg_config['fgapisrv_logcfg']
-fgapisrv_dbver = fg_config['fgapisrv_dbver']
-fgapisrv_secret = fg_config['fgapisrv_secret']
-fgapisrv_notoken = fg_config['fgapisrv_notoken'].lower() == 'true'
-fgapisrv_notokenusr = fg_config['fgapisrv_notokenusr']
-fgapisrv_lnkptvflag = fg_config['fgapisrv_lnkptvflag']
-fgapisrv_ptvendpoint = fg_config['fgapisrv_ptvendpoint']
-fgapisrv_ptvuser = fg_config['fgapisrv_ptvuser']
-fgapisrv_ptvpass = fg_config['fgapisrv_ptvpass']
-fgapisrv_ptvdefusr = fg_config['fgapisrv_ptvdefusr']
-fgapisrv_ptvdefgrp = fg_config['fgapisrv_ptvdefgrp']
-fgapisrv_ptvmapfile = fg_config['fgapisrv_ptvmapfile']
+# FutureGateway database object
+fgapisrv_db = get_fgapiserver_db()
 
-# fgapiserver database settings
-fgapisrv_db_host = fg_config['fgapisrv_db_host']
-fgapisrv_db_port = int(fg_config['fgapisrv_db_port'])
-fgapisrv_db_user = fg_config['fgapisrv_db_user']
-fgapisrv_db_pass = fg_config['fgapisrv_db_pass']
-fgapisrv_db_name = fg_config['fgapisrv_db_name']
+# Load configuration
+logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
 
 # Logging
-logging.config.fileConfig(fgapisrv_logcfg)
+logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
 logger = logging.getLogger(__name__)
 logger.debug("fgAPIServer is starting ...")
-logger.debug(fg_config_obj.get_messages())
+logger.debug(fg_config.get_messages())
 
 # setup Flask app
 app = Flask(__name__)
+app.register_blueprint(ugr_apis)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# FutureGateway database object holder
-fgapisrv_db = None
-
-
-#
-# Helper functions
-#
-
-def json_bool(bool_value):
-    """
-    Accepts true/false values in different forms from json streams and
-    transform it in boolean value accordingly to the following table:
-        bool_Value = ["true"|"True"|"TRUE]" -> True/False otherwise
-        bool_Value = true/false             -> True/False (bool)
-        bool_value = "1"/"0"                -> True/False (str)
-        bool_value = 1/0                    -> True/False (int)
-    """
-    if type(bool_value) != bool:
-        bool_value= str(bool_value)
-        if bool_value.lower() == 'true' or bool_value ==  '1':
-            bool_value = True
-        else:
-            bool_value = False
-    return bool_value
-
-def get_fgapiserver_db():
-    """
-    Retrieve the fgAPIServer database object
-
-    :return: Return the fgAPIServer database object or None if the
-             database connection fails
-    """
-    fgapisrv_db = FGAPIServerDB(
-        db_host=fgapisrv_db_host,
-        db_port=fgapisrv_db_port,
-        db_user=fgapisrv_db_user,
-        db_pass=fgapisrv_db_pass,
-        db_name=fgapisrv_db_name,
-        iosandbbox_dir=fgapisrv_iosandbox,
-        fgapiserverappid=fgapisrv_geappid)
-    db_state = fgapisrv_db.get_state()
-    if db_state[0] != 0:
-        logger.error("Unbable to connect to the database:\n"
-                     "  host: %s\n"
-                     "  port: %s\n"
-                     "  user: %s\n"
-                     "  pass: %s\n"
-                     "  name: %s\n"
-                     % (fgapisrv_db_host,
-                        fgapisrv_db_port,
-                        fgapisrv_db_user,
-                        fgapisrv_db_pass,
-                        fgapisrv_db_name))
-        return None
-    return fgapisrv_db
-
-
-def check_db_ver():
-    """
-    Database versioning check
-
-    :return: This function will check the database connectivity, set the
-             fgapisrv_db global variable and terminate with error if the
-             database schema version is not aligned with the version
-             required by the code; see fgapisrv_dbver in configuration file
-    """
-    global fgapisrv_db
-    fgapisrv_db = get_fgapiserver_db()
-    if fgapisrv_db is None:
-        msg = "Unable to connect to the database!"
-        logger.error(msg)
-        print msg
-        sys.exit(1)
-    else:
-        # getDBVersion
-        db_ver = fgapisrv_db.get_db_version()
-        if fgapisrv_dbver is None or\
-           fgapisrv_dbver == '' or\
-           fgapisrv_dbver != db_ver:
-            msg = ("Current database version '%s' is not compatible "
-                   "with this version of the API server front-end; "
-                   "version %s is required."
-                   "It is suggested to update your database applying "
-                   "new available patches" % (db_ver, fgapisrv_dbver))
-            logger.error(msg)
-            print msg
-            sys.exit(1)
-    logger.debug("Check database version passed")
-    return db_ver
-
-
-def paginate_response(response, page, per_page, page_url):
-    """
-    Paginate the incoming response json vector, accordinlgly to page and
-    per_page values
-    :param response: The whole response text
-    :param page: The selected page number
-    :param per_page: How many response record per page
-    :param page_url: The url to get this page
-    :return: The number of specified response records of the selected page
-    """
-    links = []
-    if page is not None and per_page is not None:
-        pg = int(page)
-        if pg > 0:
-            pg -= 1
-        ppg = int(per_page)
-        if pg > len(response)/ppg:
-            pg = len(response)/ppg
-        max_pages = len(response)/ppg + (1 * len(response) % ppg)
-        record_from = pg * ppg
-        record_to = record_from + ppg
-        paginated_response = response[record_from:record_to]
-        for link_page in range(0, max_pages):
-            if link_page == pg:
-                rel = "self"
-            elif link_page < pg:
-                rel = "prev"
-            else:
-                rel = "next"
-            if "?" in page_url:
-                filter_char = "&"
-            else:
-                filter_char = "?"
-            href = "%s%spage=%s&per_page=%s" % (page_url,
-                                                filter_char,
-                                                link_page+1,
-                                                ppg)
-            links += [{"rel": rel,
-                       "href": href}, ]
-    else:
-        paginated_response = response
-        links += [{"rel": "self",
-                   "href": page_url}, ]
-    return paginated_response, links
-
-
-def get_task_app_id(task_id):
-    """
-    Return the application id associated to the given task_id
-    :param task_id: Task id
-    :return: The associated application id associated to the given task id
-    """
-    global fgapisrv_db
-    task_info = fgapisrv_db.get_task_info(task_id)
-    app_record = task_info.get('application', None)
-    if app_record is not None:
-        logger.debug("Found app_id: '%s' for task_id: '%s'"
-                     % (app_record['id'], task_id))
-        return app_record['id']
-    logger.warn("Could not find app_id for task_id: '%s'" % task_id)
-    return None
-
-
-def process_log_token(logtoken):
-    """
-    processLogToken retrieve username and password from a given login token
-
-    (!)Override this method to manage more complex and secure algorithms;
-       tester code uses the following encrypted string to store user
-       credentials:
-       username=<username>:password=<password>:timestamp=<timestamp>
-
-    To create such log tokens, please use the following python snippet:
-
-    from Crypto.Cipher import ARC4
-    import time
-    import base64
-    secret = "0123456789ABCDEF" # (!) Please use fgapiserver_secret value
-    username = "<username>"
-    password = "<password>"
-    # Encode
-    obj=ARC4.new(secret)
-    b64em = base64.b64encode(obj.encrypt("username=%s:password=%s:timestamp=%s"
-                             % (username,password,int(time.time()))))
-    print b64em
-    # Decode
-    obj=ARC4.new(secret)
-    creds = obj.decrypt(base64.b64decode(b64em))
-    print creds
-
-    :param logtoken: The encripted string containing the:
-                 username=<username>:password=<password>:timestamp=<timestamp>
-                 The key is encripted using a key, see fgapisrv_secret value
-                 in configuration file
-                 Username and Passord credentials are stored inside in the
-                 APIServer users table
-    :return: Unencripted triple: (username, password, timestamp)
-    """
-    username = ""
-    password = ""
-    timestamp = 0
-    obj = ARC4.new(fgapisrv_secret)
-    creds = obj.decrypt(base64.b64decode(logtoken))
-    credfields = creds.split(":")
-    if len(credfields) > 0:
-        username = credfields[0].split("=")[1]
-        password = credfields[1].split("=")[1]
-        timestamp = credfields[2].split("=")[1]
-    logger.debug("Logtoken: '%s'\n"
-                 "    User: '%s'\n"
-                 "    Password: '%s'\n"
-                 "    Timestamp: '%s'" % (logtoken,
-                                          username,
-                                          password,
-                                          timestamp))
-    return username, password, timestamp
-
-
-def create_session_token(**kwargs):
-    """
-    This function accepts login tokens or directly username/password
-    credentials returning an access token
-    :param kwargs: logtoken - A token containing encrypted credentials
-                  plus a timestamp
-                  username,password - Credentials of APIServer users
-    :return: An access token to be used by any further transaction with
-             the APIServer front-end
-    """
-    global fgapisrv_db
-    timestamp = int(time.time())
-    sestoken = ""
-    logtoken = kwargs.get("logtoken", "")
-    username = kwargs.get("username", "")
-    password = kwargs.get("password", "")
-    if len(logtoken) > 0:
-        # Calculate credentials starting from a logtoken
-        username, password, timestamp = process_log_token(logtoken)
-    if len(username) > 0 and len(password) > 0:
-        # Create a new access token starting from given username and password
-        # (DBRequired)
-        sestoken = fgapisrv_db.create_session_token(username,
-                                                    password,
-                                                    timestamp)
-    logger.debug("Session token is:\n"
-                 "logtoken: '%s'\n"
-                 "username: '%s'\n"
-                 "password: '%s'\n"
-                 "timestamp: '%s'\n" % (sestoken,
-                                        logtoken,
-                                        username,
-                                        password))
-    return sestoken
-
-
-def authorize_user(current_user, app_id, user, reqroles):
-    """
-    This function returns true if the given user is authorized to process the
-    requested action
-    The request will be checked against user group roles stored in the database
-
-    :param current_user: The user requesting the action
-    :param app_id: The application id (if appliable)
-    :param user: The user specified by the filter
-    :param reqroles: The requested roles: task_view, app_run, ...
-    :return:
-    """
-    logger.debug("AuthUser: (begin)")
-    global fgapisrv_db
-
-    # Return True if token management is disabled
-    # if fgapisrv_notoken:
-    #     return True, 'Authorization disabled'
-
-    message = ''
-    user_id = current_user.get_id()
-    user_name = current_user.get_name()
-    logger.debug(("AuthUser: user_id: '%s' - "
-                  "user_name: '%s'" % (user_id, user_name)))
-
-    # Check if requested action is in the user group roles
-    auth_z = fgapisrv_db.verify_user_role(user_id, reqroles)
-    logger.debug(("AuthUser: Auth for user '%s' "
-                  "with roles '%s' is %s")
-                 % (user_id, reqroles, auth_z))
-    if not auth_z:
-        message = ("User '%s' does not have requested '%s' role(s)\n"
-                   % (user_name, reqroles))
-    # Check current_user and filter user are different
-    if user_name != user:
-        logger.debug("AuthUser: User name '%s' differs from user '%s'"
-                     % (user_name, user))
-        user_impersonate = fgapisrv_db.verify_user_role(
-            user_id, 'user_impersonate')
-        if user != "@":
-            group_impersonate = fgapisrv_db.same_group(
-                user_name, user) and fgapisrv_db.verify_user_role(
-                user_id, 'group_impersonate')
-        else:
-            group_impersonate = fgapisrv_db.verify_user_role(
-                user_id, 'group_impersonate')
-        auth_z = auth_z and (user_impersonate or group_impersonate)
-        if not auth_z:
-            if user == "*":
-                user_text = "any user"
-            elif user == "@":
-                user_text = "group-wide users"
-            else:
-                user_text = "'%s' user" % user
-            message = "User '%s' cannot impersonate %s\n" % (
-                user_name, user_text)
-    # Check if app belongs to Group apps
-    if (app_id is not None):
-        logger.debug("AuthUser: checking for app_id '%s'" % app_id)
-        auth_z = auth_z and fgapisrv_db.verify_user_app(user_id, app_id)
-        if not auth_z:
-            message = ("User '%s' cannot perform any activity on application "
-                       "having id: '%s'\n") % (user_name, app_id)
-
-    return auth_z, message
 
 ##
 # flask-login
@@ -429,54 +102,56 @@ def authorize_user(current_user, app_id, user, reqroles):
 
 
 @login_manager.request_loader
-def load_user(request):
-    global fgapisrv_db
+def load_user(req):
     logger.debug("LoadUser: begin")
     # Login manager could be disabled in conf file
-    if fgapisrv_notoken:
+    if fg_config['fgapisrv_notoken']:
         logger.debug("LoadUser: notoken is true")
-        user_info = fgapisrv_db.get_user_info_by_name(fgapisrv_notokenusr)
+        user_info = fgapisrv_db.get_user_info_by_name(
+            fg_config['fgapisrv_notokenusr'])
         user_id = user_info["id"]
         user_name = user_info["name"]
         logger.debug(("LoadUser: Session token disabled; "
                       "behaving has user: '%s' (%s)"
                       % (user_name, user_id)))
-        return User(int(user_info["id"]), user_info["name"])
+        return User(int(user_info["id"]), user_info["name"], '')
 
     logger.debug("LoadUser: using token")
-    token = request.headers.get('Authorization')
-    if token is None:
-        token = request.args.get('token')
-    logger.debug("LoadUser: token is '%s'" % token)
+    auth_token = req.headers.get('Authorization')
+    if auth_token is None:
+        auth_token = req.args.get('token')
+    logger.debug("LoadUser: token is '%s'" % auth_token)
 
-    if token is not None:
+    if auth_token is not None:
         # Check for Portal Token verification  (PTV) method
-        if fgapisrv_lnkptvflag:
+        if fg_config['fgapisrv_lnkptvflag']:
             logger.debug("LoadUser: (PTV)")
-            token_fields = token.split()
+            token_fields = auth_token.split()
             if token_fields[0] == "Bearer":
                 try:
-                    token = token_fields[1]
+                    auth_token = token_fields[1]
                 except IndexError:
                     logger.debug("Passed empty Bearer token")
                     return None
             elif token_fields[0] == "Task":
-                # Taks token management
+                # Task token management
                 # Not available
                 try:
-                    token = token_fields[1]
+                    auth_token = token_fields[1]
+                    logger.debug("Task token '%s' (not yet supported)"
+                                 % auth_token)
                 except IndexError:
                     logger.debug("Passed empty Task token")
                     return None
                 logger.debug("Task token not yet implemented")
                 return None
             else:
-                token = token_fields[0]
-            logger.debug("LoadUser: token field is '%s'" % token)
-            ptv = FGAPIServerPTV(endpoint=fgapisrv_ptvendpoint,
-                                 tv_user=fgapisrv_ptvuser,
-                                 tv_password=fgapisrv_ptvpass)
-            result = ptv.validate_token(token)
+                auth_token = token_fields[0]
+            logger.debug("LoadUser: token field is '%s'" % auth_token)
+            ptv = FGAPIServerPTV(endpoint=fg_config['fgapisrv_ptvendpoint'],
+                                 tv_user=fg_config['fgapisrv_ptvuser'],
+                                 tv_password=fg_config['fgapisrv_ptvpass'])
+            result = ptv.validate_token(auth_token)
             logger.debug("LoadUser: validate_token: '%s'" % result)
             # result: valid/invalid and optionally portal username and/or
             # its group from result map the corresponding APIServer username
@@ -501,8 +176,6 @@ def load_user(request):
                 # not registered users to access the APIs in an isolated way
                 # The Group/s field will be used to register the subject user
                 # in the proper group(s) providing the correct rights
-                ptv_subj = None
-                ptv_groups = None
                 if portal_user == '' and portal_subject is not None:
                     portal_user = portal_subject
                     # Prepare a groups vector containing group(s) associated
@@ -512,19 +185,19 @@ def load_user(request):
                     if portal_group != '':
                         portal_groups.append(portal_group)
                     fg_groups = fgapisrv_db.get_ptv_groups(portal_groups)
-                    if fg_groups == []:
+                    if len(fg_groups) == 0:
                         # Assign a default FG group
-                        fg_groups = [fgapisrv_ptvdefgrp]
+                        fg_groups = [fg_config['fgapisrv_ptvdefgrp']]
                     fg_user = fgapisrv_db.register_ptv_subject(portal_user,
                                                                fg_groups)
                     if fg_user != ():
                         fgapisrv_db.register_token(fg_user[0],
-                                                   token,
+                                                   auth_token,
                                                    portal_subject)
                         logger.debug("LoadUser: '%s' - '%s'"
                                      % (fg_user[0], fg_user[1]))
                         logger.debug("LoadUser: (end)")
-                        return User(fg_user[0], fg_user[1])
+                        return User(fg_user[0], fg_user[1], auth_token)
                 # Map the portal user with one of defined APIServer users
                 # accordingly to the rules defined in fgapiserver_ptvmap.json
                 # file. The json contains the list of possible APIServer
@@ -548,12 +221,12 @@ def load_user(request):
                 logger.debug("LoadUser: Mapping user")
                 mapped_userid = 0
                 mapped_username = ''
-                with open(fgapisrv_ptvmapfile) as ptvmap_file:
+                with open(fg_config['fgapisrv_ptvmapfile']) as ptvmap_file:
                     ptvmap = json.load(ptvmap_file)
                 # portal_user or group must be not null
-                if portal_user != ''\
-                   or portal_group != ''\
-                   or portal_groups != []:
+                if portal_user != '' \
+                        or portal_group != '' \
+                        or portal_groups != []:
                     # Scan all futuregateway users in json file
                     for user in ptvmap:
                         logger.debug(("LoadUser: Trying mapping "
@@ -605,21 +278,24 @@ def load_user(request):
                                 mapped_username)
                             mapped_userid = user_info["id"]
                             mapped_username = user_info["name"]
+                            logger.debug(
+                                "LoadUser: mapped user %s <- %s (unused)" %
+                                (mapped_userid, mapped_username))
                             break
                         logger.debug(("LoadUser: PTV mapped user - "
                                       "user_rec(0): '%s',user_rec(1): '%s'")
                                      % (mapped_userid, mapped_username))
                         fgapisrv_db.register_token(mapped_userid,
-                                                   token,
+                                                   auth_token,
                                                    portal_subject)
                         logger.debug("LoadUser: '%s' - '%s'" %
                                      (mapped_userid, mapped_username))
                         logger.debug("LoadUser: (end)")
-                        return User(mapped_userid, mapped_username)
+                        return User(mapped_userid, mapped_username, auth_token)
                 # No portal user and group are returned or no mapping
                 # is available returning default user
-                user_info = fgapisrv_db.\
-                    get_user_info_by_name(fgapisrv_ptvdefusr)
+                user_info = fgapisrv_db. \
+                    get_user_info_by_name(fg_config['fgapisrv_ptvdefusr'])
                 default_userid = user_info["id"]
                 default_username = user_info["name"]
                 logger.debug(("LoadUser: No map on portal user/group "
@@ -628,30 +304,31 @@ def load_user(request):
                               "user_id: '%s',user_name: '%s'"
                               % (default_userid, default_username)))
                 fgapisrv_db.register_token(default_userid,
-                                           token,
+                                           auth_token,
                                            portal_subject)
                 logger.debug("LoadUser: '%s' - '%s'" %
                              (default_userid, default_username))
                 logger.debug("LoadUser: (end)")
-                return User(default_userid, default_username)
+                return User(default_userid, default_username, auth_token)
             else:
-                logger.debug("LoadUser: PTV token '%s' is not valid" % token)
+                logger.debug("LoadUser: PTV token '%s' is not valid"
+                             % auth_token)
                 return None
         else:
             logger.debug(("LoadUser: Verifying token with "
                           "baseline token management"))
-            user_rec = fgapisrv_db.verify_session_token(token)
+            user_rec = fgapisrv_db.verify_session_token(auth_token)
             logger.debug("LoadUser: user_id: '%s',user_name: '%s'"
                          % (user_rec[0], user_rec[1]))
             if user_rec is not None and user_rec[0] is not None:
-                fgapisrv_db.register_token(user_rec[0], token, None)
+                fgapisrv_db.register_token(user_rec[0], auth_token, None)
                 logger.debug("LoadUser: '%s' - '%s'"
                              % (user_rec[0], user_rec[1]))
                 logger.debug("LoadUser: (end)")
-                return User(user_rec[0], user_rec[1])
+                return User(user_rec[0], user_rec[1], auth_token)
             else:
                 logger.debug(("LoadUser: No user is associated to "
-                              "session token: '%s'" % token))
+                              "session token: '%s'" % auth_token))
                 logger.debug("LoadUser: (end)")
                 return None
     else:
@@ -660,100 +337,105 @@ def load_user(request):
     return None
 
 
-#
-# header_links; take care of _links fields
-#               and Location
-#
-def header_links(req, resp, json):
-    if '_links' in json:
-        for link in json['_links']:
-            resp.headers.add('Link', ('%s; '
-                                      'rel="%s", <%s>; '
-                                      % (req.url,
-                                         link['rel'],
-                                         link['href'])))
-        resp.headers.add('Location', req.url)
-
 ##
 # Auth handlers
 ##
-
 
 #
 # /auth; used to provide a logtoken or username/password credentials and
 # receive back an access token
 #
 @app.route('/auth', methods=['GET', 'POST'])
-@app.route('/%s/auth' % fgapiver, methods=['GET', 'POST'])
-def auth():
-    global logger
+@app.route('/<apiver>/auth', methods=['GET', 'POST'])
+def auth(apiver=fg_config['fgapiver']):
+
     logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
-    token = ""
-    message = ""
-    logtoken = request.values.get('token')
-    username = request.values.get('username')
-    password = request.values.get('password')
-    if request.method == 'GET':
-        if logtoken is not None or len(token) > 0:
+    session_token = ""
+    delegated_token = ""
+    response = {}
+    user = request.values.get('user', '')
+    logtoken = request.values.get('token', '')
+    username = request.values.get('username', '')
+    password = request.values.get('password', '')
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
+        if len(session_token) > 0:
             # Retrieve access token from an login token
-            token = create_session_token(logtoken=logtoken)
-        elif username is not None and len(username) > 0 \
-                and password is not None and len(password) > 0:
+            session_token, delegated_token = create_session_token(
+                logtoken=logtoken,
+                user=user)
+        elif (len(username) > 0 and
+              len(password) > 0):
             # Retrieve token from given username and password
-            token = create_session_token(username=username, password=password)
+            session_token, delegated_token = create_session_token(
+                username=username,
+                password=base64.b64decode(password),
+                user=user)
         else:
             message = "No credentials found!"
-        logger.debug('session token: %s' % token)
+        logger.debug('session token: %s' % session_token)
     elif request.method == 'POST':
-        auth = request.headers.get('Authorization')
-        auth_bearer = auth.split(" ")  # Authorization: Bearer <Token>
-        # Authorization: <Username>/Base64(Password)
-        auth_creds0 = auth.split("/")
-        # Authorization: <Username>:Base64(Password)
-        auth_creds1 = auth.split(":")
-        if len(auth_bearer) > 1 and auth_bearer[0] == "Bearer":
-            # Retrieve access token from an login token
-            token = create_session_token(logtoken=auth_bearer[1])
-        elif len(auth_creds0) > 1 \
-                and len(auth_creds0[0]) > 0 \
-                and len(auth_creds0[1]) > 0:
-            # Retrieve token from given username and password
-            token = create_session_token(
-                username=auth_creds0[0],
-                password=base64.b64decode(
-                    auth_creds0[1]))
-        elif len(auth_creds1) > 1 \
-                and len(auth_creds0[1]) > 0 \
-                and len(auth_creds1[1]) > 0:
-            # Retrieve token from given username and password
-            token = create_session_token(
-                username=auth_creds1[0],
-                password=base64.b64decode(
-                    auth_creds1[1]))
+        auth_request = request.headers.get('Authorization')
+        # auth may be in the form:
+        #     'Bearer TOKEN'
+        #     'Username/Password' or 'Username:Password'
+        auth_bearer = auth_request.split(" ")
+        if auth_bearer[0] == "Bearer":
+            try:
+                session_token = auth_bearer[1]
+            except IndexError:
+                session_token = ''
+            if session_token != '':
+                # Retrieve access token from a login token
+                session_token, delegated_token = create_session_token(
+                    logtoken=session_token,
+                    user=user)
+        auth_usrnpass = auth_request.split(":")
+        if len(auth_usrnpass) > 1:
+            session_token, delegated_token = create_session_token(
+                username=auth_usrnpass[0],
+                password=base64.b64decode(auth_usrnpass[1]),
+                user=user)
+        auth_usrnpass = auth_request.split("/")
+        if len(auth_usrnpass) > 1:
+            session_token, delegated_token = create_session_token(
+                username=auth_usrnpass[0],
+                password=base64.b64decode(auth_usrnpass[1]),
+                user=user)
         else:
             # No credentials found
             message = "No credentials found!"
-        logger.debug('session token: %s' % token)
+        logger.debug('session token: %s' % session_token)
     else:
-        message = "Unhandled method: '%s'" % request.method
-        logger.debug(message)
-    if len(token) > 0:
+        state, response = not_allowed_method()
+    if len(delegated_token) == 0:
+        message += "Delegated token not created"
+        if len(session_token) == 0:
+            if len(message) > 0:
+                message += " "
+            message += "Token not created"
+    if len(session_token) > 0:
         response = {
-            "token": token
+            "token": session_token
         }
-        log_status = 200
-    else:
-        response = {
-            "message": message
-        }
-        log_status = 404
+        state = 200
+        if len(user) > 0:
+            if len(delegated_token) > 0:
+                response['delegated_token'] = delegated_token
+            else:
+                response['message'] = (
+                    "Delegated token for user '%s' not created" % user)
+                state = 203
     # include _links part
     response["_links"] = [{"rel": "self", "href": "/auth"}, ]
-    js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=log_status, mimetype='application/json')
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
 
 ##
 # Routes as specified for APIServer at http://docs.csgfapis.apiary.io
@@ -765,27 +447,78 @@ def auth():
 
 
 @app.route('/')
-@app.route('/%s/' % fgapiver)
-def index():
-    global logger
+@app.route('/<apiver>/')
+def index(apiver=fg_config['fgapiver']):
+
     logger.debug('index(%s): %s' % (request.method, request.values.to_dict()))
-    versions = ({"id": fgapiver,
-                 "_links": ({"rel": "self",
-                            "href": fgapiver},),
-                 "media-types": ({"type": "application/json"}),
-                 "status": __status__,
-                 "updated": __update__,
-                 "build:": __version__},)
-    response = {
-        "versions": versions,
-        "_links": ({"rel": "self",
-                    "href": "/"},)
-    }
-    js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=200, mimetype='application/json')
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    else:
+        versions = ({"id": apiver,
+                     "_links": ({"rel": "self",
+                                 "href": apiver},),
+                     "media-types": ({"type": "application/json"}),
+                     "status": __status__,
+                     "updated": __update__,
+                     "build:": __version__},)
+        response = {
+            "versions": versions,
+            "config": fg_config,
+            "_links": ({"rel": "self",
+                        "href": "/"},)
+        }
+        state = 200
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
+
+##
+# Token handlers
+##
+
+# token - used to extract token info
+#
+# GET - View token associated info
+
+
+@app.route('/<apiver>/token', methods=['GET', ])
+@login_required
+def token(apiver=fg_config['fgapiver']):
+    global fgapisrv_db
+    global logger
+    logger.debug('token(%s): %s' % (request.method, request.values.to_dict()))
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
+    user_token = current_user.get_token()
+    logger.debug("user_name: '%s'" % user_name)
+    logger.debug("user_id: '%s'" % user_id)
+    logger.debug("user_token: '%s'" % user_token)
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
+        state = 200
+        if len(user_token) == 0:
+            response = {'user_id': user_id,
+                        'user_name': user_name,
+                        'creation': None,
+                        'expiry': None,
+                        'valid': True,
+                        'lasting': None}
+        else:
+            response = fgapisrv_db.get_token_info(user_token)
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=state, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    header_links(request, resp, response)
+    return resp
+
 
 ##
 # Task handlers
@@ -797,11 +530,10 @@ def index():
 # POST - Create a new task; it only prepares the task for execution
 
 
-@app.route('/%s/tasks' % fgapiver, methods=['GET', 'POST'])
+@app.route('/<apiver>/tasks', methods=['GET', 'POST'])
 @login_required
-def tasks():
-    global fgapisrv_db
-    global logger
+def tasks(apiver=fg_config['fgapiver']):
+
     logger.debug('tasks(%s): %s' % (request.method, request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
@@ -809,14 +541,16 @@ def tasks():
     logger.debug("user_id: '%s'" % user_id)
     page = request.values.get('page')
     per_page = request.values.get('per_page')
-    status = request.values.get('status')
+    status = request.values.get('status', None)
     user = request.values.get('user', user_name)
-    app_id = request.values.get('application')
-    task_state = 0
-
-    if request.method == 'GET':
+    appid = request.values.get('application')
+    response = {}
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "task_view")
+            current_user, appid, user, "task_view")
         logger.debug("[task_view]: auth_state: '%s', auth_msg: '%s'"
                      % (auth_state, auth_msg))
         if not auth_state:
@@ -843,12 +577,12 @@ def tasks():
             if user == "*" or user == "@":
                 user = user + user_name
             # call to get tasks list
-            task_list = fgapisrv_db.get_task_list(user, app_id)
+            task_list = fgapisrv_db.get_task_list(user, appid)
             logger.debug("task_list: '%s'" % task_list)
             # Prepare response
             task_array = []
-            for task_id in task_list:
-                task_record = fgapisrv_db.get_task_record(task_id)
+            for taskid in task_list:
+                task_record = fgapisrv_db.get_task_record(taskid)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # DBError getting TaskRecord
@@ -859,39 +593,26 @@ def tasks():
                     }
                     break
                 else:
-                    task_array += [{
-                        "id": task_record['id'],
-                        "application": task_record['application'],
-                        "description": task_record['description'],
-                        "arguments": task_record['arguments'],
-                        "input_files": task_record['input_files'],
-                        "output_files": task_record['output_files'],
-                        "status": task_record['status'],
-                        "user": task_record['user'],
-                        "date": str(task_record['creation']),
-                        "last_change": str(task_record['last_change']),
-                        "_links": [
+                    if status is None or task_record['status'] == status:
+                        task_record['_links'] = [
                             {"rel": "self",
-                             "href": "/%s/tasks/%s"
-                                     % (fgapiver, task_id)
-                             },
+                             "href": "/%s/tasks/%s" % (apiver, taskid)},
                             {"rel": "input",
-                             "href": "/%s/tasks/%s/input"
-                                     % (fgapiver, task_id)
-                             }
-                        ]},
-                    ]
-            state = 200
-            paged_tasks, paged_links = paginate_response(
-                task_array,
-                page,
-                per_page,
-                request.url)
-            response = {"tasks": paged_tasks,
-                        "_links": paged_links}
+                             "href": "/%s/tasks/%s/input" % (apiver, taskid)}]
+                        task_array += [task_record, ]
+            if state != 403:
+                state = 200
+                paged_tasks, paged_links =\
+                    paginate_response(
+                        task_array,
+                        page,
+                        per_page,
+                        request.url)
+                response = {"tasks": paged_tasks,
+                            "_links": paged_links}
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_run")
+            current_user, appid, user, "app_run")
         logger.debug("[app_run]: auth_state: '%s', auth_msg: '%s'"
                      % (auth_state, auth_msg))
         if not auth_state:
@@ -904,16 +625,16 @@ def tasks():
             params = request.get_json()
             logger.debug("params: '%s'" % params)
             if params is not None:
-                app_id = params.get('application', '')
+                appid = params.get('application', '')
                 app_desc = params.get('description', '')
                 app_args = params.get('arguments', [])
                 app_inpf = params.get('input_files', [])
                 app_outf = params.get('output_files', [])
                 # Create task
-                task_id = fgapisrv_db.init_task(
-                    app_id, app_desc, user, app_args, app_inpf, app_outf)
-                logger.debug("task_id: '%s'" % task_id)
-                if task_id < 0:
+                taskid = fgapisrv_db.init_task(
+                    appid, app_desc, user, app_args, app_inpf, app_outf)
+                logger.debug("task_id: '%s'" % taskid)
+                if taskid < 0:
                     db_state = fgapisrv_db.get_state()
                     # Error initializing task
                     # Prepare for 410 error
@@ -924,7 +645,7 @@ def tasks():
                 else:
                     # Prepare response
                     state = 200
-                    task_record = fgapisrv_db.get_task_record(task_id)
+                    task_record = fgapisrv_db.get_task_record(taskid)
                     response = {
                         "id": task_record['id'],
                         "application": task_record['application'],
@@ -940,19 +661,21 @@ def tasks():
                             {
                                 "rel": "self",
                                 "href": "/%s/tasks/%s" %
-                                        (fgapiver,
-                                         task_id)},
+                                        (apiver,
+                                         taskid)},
                             {
                                 "rel": "input",
                                 "href": "/%s/tasks/%s/input" %
-                                        (fgapiver,
-                                         task_id)}]}
+                                        (apiver,
+                                         taskid)}]}
             else:
                 state = 404
                 response = {
                     "message": ("Did not find any application description "
                                 "json input")}
-    js = json.dumps(response, indent=fgjson_indent)
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
@@ -964,8 +687,7 @@ def tasks():
 # POST - could reshape the request (Delete/Recreate)
 
 @app.route(
-    '/%s/tasks/<task_id>' %
-    fgapiver,
+    '/<apiver>/tasks/<taskid>',
     methods=[
         'GET',
         'PUT',
@@ -973,19 +695,20 @@ def tasks():
         'DELETE',
         'PATCH'])
 @login_required
-def task_id(task_id=None):
-    global fgapisrv_db
-    global logger
-    logger.debug('tasks(%s)/%s: %s' % (request.method,
-                                       task_id,
+def task_id(apiver=fg_config['fgapiver'], taskid=None):
+    logger.debug("tasks(%s)/%s: %s" % (request.method,
+                                       taskid,
                                        request.values.to_dict()))
     user_name = current_user.get_name()
-    user_id = current_user.get_id()
-    app_id = get_task_app_id(task_id)
+    userid = current_user.get_id()
+    appid = get_task_app_id(taskid)
     user = request.values.get('user', user_name)
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "task_view")
+            current_user, appid, user, "task_view")
         if not auth_state:
             state = 402
             response = {
@@ -993,14 +716,14 @@ def task_id(task_id=None):
                            auth_msg}
         else:
             # User should be able to see the given app_id
-            if not fgapisrv_db.task_exists(task_id, user_id, user):
+            if not fgapisrv_db.task_exists(taskid, userid, user):
                 state = 404
                 response = {
-                    "message": "Unable to find task with id: %s" % task_id
+                    "message": "Unable to find task with id: %s" % taskid
                 }
             else:
                 # Get task details
-                response = fgapisrv_db.get_task_record(task_id)
+                response = fgapisrv_db.get_task_record(taskid)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
@@ -1015,33 +738,33 @@ def task_id(task_id=None):
                         {
                             "rel": "input",
                             "href": "/%s/tasks/%s/input" %
-                                    (fgapiver,
-                                     task_id)}, ]
+                                    (apiver,
+                                     taskid)}, ]
                     state = 200
     elif request.method == 'DELETE':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "task_delete")
+            current_user, appid, user, "task_delete")
         if not auth_state:
             state = 402
             response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            if not fgapisrv_db.task_exists(task_id, user_id, user):
+            if not fgapisrv_db.task_exists(taskid, userid, user):
                 state = 404
                 response = {
-                    "message": "Unable to find task with id: %s" % task_id
+                    "message": "Unable to find task with id: %s" % taskid
                 }
-            elif not fgapisrv_db.delete(task_id):
+            elif not fgapisrv_db.delete(taskid):
                 state = 410
                 response = {
-                    "message": "Unable to delete task with id: %s" % task_id
+                    "message": "Unable to delete task with id: %s" % taskid
                 }
             else:
                 state = 204
                 response = {
                     "message": "Successfully removed task with id: %s" %
-                               task_id}
+                               taskid}
                 # 204 - NO CONTENT cause no output
                 logger.debug(response['message'])
     elif request.method == 'PATCH':
@@ -1051,7 +774,7 @@ def task_id(task_id=None):
         if new_status is not None:
             # status change:
             auth_state, auth_msg = authorize_user(
-                current_user, app_id, user, "task_statuschange")
+                current_user, appid, user, "task_statuschange")
             if not auth_state:
                 state = 402
                 response = {
@@ -1059,22 +782,22 @@ def task_id(task_id=None):
                                "request:\n%s" %
                                auth_msg}
             else:
-                if not fgapisrv_db.task_exists(task_id, user_id, user):
+                if not fgapisrv_db.task_exists(taskid, userid, user):
                     state = 404
                     response = {
-                        "message": "Unable to find task with id: %s" % task_id
+                        "message": "Unable to find task with id: %s" % taskid
                     }
-                elif not fgapisrv_db.status_change(task_id, new_status):
+                elif not fgapisrv_db.status_change(taskid, new_status):
                     state = 410
                     response = {
                         "message": ("Unable to change status for task having "
-                                    "id: %s" % task_id)
+                                    "id: %s" % taskid)
                     }
                 else:
                     state = 200
                     response = {
                         "message": "Successfully changed status of task with"
-                                   " id: %s" % task_id
+                                   " id: %s" % taskid
                     }
         else:
             # runtime_data:
@@ -1095,7 +818,7 @@ def task_id(task_id=None):
             #     existing name
             #
             auth_state, auth_msg = authorize_user(
-                current_user, app_id, user, "task_userdata")
+                current_user, appid, user, "task_userdata")
             if not auth_state:
                 state = 402
                 response = {
@@ -1103,56 +826,59 @@ def task_id(task_id=None):
                                auth_msg}
             else:
                 runtime_data = params.get('runtime_data', [])
-                if not fgapisrv_db.task_exists(task_id, user_id, user):
+                if not fgapisrv_db.task_exists(taskid, userid, user):
                     state = 404
                     response = {
-                        "message": "Unable to find task with id: %s" % task_id
+                        "message": "Unable to find task with id: %s" % taskid
                     }
-                elif not fgapisrv_db.patch_task(task_id, runtime_data):
+                elif not fgapisrv_db.patch_task(taskid, runtime_data):
                     state = 410
                     response = {
                         "message": ("Unable store runtime data for task "
-                                    "having id: %s" % task_id)
+                                    "having id: %s" % taskid)
                     }
                 else:
                     state = 200
                     response = {
                         "message": "Successfully patched task with id: %s" %
-                                   task_id}
+                                   taskid}
     elif (request.method == 'PUT' or
           request.method == 'POST'):
         state = 405
         response = {
             "message": "This method is not allowed for this endpoint"
         }
-    js = json.dumps(response, indent=fgjson_indent)
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
 
 # This finalizes the task request allowing to submit the task
 # GET  - shows input files
 # POST - specify input files
 
 
-@app.route('/%s/tasks/<task_id>/input' % fgapiver,
+@app.route('/<apiver>/tasks/<task_id>/input',
            methods=['GET',
                     'POST'])
 @login_required
-def task_id_input(task_id=None):
-    global fgapisrv_db
-    global logger
+def task_id_input(apiver=fg_config['fgapiver'], taskid=None):
     logger.debug('task_id_input(%s): %s' % (request.method,
                                             request.values.to_dict()))
     user_name = current_user.get_name()
-    user_id = current_user.get_id()
-    app_id = get_task_app_id(task_id)
+    userid = current_user.get_id()
+    appid = get_task_app_id(taskid)
     user = request.values.get('user', user_name)
-    state = 404
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "task_view")
+            current_user, appid, user, "task_view")
         if not auth_state:
             state = 402
             response = {
@@ -1160,18 +886,18 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # Display task_input_file details
-            if not fgapisrv_db.task_exists(task_id, user_id, user):
+            if not fgapisrv_db.task_exists(taskid, userid, user):
                 state = 404
                 response = {
-                    "message": "Unable to find task with id: %s" % task_id
+                    "message": "Unable to find task with id: %s" % taskid
                 }
             else:
                 state = 200
-                response = fgapisrv_db.get_task_record(task_id)[
+                response = fgapisrv_db.get_task_record(taskid)[
                     'input_files']
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_run")
+            current_user, appid, user, "app_run")
         if not auth_state:
             state = 402
             response = {
@@ -1179,27 +905,27 @@ def task_id_input(task_id=None):
                            auth_msg}
         else:
             # First determine IO Sandbox location for this task
-            if not fgapisrv_db.task_exists(task_id, user_id, user):
+            if not fgapisrv_db.task_exists(taskid, userid, user):
                 state = 404
                 response = {
-                    "message": "Unable to find task with id: %s" % task_id
+                    "message": "Unable to find task with id: %s" % taskid
                 }
-            elif fgapisrv_db.get_task_record(task_id)['status'] != 'WAITING':
+            elif fgapisrv_db.get_task_record(taskid)['status'] != 'WAITING':
                 state = 404
                 response = {
                     "message": ("Task with id: %s, "
-                                "is no more waiting for inputs") % task_id
+                                "is no more waiting for inputs") % taskid
                 }
             else:
-                task_sandbox = fgapisrv_db.get_task_io_sandbox(task_id)
+                task_sandbox = fgapisrv_db.get_task_io_sandbox(taskid)
                 if task_sandbox is None:
                     state = 404
                     response = {
                         "message": 'Could not find IO Sandbox dir for task: %s'
-                                   % task_id}
+                                   % taskid}
                 else:
                     # Process default application files
-                    fgapisrv_db.setup_default_inputs(task_id, task_sandbox)
+                    fgapisrv_db.setup_default_inputs(taskid, task_sandbox)
                     # Now process files to upload
                     uploaded_files = request.files.getlist('file[]')
                     file_list = ()
@@ -1207,23 +933,22 @@ def task_id_input(task_id=None):
                         filename = secure_filename(f.filename)
                         f.save(os.path.join(task_sandbox, filename))
                         fgapisrv_db.update_input_sandbox_file(
-                            task_id, filename, os.path.join(task_sandbox))
+                            taskid, filename, os.path.join(task_sandbox))
                         file_list += (filename,)
                     # Now get input_sandbox status
-                    if fgapisrv_db.is_input_sandbox_ready(task_id):
+                    if fgapisrv_db.is_input_sandbox_ready(taskid):
                         # The input_sandbox is completed; trigger the GE for
                         # this task
-                        if fgapisrv_db.submit_task(task_id):
+                        if fgapisrv_db.submit_task(taskid):
                             state = 200
                             response = {
-                                "task": task_id,
+                                "task": taskid,
                                 "files": file_list,
                                 "message": "uploaded",
-                                "gestatus": "triggered"}
-                            response['_links'] = [
-                                {"rel": "task",
-                                 "href": "/%s/tasks/%s"
-                                         % (fgapiver, task_id)}, ]
+                                "gestatus": "triggered",
+                                "_links": [{"rel": "task",
+                                            "href": "/%s/tasks/%s" %
+                                                    (apiver, taskid)}, ]}
                         else:
                             state = 412
                             response = {
@@ -1236,38 +961,43 @@ def task_id_input(task_id=None):
                             "files": file_list,
                             "message": "uploaded",
                             "gestatus": "waiting"}
-    js = json.dumps(response, indent=fgjson_indent)
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
 
 # Callback mechanism for takss
 # Some infrastructures provide a callback mechanism describing the status
 # of the task acrivity
 
 
-@app.route('/%s/callback/<task_id>' % fgapiver, methods=['GET', 'POST'])
-def task_callback(task_id=None):
+@app.route('/<apiver>/callback/<task_id>', methods=['GET', 'POST'])
+def task_callback(apiver=fg_config['fgapiver'], taskid=None):
     global fgapisrv_db
     global logger
     logger.debug('callback(%s)/%s: %s' % (request.method,
-                                          task_id,
+                                          taskid,
                                           request.values.to_dict()))
-    if request.method == 'POST':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'POST':
         # Getting values
         callback_info = request.get_json()
         logger.debug("Callback info for task_id: %s - '%s'"
-                     % (task_id, callback_info))
+                     % (taskid, callback_info))
         # 204 - NO CONTENT cause no output
         state = 204
-        fgapisrv_db.serve_callback(task_id, callback_info)
-        response = {"message": "Callback for taks: %s" % task_id}
+        fgapisrv_db.serve_callback(taskid, callback_info)
+        response = {"message": "Callback for taks: %s" % taskid}
     else:
-        state = 404
-        response = {"message": "Method '%s' is not allowed" % request.method}
+        state, response = not_allowed_method()
     logger.debug(response['message'])
-    js = json.dumps(response, indent=fgjson_indent)
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
@@ -1277,11 +1007,9 @@ def task_callback(task_id=None):
 # File download endpoint
 
 
-@app.route('/%s/file' % fgapiver, methods=['GET', ])
+@app.route('/<apiver>/file', methods=['GET', ])
 @login_required
-def file():
-    global fgapisrv_db
-    global logger
+def getfile(apiver=fg_config['fgapiver']):
     logger.debug('file(%s): %s' % (request.method, request.values.to_dict()))
     serve_file = None
     user_name = current_user.get_name()
@@ -1289,23 +1017,26 @@ def file():
     user = request.values.get('user', user_name)
     file_path = request.values.get('path', None)
     file_name = request.values.get('name', None)
-    task_id = fgapisrv_db.get_file_task_id(file_name, file_path)
-    if task_id is not None:
-        app_id = get_task_app_id(task_id)
+    taskid = fgapisrv_db.get_file_task_id(file_name, file_path)
+    if taskid is not None:
+        appid = get_task_app_id(taskid)
     else:
-        app_id = fgapisrv_db.get_file_app_id(file_path, file_name)
-    if request.method == 'GET':
-        if app_id is None:
+        appid = fgapisrv_db.get_file_app_id(file_path, file_name)
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
+        if appid is None:
             auth_state = False
             auth_msg = 'Unexisting file: %s/%s' % (file_path, file_name)
         else:
             auth_state, auth_msg = authorize_user(
-                current_user, app_id, user, "app_run")
+                current_user, appid, user, "app_run")
         if not auth_state:
-            task_state = 402
-            file_response = {
-                "message": "Not authorized to perform this request: %s" %
-                           auth_msg}
+            state = 402
+            response = {
+                "message": "Not authorized to perform this request: %s (%s)" %
+                           (auth_msg, user_id)}
         else:
             try:
                 serve_file = open('%s/%s' % (file_path, file_name), 'rb')
@@ -1315,17 +1046,20 @@ def file():
                 resp.headers.add('Content-Disposition',
                                  'attachment; filename="%s"' % file_name)
                 return resp
-            except:
-                file_response = {
-                    "message": "Unable to get file: %s/%s" %
-                               (file_path, file_name)}
+            except IOError as e:
+                response = {
+                    "message": "Unable to get file: %s/%s\n%s" %
+                               (file_path, file_name, e)}
+                state = 404
             finally:
                 if serve_file is not None:
                     serve_file.close()
-        js = json.dumps(file_response, indent=fgjson_indent)
-        resp = Response(js, status=404)
-        resp.headers['Content-type'] = 'application/json'
-        return resp
+    else:
+        status, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=state)
+    resp.headers['Content-type'] = 'application/json'
+    return resp
 
 
 #
@@ -1337,33 +1071,32 @@ def file():
 # POST - Create a new task; it only prepares the task for execution
 
 
-@app.route('/%s/applications' % fgapiver,
+@app.route('/<apiver>/applications',
            methods=['GET',
                     'PUT',
                     'POST'])
 @login_required
-def applications():
-    global fgapisrv_db
-    global logger
+def applications(apiver=fg_config['fgapiver']):
     logger.debug('applications(%s): %s' % (request.method,
                                            request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
-    app_id = None
+    appid = None
     user = request.values.get('user', user_name)
     page = request.values.get('page')
     per_page = request.values.get('per_page')
-    user = request.values.get('user')
-    state = 0
     response = {}
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_view")
+            current_user, appid, user, "app_view")
         if not auth_state:
-            task_state = 402
-            task_response = {
-                "message": "Not authorized to perform this request:\n%s" %
-                           auth_msg}
+            state = 402
+            response = {
+                "message": "Not authorized to perform this request:\n%s (%s)" %
+                           (auth_msg, user_id)}
         else:
             # Show the whole task list
             # call to get tasks
@@ -1380,10 +1113,10 @@ def applications():
                     "message": db_state[1]
                 }
             else:
-                applications = []
+                apps = []
                 state = 200
-                for app_id in app_list:
-                    app_record = fgapisrv_db.get_app_record(app_id)
+                for appid in app_list:
+                    app_record = fgapisrv_db.get_app_record(appid)
                     db_state = fgapisrv_db.get_state()
                     if db_state[0] != 0:
                         # DBError getting TaskRecord
@@ -1392,40 +1125,42 @@ def applications():
                         response = {
                             "message": db_state[1]
                         }
+                        break
                     else:
-                        applications += [
+                        apps += [
                             {
                                 "id":
-                                app_record['id'],
+                                    app_record['id'],
                                 "name":
-                                app_record['name'],
+                                    app_record['name'],
                                 "description":
-                                app_record['description'],
+                                    app_record['description'],
                                 "outcome":
-                                app_record['outcome'],
+                                    app_record['outcome'],
                                 "enabled":
-                                app_record['enabled'],
+                                    app_record['enabled'],
                                 "parameters":
-                                app_record['parameters'],
+                                    app_record['parameters'],
                                 "files":
-                                app_record['files'],
+                                    app_record['files'],
                                 "infrastructures":
-                                app_record['infrastructures'],
+                                    app_record['infrastructures'],
                                 "_links": [{"rel": "self",
                                             "href": "/%s/applications/%s"
-                                                    % (fgapiver, app_id)},
+                                                    % (apiver, appid)},
                                            {"rel": "input",
                                             "href": "/%s/applications/%s/input"
-                                                    % (fgapiver, app_id)}]
+                                                    % (apiver, appid)}]
                             },
                         ]
-                paged_apps, paged_links = paginate_response(
-                    applications,
-                    page,
-                    per_page,
-                    request.url)
-                response = {"applications": paged_apps,
-                            "_links": paged_links}
+                if response == {}:
+                    paged_apps, paged_links = paginate_response(
+                        apps,
+                        page,
+                        per_page,
+                        request.url)
+                    response = {"applications": paged_apps,
+                                "_links": paged_links}
     elif request.method == 'PUT':
         state = 405
         response = {
@@ -1433,7 +1168,7 @@ def applications():
         }
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_install")
+            current_user, appid, user, "app_install")
         if not auth_state:
             state = 402
             response = {
@@ -1449,9 +1184,9 @@ def applications():
             parameters = params.get('parameters', [])
             inp_files = params.get('input_files', [])
             files = params.get('files', [])
-            infrastructures = params.get('infrastructures', [])
+            infras = params.get('infrastructures', [])
             # Create app
-            app_id = fgapisrv_db.init_app(
+            appid = fgapisrv_db.init_app(
                 name,
                 description,
                 outcome,
@@ -1459,24 +1194,24 @@ def applications():
                 parameters,
                 inp_files,
                 files,
-                infrastructures)
-            if app_id <= 0:
-                task_state = fgapisrv_db.get_state()
+                infras)
+            if appid <= 0:
+                db_state = fgapisrv_db.get_state()
                 # Error initializing task
                 # Prepare for 410 error
                 state = 410
                 response = {
-                    "message": task_state[1]
+                    "message": db_state[1]
                 }
             else:
                 # Enable the groups owned by the installing user to
                 # execute the app
                 fgapisrv_db.enable_app_by_userid(
                     user_id,
-                    app_id)
+                    appid)
                 # Prepare response
                 state = 201
-                app_record = fgapisrv_db.get_app_record(app_id)
+                app_record = fgapisrv_db.get_app_record(appid)
                 response = {
                     "id": app_record['id'],
                     "name": app_record['name'],
@@ -1487,8 +1222,10 @@ def applications():
                     "infrastructures": app_record['infrastructures'],
                     "_links": [{"rel": "input",
                                 "href": "/%s/application/%s/input"
-                                        % (fgapiver, app_id)}, ]}
-    js = json.dumps(response, indent=fgjson_indent)
+                                        % (apiver, appid)}, ]}
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
@@ -1501,45 +1238,46 @@ def applications():
 
 
 @app.route(
-    '/%s/applications/<app_id>' % fgapiver,
+    '/<apiver>/applications/<appid>',
     methods=[
         'GET',
         'DELETE',
         'PUT',
         'POST'])
 @login_required
-def app_id(app_id=None):
-    global fgapisrv_db
-    global logger
+def app_id(apiver=fg_config['fgapiver'], appid=None):
     logger.debug('application(%s)/%s: %s' % (request.method,
-                                             app_id,
+                                             appid,
                                              request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_view")
+            current_user, appid, user, "app_view")
         if not auth_state:
-            status = 402
+            state = 402
             response = {
-                "message": "Not authorized to perform this request:\n%s" %
-                           auth_msg}
+                "message": "Not authorized to perform this request:\n%s (%s)" %
+                           (auth_msg, user_id)}
         else:
-            if not fgapisrv_db.app_exists(app_id):
-                status = 404
+            if not fgapisrv_db.app_exists(appid):
+                state = 404
                 response = {
                     "message":
-                    "Unable to find application with id: %s"
-                    % app_id}
+                        "Unable to find application with id: %s"
+                        % appid}
             else:
                 # Get application details
-                response = fgapisrv_db.get_app_record(app_id)
+                response = fgapisrv_db.get_app_record(appid)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get AppRecord
                     # Prepare for 404 not found
-                    status = 404
+                    state = 404
                     response = {
                         "message": db_state[1]
                     }
@@ -1547,116 +1285,119 @@ def app_id(app_id=None):
                     response['_links'] = [
                         {"rel": "self",
                          "href": "/%s/application/%s/input"
-                                 % (fgapiver, app_id)}, ]
-                    status = 200
+                                 % (apiver, appid)}, ]
+                    state = 200
     elif request.method == 'DELETE':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_delete")
-        if not auth_state:
-            status = 402
-            response = {
-                "message": "Not authorized to perform this request:\n%s" %
-                           auth_msg}
-        else:
-            if not fgapisrv_db.app_exists(app_id):
-                status = 404
-                response = {
-                    "message": "Unable to find application with id: %s" %
-                               app_id}
-            elif not fgapisrv_db.app_delete(app_id):
-                status = 410
-                response = {
-                    "message": ("Unable to delete application with id: %s; "
-                                "reason: '%s'"
-                                % (app_id, fgapisrv_db.get_state()[1]))}
-            else:
-                status = 204
-                response = {
-                    "message": "Successfully removed application with id: %s" %
-                               app_id}
-                # 204 - NO CONTENT cause no output
-                logger.debug(response['message'])
-    elif request.method == 'POST':
-        statis = 404
-        response = {
-            "message": "Not supported method"
-        }
-    elif request.method == 'PUT':
-        auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_change")
-        if not auth_state:
-            status = 402
-            response = {
-                "message": "Not authorized to perform this request:\n%s" %
-                           auth_msg}
-        else:
-            app_desc = request.get_json()
-            if app_desc.get("id", None) is not None\
-               and int(app_desc['id']) != int(app_id):
-                status = 403
-                response = {
-                    "message": "JSON application id %s is different than "
-                               "URL application id: %s" % (app_desc['id'],
-                                                           app_id)}
-            elif not fgapisrv_db.app_exists(app_id):
-                status = 404
-                response = {
-                    "message": "Unable to find application with id: %s" %
-                               app_id}
-            elif not fgapisrv_db.app_change(app_id, app_desc):
-                status = 410
-                response = {
-                    "message": ("Unable to change application with id: %s; "
-                                "reason: '%s'"
-                                % (app_id, fgapisrv_db.get_state()[1]))}
-            else:
-                status = 200
-                response = {
-                    "message": "Successfully changed application with id: %s" %
-                               app_id}
-    js = json.dumps(response, indent=fgjson_indent)
-    resp = Response(js, status=status, mimetype='application/json')
-    resp.headers['Content-type'] = 'application/json'
-    header_links(request, resp, response)
-    return resp
-
-
-@app.route('/%s/applications/<app_id>/input' % fgapiver,
-           methods=['GET', 'POST'])
-@login_required
-def app_id_input(app_id=None):
-    global fgapisrv_db
-    global logger
-    logger.debug('index(%s)/%s/input: %s' % (request.method,
-                                             app_id,
-                                             request.values.to_dict()))
-    user_name = current_user.get_name()
-    user_id = current_user.get_id()
-    user = request.values.get('user', user_name)
-    state = 404
-    if request.method == 'GET':
-        auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_view")
+            current_user, appid, user, "app_delete")
         if not auth_state:
             state = 402
             response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
+            if not fgapisrv_db.app_exists(appid):
+                state = 404
+                response = {
+                    "message": "Unable to find application with id: %s" %
+                               appid}
+            elif not fgapisrv_db.app_delete(appid):
+                state = 410
+                response = {
+                    "message": ("Unable to delete application with id: %s; "
+                                "reason: '%s'"
+                                % (appid, fgapisrv_db.get_state()[1]))}
+            else:
+                state = 204
+                response = {
+                    "message": "Successfully removed application with id: %s" %
+                               appid}
+                # 204 - NO CONTENT cause no output
+                logger.debug(response['message'])
+    elif request.method == 'POST':
+        state = 404
+        response = {
+            "message": "Not supported method"
+        }
+    elif request.method == 'PUT':
+        auth_state, auth_msg = authorize_user(
+            current_user, appid, user, "app_change")
+        if not auth_state:
+            state = 402
+            response = {
+                "message": "Not authorized to perform this request:\n%s" %
+                           auth_msg}
+        else:
+            app_desc = request.get_json()
+            if app_desc.get("id", None) is not None \
+                    and int(app_desc['id']) != int(appid):
+                state = 403
+                response = {
+                    "message": "JSON application id %s is different than "
+                               "URL application id: %s" % (app_desc['id'],
+                                                           appid)}
+            elif not fgapisrv_db.app_exists(appid):
+                state = 404
+                response = {
+                    "message": "Unable to find application with id: %s" %
+                               appid}
+            elif not fgapisrv_db.app_change(appid, app_desc):
+                state = 410
+                response = {
+                    "message": ("Unable to change application with id: %s; "
+                                "reason: '%s'"
+                                % (appid, fgapisrv_db.get_state()[1]))}
+            else:
+                state = 200
+                response = {
+                    "message": "Successfully changed application with id: %s" %
+                               appid}
+    else:
+        status, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=state, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    header_links(request, resp, response)
+    return resp
+
+
+@app.route('/<apiver>/applications/<appid>/input',
+           methods=['GET', 'POST'])
+@login_required
+def app_id_input(apiver=fg_config['fgapiver'], appid=None):
+    logger.debug('index(%s)/%s/input: %s' % (request.method,
+                                             appid,
+                                             request.values.to_dict()))
+    user_name = current_user.get_name()
+    user_id = current_user.get_id()
+    user = request.values.get('user', user_name)
+    response = {}
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
+        auth_state, auth_msg = authorize_user(
+            current_user, appid, user, "app_view")
+        if not auth_state:
+            state = 402
+            response = {
+                "message": "Not authorized to perform this request:\n%s (%s)" %
+                           (auth_msg, user_id)}
+        else:
             # Display app_input_file details
-            if not fgapisrv_db.app_exists(app_id):
+            if not fgapisrv_db.app_exists(appid):
                 state = 404
                 response = {
                     "message": ("Unable to find application with id: %s"
-                                % app_id)
+                                % appid)
                 }
             else:
                 state = 200
                 response =\
-                    fgapisrv_db.get_app_record(app_id)['files']
+                    fgapisrv_db.get_app_record(appid)['files']
     elif request.method == 'POST':
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "app_install")
+            current_user, appid, user, "app_install")
         if not auth_state:
             state = 402
             response = {
@@ -1664,7 +1405,7 @@ def app_id_input(app_id=None):
                            auth_msg}
         else:
             # First determine IO Sandbox location for this task
-            if not fgapisrv_db.app_exists(app_id):
+            if not fgapisrv_db.app_exists(appid):
                 state = 404
                 response = {
                     "message": ("Unable to find application with id: %s"
@@ -1672,66 +1413,79 @@ def app_id_input(app_id=None):
                 }
             else:
                 # Now process files to upload
-                app_dir = 'apps/%s' % app_id
+                app_dir = 'apps/%s' % appid
+                uploaded_files = request.files.getlist('file[]')
                 try:
                     os.stat(app_dir)
                     logger.debug("App dir: '%s' exists" % app_dir)
-                except:
+                except OSError:
                     logger.debug("Creating app dir: '%s'" % app_dir)
-                    os.makedirs(app_dir)
-                uploaded_files = request.files.getlist('file[]')
-                file_list = ()
-                logger.debug("uploading file(s):")
-                for f in uploaded_files:
-                    filename = secure_filename(f.filename)
-                    logger.debug("%s -> %s" % (filename, app_dir))
-                    f.save(os.path.join(app_dir, filename))
-                    fgapisrv_db.insert_or_update_app_file(app_id,
-                                                          filename,
-                                                          app_dir)
-                    file_list += (filename,)
-                state = 200
-                response = {
-                    "application": app_id,
-                    "files": file_list,
-                    "message": "uploaded successfully"}
-    js = json.dumps(response, indent=fgjson_indent)
+                    try:
+                        os.makedirs(app_dir)
+                    except OSError as e:
+                        os.error(
+                            "Error creating application directory '%s'\n%s" %
+                            (app_dir, e))
+                        state = 404
+                        response = {"message": ("Unable to create application "
+                                                "directory '%s'" % app_dir)}
+                if state != 404:
+                    file_list = ()
+                    logger.debug("uploading file(s):")
+                    for f in uploaded_files:
+                        filename = secure_filename(f.filename)
+                        logger.debug(" File: '%s' -> Dir: '%s'"
+                                     % (filename, app_dir))
+                        f.save(os.path.join(app_dir, filename))
+                        fgapisrv_db.insert_or_update_app_file(appid,
+                                                              filename,
+                                                              app_dir)
+                        file_list += (filename,)
+                    state = 200
+                    response = {
+                        "application": appid,
+                        "files": file_list,
+                        "message": "uploaded successfully"}
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
 
 #
 # INFRASTRUCTURE
 #
 
 
-@app.route('/%s/infrastructures' % fgapiver,
+@app.route('/<apiver>/infrastructures',
            methods=['GET',
                     'PUT',
                     'POST'])
 @login_required
-def infrastructures():
-    global fgapisrv_db
-    global logger
+def infrastructures(apiver=fg_config['fgapiver']):
     logger.debug('infrastructures(%s): %s' % (request.method,
                                               request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
-    infra_id = None
+    infraid = None
     user = request.values.get('user', user_name)
     page = request.values.get('page')
     per_page = request.values.get('per_page')
-    user = request.values.get('user')
-    state = 0
-    if request.method == 'GET':
+    response = {}
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
-            current_user, infra_id, user, "infra_view")
+            current_user, infraid, user, "infra_view")
         if not auth_state:
             state = 402
             response = {
-                "message": "Not authorized to perform this request:\n%s" %
-                           auth_msg}
+                "message": "Not authorized to perform this request:\n%s (%s)" %
+                           (auth_msg, user_id)}
         else:
             # Show the whole infra list
             # call to get infrastructures
@@ -1746,11 +1500,10 @@ def infrastructures():
                 }
             else:
                 # Prepare response
-                infra_response = []
-                infrastructures = []
+                infras = []
                 state = 200
-                for infra_id in infra_list:
-                    infra_record = fgapisrv_db.get_infra_record(infra_id)
+                for infraid in infra_list:
+                    infra_record = fgapisrv_db.get_infra_record(infraid)
                     db_state = fgapisrv_db.get_state()
                     if db_state[0] != 0:
                         # DBError getting InfraRecord
@@ -1759,35 +1512,37 @@ def infrastructures():
                         response = {
                             "message": db_state[1]
                         }
+                        break
                     else:
-                        infrastructures += [
+                        infras += [
                             {
                                 "id":
-                                infra_record['id'],
+                                    infra_record['id'],
                                 "name":
-                                infra_record['name'],
+                                    infra_record['name'],
                                 "description":
-                                infra_record['description'],
+                                    infra_record['description'],
                                 "date":
-                                infra_record['creation'],
+                                    infra_record['creation'],
                                 "enabled":
-                                infra_record['enabled'],
+                                    infra_record['enabled'],
                                 "virtual":
-                                infra_record['virtual'],
+                                    infra_record['virtual'],
                                 "_links": [
                                     {"rel": "self",
                                      "href": "/%s/infrastructures/%s"
-                                             % (fgapiver, infra_id)}]
+                                             % (apiver, infraid)}]
                             },
                         ]
-                paged_infras, paged_links = paginate_response(
-                    infrastructures,
-                    page,
-                    per_page,
-                    request.url)
-                response = {
-                    "infrastructures": paged_infras,
-                    "_links": paged_links}
+                if response == {}:
+                    paged_infras, paged_links = paginate_response(
+                        infras,
+                        page,
+                        per_page,
+                        request.url)
+                    response = {
+                        "infrastructures": paged_infras,
+                        "_links": paged_links}
     elif request.method == 'PUT':
         state = 405
         response = {
@@ -1810,16 +1565,16 @@ def infrastructures():
             description = params.get('description', '')
             enabled = params.get('enabled', True)
             vinfra = params.get('virtual', False)
-            infrastructure_parameters =\
+            infrastructure_parameters = \
                 params.get('parameters', '')
             # Create infrastructure
-            infra_id = fgapisrv_db.init_infra(
+            infraid = fgapisrv_db.init_infra(
                 name,
                 description,
                 enabled,
                 vinfra,
                 infrastructure_parameters)
-            if infra_id < 0:
+            if infraid < 0:
                 init_state = fgapisrv_db.get_state()
                 # Error initializing infrastructure
                 # Prepare for 410 error
@@ -1830,7 +1585,7 @@ def infrastructures():
             else:
                 # Prepare response
                 state = 201
-                infra_record = fgapisrv_db.get_infra_record(infra_id)
+                infra_record = fgapisrv_db.get_infra_record(infraid)
                 response = {
                     "id": infra_record['id'],
                     "name": infra_record['name'],
@@ -1842,9 +1597,11 @@ def infrastructures():
                         {
                             "rel": "self",
                             "href": "/%s/infrastructure/%s" %
-                                    (fgapiver,
+                                    (apiver,
                                      infra_record['id'])}]}
-    js = json.dumps(response, indent=fgjson_indent)
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
@@ -1857,40 +1614,40 @@ def infrastructures():
 
 
 @app.route(
-    '/%s/infrastructures/<infra_id>' %
-    fgapiver,
+    '/<apiver>/infrastructures/<infraid>',
     methods=[
         'GET',
         'DELETE',
         'POST',
         'PUT'])
 @login_required
-def infra_id(infra_id=None):
-    global fgapisrv_db
-    global logger
+def infra_id(apiver=fg_config['fgapiver'], infraid=None):
     logger.debug('infrastructures(%s)/%s: %s' % (request.method,
-                                                 infra_id,
+                                                 infraid,
                                                  request.values.to_dict()))
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user = request.values.get('user', user_name)
-    if request.method == 'GET':
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        response = {"message": message}
+    elif request.method == 'GET':
         auth_state, auth_msg = authorize_user(
             current_user, None, user, "infra_view")
         if not auth_state:
             state = 402
             response = {
-                "message": "Not authorized to perform this request:\n%s" %
-                           auth_msg}
+                "message": "Not authorized to perform this request:\n%s (%s)" %
+                           (auth_msg, user_id)}
         else:
-            if not fgapisrv_db.infra_exists(infra_id):
+            if not fgapisrv_db.infra_exists(infraid):
                 state = 404
                 response = {
                     "message": ("Unable to find infrastructure with id: %s"
-                                % infra_id)}
+                                % infraid)}
             else:
                 # Get task details
-                infra_record = fgapisrv_db.get_infra_record(infra_id)
+                infra_record = fgapisrv_db.get_infra_record(infraid)
                 db_state = fgapisrv_db.get_state()
                 if db_state[0] != 0:
                     # Couldn't get TaskRecord
@@ -1911,45 +1668,45 @@ def infra_id(infra_id=None):
                                 "_links": [
                                     {"rel": "self",
                                      "href": ("/%s/infrastructure/%s"
-                                              % (fgapiver,
+                                              % (apiver,
                                                  infra_record['id']))}]}
     elif request.method == 'DELETE':
-        app_id = request.values.get('app_id', None)
+        appid = request.values.get('app_id', None)
         app_orphan = request.values.get('app_orphan', None)
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "infra_delete")
+            current_user, appid, user, "infra_delete")
         if not auth_state:
             state = 402
             response = {
                 "message": "Not authorized to perform this request:\n%s" %
                            auth_msg}
         else:
-            if not fgapisrv_db.infra_exists(infra_id):
+            if not fgapisrv_db.infra_exists(infraid):
                 state = 404
                 response = {
                     "message": "Unable to find infrastructure with id: %s" %
-                               infra_id}
-            elif not fgapisrv_db.infra_delete(infra_id, app_id, app_orphan):
+                               infraid}
+            elif not fgapisrv_db.infra_delete(infraid, appid, app_orphan):
                 state = 410
                 response = {
                     "message": ("Unable to delete infrastructure with id: %s; "
                                 "reason: '%s'"
-                                % (infra_id, fgapisrv_db.get_state()[1]))}
+                                % (infraid, fgapisrv_db.get_state()[1]))}
             else:
                 state = 200
                 response = {
                     "message":
-                    "Successfully removed infrastructure with id: %s" %
-                    infra_id}
+                        "Successfully removed infrastructure with id: %s" %
+                        infraid}
     elif request.method == 'POST':
+        state = 404
         response = {
             "message": "Not supported method"
         }
-        infra_state = 404
     elif request.method == 'PUT':
-        app_id = request.values.get('app_id', None)
+        appid = request.values.get('app_id', None)
         auth_state, auth_msg = authorize_user(
-            current_user, app_id, user, "infra_change")
+            current_user, appid, user, "infra_change")
         if not auth_state:
             state = 402
             response = {
@@ -1957,31 +1714,33 @@ def infra_id(infra_id=None):
                            auth_msg}
         else:
             infra_desc = request.get_json()
-            if infra_desc.get("id", None) is not None\
-               and int(infra_desc['id']) != int(infra_id):
+            if infra_desc.get("id", None) is not None \
+                    and int(infra_desc['id']) != int(infraid):
                 state = 403
                 response = {
                     "message": "JSON infrastructure id %s is different than "
                                "URL infrastructure id: %s" % (infra_desc['id'],
-                                                              infra_id)}
-            elif not fgapisrv_db.infra_exists(infra_id):
+                                                              infraid)}
+            elif not fgapisrv_db.infra_exists(infraid):
                 state = 404
                 response = {
                     "message": "Unable to find infrastructure with id: %s" %
-                               infra_id}
-            elif not fgapisrv_db.infra_change(infra_id, infra_desc):
+                               infraid}
+            elif not fgapisrv_db.infra_change(infraid, infra_desc):
                 state = 400
                 response = {
                     "message": ("Unable to change application with id: %s; "
                                 "reason: '%s'"
-                                % (app_id, fgapisrv_db.get_state()[1]))}
+                                % (appid, fgapisrv_db.get_state()[1]))}
             else:
                 state = 200
                 response = {
                     "message":
-                    "Infrastructure changed correctly"
+                        "Infrastructure changed correctly"
                 }
-    js = json.dumps(response, indent=fgjson_indent)
+    else:
+        state, response = not_allowed_method()
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=state, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
@@ -1998,16 +1757,35 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                          'GET,PUT,POST,DELETE,PATCH')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
-    response.headers.add('Server', fgapiserver_name)
+    response.headers.add('Server', fg_config['fgapiserver_name'])
     return response
 
 
+# IP Filtering
+filtered_ips = ('193.206.190.155', )
+
+
+# Common check for requests
+@app.before_request
+def limit_remote_addr():
+    global fg_config
+    # Block blacklisted IPs
+    if request.remote_addr in filtered_ips:
+        abort(403)  # Forbidden
+    # Override configuration settings from the database
+    fg_config = update_db_config(fg_config)
+
+
 #
-# The app starts here
+# The fgAPIServer app starts here
 #
+
 
 # Get database object and check the DB
 check_db_ver()
+
+# Server registration and configuration from fgdb
+check_db_reg(fg_config)
 
 # Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":
@@ -2015,9 +1793,15 @@ if __name__ == "__main__":
     print "fgAPIServer running in stand-alone mode ..."
 
     # Starting-up server
-    if len(fgapisrv_crt) > 0 and len(fgapisrv_key) > 0:
-        context = (fgapisrv_crt, fgapisrv_key)
-        app.run(host=fgapisrv_host, port=fgapisrv_port,
-                ssl_context=context, debug=fgapisrv_debug)
+    if len(fg_config['fgapisrv_crt']) > 0 and \
+            len(fg_config['fgapisrv_key']) > 0:
+        context = (fg_config['fgapisrv_crt'],
+                   fg_config['fgapisrv_key'])
+        app.run(host=fg_config['fgapisrv_host'],
+                port=fg_config['fgapisrv_port'],
+                ssl_context=context,
+                debug=fg_config['fgapisrv_debug'])
     else:
-        app.run(host=fgapisrv_host, port=fgapisrv_port, debug=fgapisrv_debug)
+        app.run(host=fg_config['fgapisrv_host'],
+                port=fg_config['fgapisrv_port'],
+                debug=fg_config['fgapisrv_debug'])

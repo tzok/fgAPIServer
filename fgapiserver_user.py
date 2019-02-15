@@ -18,7 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from flask_login import UserMixin
-import logging
+import os
+import sys
+import logging.config
+from fgapiserver_config import FGApiServerConfig
 
 """
   FutureGateway APIServer User class
@@ -30,21 +33,36 @@ __version__ = "v0.0.7-1"
 __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
 
+# setup path
+fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# fgapiserver configuration file
+fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
+
+# Load configuration
+fg_config = FGApiServerConfig(fgapiserver_config_file)
+
+# Logging
+logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
+logger = logging.getLogger(__name__)
+
 
 class User(UserMixin):
     """
     flask-login User Class
     """
 
-    log = None
     id = 0
     name = ''
+    token = ''
 
-    def __init__(self, id, name):
-        self.log = logging.getLogger(__name__)
-        self.id = id
-        self.name = name
-        self.log.debug("fgUser - id: '%s' - name: '%s'" % (id, name))
+    def __init__(self, user_id, user_name, user_token):
+        self.id = user_id
+        self.name = user_name
+        self.token = user_token
+        logger.debug("fg_user(id='%s', name='%s', token='%s')"
+                     % (self.id, self.name, self.token))
 
     def get_id(self):
         """
@@ -59,3 +77,10 @@ class User(UserMixin):
         :return:  user_name
         """
         return self.name
+
+    def get_token(self):
+        """
+         Get the token
+        :return: token
+        """
+        return self.token

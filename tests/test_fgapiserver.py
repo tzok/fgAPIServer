@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
-# Consorzio COMETA (COMETA), Italy
 #
-# See http://www.infn.it and and http://www.consorzio-cometa.it for details on
-# the copyright holders.
+# See http://www.infn.it  for details on the copyrigh holder
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +22,11 @@ import hashlib
 import json
 import os
 import shutil
+from StringIO import StringIO
 from fgapiserver import app
 from mklogtoken import token_encode, token_decode, token_info
+from fgapiserver_user import User
+from fgapiserver_tools import get_fgapiserver_db
 
 __author__ = "Riccardo Bruno"
 __copyright__ = "2015"
@@ -34,39 +35,56 @@ __version__ = "v0.0.2-30-g37540b8-37540b8-37"
 __maintainer__ = "Riccardo Bruno"
 __email__ = "riccardo.bruno@ct.infn.it"
 
+# FGTESTS_STOPATFAIL environment controls the execution
+# of the tests, if defined, it stops test execution as
+# soon as the first test error occurs
+stop_at_fail = os.getenv('FGTESTS_STOPATFAIL') is not None
 
-class Test_fgAPIServer(unittest.TestCase):
+
+class TestfgAPIServer(unittest.TestCase):
 
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
         self.app.debug = True
 
-    def banner(self, test_name):
+    @staticmethod
+    def banner(test_name):
         print ""
         print "------------------------------------------------"
         print " Testing: %s" % test_name
         print "------------------------------------------------"
 
-    def md5sum(self, filename, blocksize=65536):
-        hash = hashlib.md5()
+    @staticmethod
+    def md5sum(filename, blocksize=65536):
+        hash_value = hashlib.md5()
         with open(filename, "rb") as f:
             for block in iter(lambda: f.read(blocksize), b""):
-                hash.update(block)
-        return hash.hexdigest()
+                hash_value.update(block)
+        return hash_value.hexdigest()
 
-    def md5sum_str(self, str):
-        return hashlib.md5(str).hexdigest()
+    @staticmethod
+    def md5sum_str(string):
+        return hashlib.md5(string).hexdigest()
 
     #
     # fgapiserver
     #
 
+    # Baseline authentication must be activated
+    def test_CkeckConfig(self):
+        self.banner("Check configuration settings")
+        self.assertEqual(
+            fgapiserver.fg_config['fgapisrv_notoken'], True)
+        self.assertEqual(
+            fgapiserver.fg_config['fgapisrv_notokenusr'].lower(), 'test')
+
     def test_User(self):
         self.banner("User class")
-        user = fgapiserver.User(2, 'test')
-        self.assertEqual(2, user.get_id())
+        user = fgapiserver.User(1, 'test', 'test_token')
+        self.assertEqual(1, user.get_id())
         self.assertEqual('test', user.get_name())
+        self.assertEqual('test_token', user.get_token())
 
     def test_paginate_reposnse(self):
         self.banner("paginate_response(txt,'2','3',[])")
@@ -94,7 +112,7 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_checkDbVer(self):
         self.banner("checkDbVer()")
-        self.assertEqual('0.0.10', fgapiserver.check_db_ver())
+        self.assertEqual('0.0.12b', fgapiserver.check_db_ver())
 
     def test_fgapiserver(self):
         self.banner("get_task_app_id(1)")
@@ -103,7 +121,7 @@ class Test_fgAPIServer(unittest.TestCase):
     #
     # fgapiserverdb
     #
-    fgapisrv_db = fgapiserver.get_fgapiserver_db()
+    fgapisrv_db = get_fgapiserver_db()
 
     def test_dbobject(self):
         self.banner("Testing fgapiserverdb get DB object")
@@ -116,8 +134,9 @@ class Test_fgAPIServer(unittest.TestCase):
 
     def test_dbobj_test(self):
         self.banner("Testing fgapiserverdb test")
-        test = self.fgapisrv_db.test()
+        result = self.fgapisrv_db.test()
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -137,10 +156,27 @@ class Test_fgAPIServer(unittest.TestCase):
         assert result[0] == '1'
         assert result[1] == 'test_user'
 
+    def test_get_token_info(self):
+        self.banner("Testing fgapiserverdb get_token_info")
+        result = self.fgapisrv_db.get_token_info('TESTSESSIONTOKEN')
+        state = self.fgapisrv_db.get_state()
+        print "DB state: %s" % (state,)
+        assert state[0] is False
+        expected_result = {
+            'user_id': '1',
+            'creation': None,
+            'expiry': None,
+            'token': 'TESTSESSIONTOKEN',
+            'valid': True,
+            'user_name': 'test_user',
+            'lasting': 1000}
+        assert result == expected_result
+
     def test_dbobj_register_token(self):
         self.banner("Testing fgapiserverdb register_token")
         result = self.fgapisrv_db.register_token(1, 'TESTSESSIONTOKEN', 'SUBJ')
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -282,7 +318,7 @@ class Test_fgAPIServer(unittest.TestCase):
     def create_test_json(self):
         try:
             os.stat(self.test_dir)
-        except:
+        except OSError:
             os.mkdir(self.test_dir)
         f = open('%s/1.json' % self.test_dir, 'w')
         f.write('{}')
@@ -326,6 +362,7 @@ class Test_fgAPIServer(unittest.TestCase):
                                                             'test_file1',
                                                             '/path/to/file')
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -472,6 +509,7 @@ class Test_fgAPIServer(unittest.TestCase):
         self.banner("Testing fgapiserverdb status_change")
         result = self.fgapisrv_db.status_change(1, 'TEST')
         state = self.fgapisrv_db.get_state()
+        print result
         print "DB state: %s" % (state,)
         assert state[0] is False
 
@@ -497,7 +535,7 @@ class Test_fgAPIServer(unittest.TestCase):
         state = self.fgapisrv_db.get_state()
         print "DB state: %s" % (state,)
         assert state[0] is False
-        assert result['name'] == 'test_app'
+        assert result['name'] == 'test application'
 
     def test_dbobj_init_app(self):
         self.banner("Testing fgapiserverdb init_app")
@@ -615,17 +653,25 @@ class Test_fgAPIServer(unittest.TestCase):
         password = 'testpwd'
         token = token_encode(key, username, password)
         tinfo = token_decode(key, token)
-        print ("Token with key: '%s'; "
+        print ("Token with key: '%s':"
                "encoding: 'username:=%s:"
                "password=%s:"
                "timestamp=<issue_time>' is '%s'"
                % (key, username, password, token))
         print "Decoded token: '%s' -> '%s'" % (token, tinfo)
-        username2, password2, timestamp2 = token_info(token)
+        username2, password2, timestamp2 = token_info(key, token)
         print ("Token info: 'username=%s:password=%s:timestamp=%s'"
                % (username2, password2, timestamp2))
         self.assertEqual("%s:%s" % (username, password), "%s:%s" % (username2,
                                                                     password2))
+
+    #
+    # fgapiserver_user
+    #
+    def test_fgapiserver_user(self):
+        self.banner("Testing user")
+        user = User(1, "test_user", "test_token")
+        assert user is not None
 
     #
     # REST APIs - Following tests are functional tests
@@ -634,29 +680,34 @@ class Test_fgAPIServer(unittest.TestCase):
     # then they are hardcoded in the assertEqual statement
     #
 
-    def test_get_root(self):
+    def test_get_index(self):
         self.banner("GET /v1.0/")
         result = self.app.get('/v1.0/')
-        print result
-        print result.data
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("39966ce9d2fd0e8a009fab43d8cae254",
-                         self.md5sum_str(result.data))
+        result_data = json.loads(result.data)
+        self.assertEqual('versions' in result_data, True)
+        self.assertEqual('config' in result_data, True)
+
+    """
+    INFRASTRUCTURES
+    """
 
     def test_get_infrastructures(self):
         self.banner("GET /v1.0/infrastructures")
         result = self.app.get('/v1.0/infrastructures')
-        print result
-        print result.data
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("0fa855a95a6d94d759c2bd2c73cb023c",
+        self.assertEqual("97b437330ba649e1a54d0abbf9ff0b93",
                          self.md5sum_str(result.data))
 
-    def test_get_infrastructures(self):
+    def test_get_infrastructure(self):
         self.banner("GET /v1.0/infrastructures/1")
         result = self.app.get('/v1.0/infrastructures/1')
-        print result
-        print result.data
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("0f814c236f26fd5fd5feb6449f9f8afc",
                          self.md5sum_str(result.data))
@@ -672,8 +723,8 @@ class Test_fgAPIServer(unittest.TestCase):
             '/v1.0/infrastructures',
             data=json.dumps(post_data),
             content_type="application/json")
-        print result
-        print result.data
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("0ccd202bbf2ccbcded52eab2a64857bf",
                          self.md5sum_str(result.data))
@@ -681,14 +732,145 @@ class Test_fgAPIServer(unittest.TestCase):
     def test_delete_infrastructure(self):
         self.banner("DELETE /v1.0/infrastructures/1")
         result = self.app.delete('/v1.0/infrastructures/1')
-        print result.data
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("8ba55904600d405ea07f71e499ca3aa5",
                          self.md5sum_str(result.data))
+
+    """
+    APPLICATIONS
+    """
+    def test_get_applications(self):
+        self.banner("GET /v1.0/applications")
+        result = self.app.get('/v1.0/applications')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("bf6dd500b7a7a72510139484c9588da6",
+                         self.md5sum_str(result.data))
+
+    def test_get_application(self):
+        self.banner("GET /v1.0/applications/1")
+        result = self.app.get('/v1.0/applications/1')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("473edf1da15f42eaf32992a3d759e631",
+                         self.md5sum_str(result.data))
+
+    def test_post_application(self):
+        post_data = {'name': 'Test application',
+                     'description': 'Test application description',
+                     'parameters': [],
+                     'enabled': True}
+        self.banner("POST /v1.0/applications")
+        result = self.app.post(
+            '/v1.0/applications',
+            data=json.dumps(post_data),
+            content_type="application/json")
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("ac77cfbce136e375e4692d07212cb725",
+                         self.md5sum_str(result.data))
+
+    def test_delete_application(self):
+        self.banner("DELETE /v1.0/applications/1")
+        result = self.app.delete('/v1.0/applications/1')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
+                         self.md5sum_str(result.data))
+
+    def test_get_application_input(self):
+        self.banner("GET /v1.0/applications/1/input")
+        result = self.app.get('/v1.0/applications/1/input')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("b51fdff5c6e13ef4c4ed7a9b4bacd153",
+                         self.md5sum_str(result.data))
+
+    def test_post_application_input(self):
+        self.banner("POST /v1.0/applications/1/input")
+        # Upolad a file
+        data = {
+            'file[]': (StringIO('Test file stream 1'), 'test_file_1'),
+        }
+        result = self.app.post('/v1.0/applications/1/input',
+                               data=data,
+                               content_type='multipart/form-data')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        # Now upolad another file
+        self.assertEqual("eb546a7dc4a23c03b65eca8bfb74ced1",
+                         self.md5sum_str(result.data))
+        data = {
+            'file[]': (StringIO('Test file stream 2'), 'test_file_2'),
+        }
+        result = self.app.post('/v1.0/applications/1/input',
+                               data=data,
+                               content_type='multipart/form-data')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("f5173aca7b43f3895d63313dd6eaec21",
+                         self.md5sum_str(result.data))
+
+    """
+    TASKS
+    """
+
+    def test_get_tasks(self):
+        self.banner("GET /v1.0/tasks")
+        result = self.app.get('/v1.0/tasks')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("cb8f131e1ec4fb565710a3b1b7d8a233",
+                         self.md5sum_str(result.data))
+
+    def test_get_task(self):
+        self.banner("GET /v1.0/tasks/1")
+        result = self.app.get('/v1.0/tasks/1')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("6ab2753736658d09062ced3d7fecae6d",
+                         self.md5sum_str(result.data))
+
+    def test_post_task(self):
+        post_data = {'name': 'Test task',
+                     'description': 'Test application execution',
+                     'parameters': [],
+                     'app_id': 1}
+        self.banner("POST /v1.0/tasks")
+        result = self.app.post(
+            '/v1.0/tasks',
+            data=json.dumps(post_data),
+            content_type="application/json")
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("e2f5a4efa29a391496ca36935a5f106b",
+                         self.md5sum_str(result.data))
+
+    def test_delete_task(self):
+        self.banner("DELETE /v1.0/task/1")
+        result = self.app.delete('/v1.0/tasks/1')
+        print "Result: '%s'" % result
+        print "Result data: '%s'" % result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
+                         self.md5sum_str(result.data))
+
 
 if __name__ == '__main__':
     print "----------------------------------"
     print "Starting unit tests ..."
     print "----------------------------------"
-    unittest.main()
+    unittest.main(failfast=stop_at_fail)
     print "Tests completed"
