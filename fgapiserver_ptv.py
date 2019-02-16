@@ -22,7 +22,7 @@ from flask import Flask
 from flask import request
 from flask import Response
 from functools import wraps
-from fgapiserverconfig import FGApiServerConfig
+from fgapiserver_config import FGApiServerConfig
 import os
 import sys
 import json
