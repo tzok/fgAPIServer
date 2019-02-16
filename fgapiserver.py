@@ -341,6 +341,17 @@ def load_user(req):
 # Auth handlers
 ##
 
+# Extract token from request (Header: 'Authorization: [Bearer] <token>'
+def get_request_token(auth_request):
+    auth_bearer = auth_request.split(" ")
+    if len(auth_bearer) > 1:
+        session_token = auth_bearer[1]
+    elif len(auth_bearer) > 0:
+        session_token = auth_bearer[0]
+    else:
+        session_token = ''
+    return session_token
+
 #
 # /auth; used to provide a logtoken or username/password credentials and
 # receive back an access token
@@ -348,7 +359,6 @@ def load_user(req):
 @app.route('/auth', methods=['GET', 'POST'])
 @app.route('/<apiver>/auth', methods=['GET', 'POST'])
 def auth(apiver=fg_config['fgapiver']):
-
     logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
     session_token = ""
     delegated_token = ""
@@ -362,7 +372,7 @@ def auth(apiver=fg_config['fgapiver']):
     if not api_support:
         response = {"message": message}
     elif request.method == 'GET':
-        if len(session_token) > 0:
+        if len(logtoken) > 0:
             # Retrieve access token from an login token
             session_token, delegated_token = create_session_token(
                 logtoken=logtoken,
@@ -374,49 +384,37 @@ def auth(apiver=fg_config['fgapiver']):
                 username=username,
                 password=base64.b64decode(password),
                 user=user)
-        elif (len(logtoken) > 0 or
-              len(auth_request) > 0):
-            auth_bearer = auth_request.split(" ")
-            if auth_bearer[0] == "Bearer":
-                try:
-                    session_token = auth_bearer[1]
-                except IndexError:
-                    session_token = ''
-            else:
-                session_token = auth_request
+        elif len(auth_request) > 0:
+            # Extract session token from auth request (view)
+            session_token = get_request_token(auth_request)
         else:
             message = "No credentials found!"
         logger.debug('session token: %s' % session_token)
     elif request.method == 'POST':
         # auth may be in the form:
-        #     'Bearer TOKEN'
+        #     'Bearer LOGTOKEN'
         #     'Username/Password' or 'Username:Password'
-        auth_bearer = auth_request.split(" ")
-        if auth_bearer[0] == "Bearer":
-            try:
-                session_token = auth_bearer[1]
-            except IndexError:
-                session_token = ''
-            if session_token != '':
-                # Retrieve access token from a login token
-                session_token, delegated_token = create_session_token(
-                    logtoken=session_token,
-                    user=user)
-        auth_usrnpass = auth_request.split(":")
-        if len(auth_usrnpass) > 1:
+        log_token = get_request_token(auth_request)
+        auth_usrnpass_column = auth_request.split(":")
+        auth_usrnpass_slash = auth_request.split("/")
+        if len(session_token) > 0:
+            # Retrieve access token from a login token
             session_token, delegated_token = create_session_token(
-                username=auth_usrnpass[0],
-                password=base64.b64decode(auth_usrnpass[1]),
+                logtoken=log_token,
                 user=user)
-        auth_usrnpass = auth_request.split("/")
-        if len(auth_usrnpass) > 1:
+        elif len(auth_usrnpass_column) > 1:
             session_token, delegated_token = create_session_token(
-                username=auth_usrnpass[0],
-                password=base64.b64decode(auth_usrnpass[1]),
+                username=auth_usrnpass_column[0],
+                password=base64.b64decode(auth_usrnpass_column[1]),
+                user=user)
+        elif len(auth_usrnpass_slash) > 1:
+            session_token, delegated_token = create_session_token(
+                username=auth_usrnpass_slash[0],
+                password=base64.b64decode(auth_usrnpass_slash[1]),
                 user=user)
         else:
             # No credentials found
-            message = "No credentials found!"
+            message = "No credentials found from the request"
         logger.debug('session token: %s' % session_token)
     else:
         state, response = not_allowed_method()
