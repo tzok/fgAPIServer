@@ -115,7 +115,6 @@ def get_db(**kwargs):
 
 
 class FGAPIServerDB:
-
     """
      API Server Database connection settings
     """
@@ -169,9 +168,9 @@ class FGAPIServerDB:
                          self.geapiserverappid))
 
     """
-      catchDBError - common operations performed upon database
-                     query/transaction failure
-    """
+       catchDBError - common operations performed upon database
+                      query/transaction failure
+     """
 
     def catch_db_error(self, e, db, rollback):
         logging.error("[ERROR] %d: %s" % (e.args[0], e.args[1]))
@@ -469,7 +468,7 @@ class FGAPIServerDB:
                     sql = (
                         'update fg_token set creation = now()'
                         ' where token = %s')
-                    sql_data = (sestoken, )
+                    sql_data = (sestoken,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
             else:
@@ -609,6 +608,7 @@ class FGAPIServerDB:
     """
       user_token - Retrieve user info from given token
     """
+
     def user_token(self, token):
         db = None
         cursor = None
@@ -622,7 +622,7 @@ class FGAPIServerDB:
                        'from fg_token\n'
                        'where token = %s\n'
                        '  and creation+expiry > now();')
-                sql_data = (token, )
+                sql_data = (token,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 user_rec = cursor.fetchone()
@@ -647,6 +647,7 @@ class FGAPIServerDB:
       create_delegated_token - Create a new delegated token for a given user
                                using the given token as reference
     """
+
     def create_delegated_token(self, token, username):
         db = None
         cursor = None
@@ -695,7 +696,7 @@ class FGAPIServerDB:
                            '  select %s, %s, id, now() creation, 24*60*60\n'
                            '  from  fg_user u\n'
                            '  where u.name=%s;')
-                    sql_data = (sestoken, username, username, )
+                    sql_data = (sestoken, username, username,)
                 elif token_type == 'recycled':
                     sql = ('update fg_token set creation = now()'
                            ' where token = %s')
@@ -761,6 +762,7 @@ class FGAPIServerDB:
     """
       user_param_to_user_id - Retrieve the user id from an user parameter
     """
+
     def user_param_to_user_id(self, user):
         user_id = None
         if user is not None:
@@ -773,6 +775,7 @@ class FGAPIServerDB:
     """
       get_user_id_by_name - Retrieve the id of a given user name
     """
+
     def get_user_id_by_name(self, user_name):
         db = None
         cursor = None
@@ -784,7 +787,7 @@ class FGAPIServerDB:
             sql = ('select id\n'
                    'from fg_user\n'
                    'where name=%s;')
-            sql_data = (user_name, )
+            sql_data = (user_name,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()
@@ -815,6 +818,7 @@ class FGAPIServerDB:
     """
       get_app_id_by_name - Retrieve the id of a given user name
     """
+
     def get_app_id_by_name(self, app_name):
         db = None
         cursor = None
@@ -826,7 +830,7 @@ class FGAPIServerDB:
             sql = ('select id\n'
                    'from application\n'
                    'where name=%s;')
-            sql_data = (app_name, )
+            sql_data = (app_name,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()
@@ -869,7 +873,7 @@ class FGAPIServerDB:
             sql = ('select id\n'
                    'from fg_group\n'
                    'where name=%s;')
-            sql_data = (group_name, )
+            sql_data = (group_name,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             result = cursor.fetchone()
@@ -1014,6 +1018,7 @@ class FGAPIServerDB:
       get_ptv_groups - Scan the given array of groups to identify
                        valid FG groups returning only valid group names
     """
+
     def get_ptv_groups(self, portal_groups):
         db = None
         cursor = None
@@ -1048,6 +1053,7 @@ class FGAPIServerDB:
                             the fg_groups contains a list of groups associated
                             to the user
     """
+
     def register_ptv_subject(self, portal_user, fg_groups):
         db = None
         cursor = None
@@ -1229,8 +1235,8 @@ class FGAPIServerDB:
                         "name": ifile[0],
                         "status": ifile[1],
                         "url": 'file?%s'
-                        % urllib.urlencode({"path": ifile[2],
-                                            "name": ifile[0]}),
+                               % urllib.urlencode({"path": ifile[2],
+                                                   "name": ifile[0]}),
                     }
                 task_ifiles += [ifile_entry, ]
             # Task output files
@@ -1733,6 +1739,7 @@ class FGAPIServerDB:
                              default application files in to the task inputs
                              (see POST action in /tasks/<id>/input endpoint)
     """
+
     def setup_default_inputs(self, task_id, task_sandbox):
         db = None
         cursor = None
@@ -1895,7 +1902,7 @@ class FGAPIServerDB:
             self.err_flag = True
             self.err_msg = ('Wrong status (\'%s\') '
                             'to ask submission for task_id: %s') % (
-                task_status, task_id)
+                               task_status, task_id)
             return False
         # Application must be also enabled
         if not bool(app_info['enabled']):
@@ -1919,6 +1926,7 @@ class FGAPIServerDB:
     """
       enqueue_task_request - Place a request into the queue
     """
+
     def enqueue_task_request(self, task_info):
         db = None
         cursor = None
@@ -2283,6 +2291,7 @@ class FGAPIServerDB:
       get_file_app_id - Starting from path and filename get the corresponding
                         application id
     """
+
     def get_file_app_id(self, file_path, file_name):
         db = None
         cursor = None
@@ -2363,6 +2372,7 @@ class FGAPIServerDB:
     """
       serve_callback - Process an incoming callback call for a given task_id
     """
+
     def serve_callback(self, task_id, info):
         # Retrieve task record
         task_record = self.get_task_record(task_id)
@@ -2446,9 +2456,10 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return
-#
-# Application
-#
+
+    #
+    # Application
+    #
     """
       app_exists - Return True if the given app_id exists, False otherwise
     """
@@ -2529,7 +2540,7 @@ class FGAPIServerDB:
                 '      ,enabled\n'
                 'from application\n'
                 'where id=%s;')
-            sql_data = (app_id, )
+            sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             app_dbrec = cursor.fetchone()
@@ -3172,7 +3183,7 @@ class FGAPIServerDB:
             infra_params = []
             for param in cursor:
                 infra_params += [
-                    {"name":  param[0],
+                    {"name": param[0],
                      "value": param[1],
                      "description": param[2]},
                 ]
@@ -3582,8 +3593,8 @@ class FGAPIServerDB:
                 for app_file in json_input_files:
                     # Try to locate the file in previous application list
                     for prev_app_file in app_files:
-                        if prev_app_file["name"] == app_file["name"]\
-                           and prev_app_file["path"] == app_file["path"]:
+                        if prev_app_file["name"] == app_file["name"] \
+                                and prev_app_file["path"] == app_file["path"]:
                             app_files.remove(prev_app_file)
                             break
                     sql = (
@@ -3848,10 +3859,9 @@ class FGAPIServerDB:
             self.close_db(db, cursor, safe_transaction)
         return result
 
-
-#
-# User
-#
+    #
+    # User
+    #
 
     """
       user_exists - Return True if the given user exists, False otherwise
@@ -3869,7 +3879,7 @@ class FGAPIServerDB:
             sql = ('select count(*)\n'
                    'from fg_user\n'
                    'where id=%s;')
-            sql_data = (user_id, )
+            sql_data = (user_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
@@ -3950,7 +3960,7 @@ class FGAPIServerDB:
                    '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                    'from fg_user\n'
                    'where id=%s;')
-            sql_data = (user_id, )
+            sql_data = (user_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             record = cursor.fetchone()
@@ -4076,17 +4086,16 @@ class FGAPIServerDB:
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('select ud.user_id,\n'
-                   '       ud.data_id,\n'
+            sql = ('select ud.data_id,\n'
                    '       ud.data_name,\n'
                    '       ud.data_value,\n'
                    '       ud.data_desc,\n'
                    '       ud.data_proto,\n'
                    '       ud.data_type,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') ud.creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') ud.last_change\n'
+                   '       date_format(ud.creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(ud.last_change,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                    'from fg_user_data ud\n'
                    'where ud.user_id=%s\n'
                    '  and ud.data_id = (select max(data_id)\n'
@@ -4099,16 +4108,68 @@ class FGAPIServerDB:
             for user_data in cursor:
                 if user_data is not None:
                     data_entry = {
-                        'user_id': user_data[0],
-                        'data_id': user_data[1],
-                        'data_name': user_data[2],
-                        'data_value': user_data[3],
-                        'data_desc': user_data[4],
-                        'data_proto': user_data[5],
-                        'data_type': user_data[6],
-                        'creation': user_data[7],
-                        'last_change': user_data[8], }
+                        'data_id': user_data[0],
+                        'data_name': user_data[1],
+                        'data_value': user_data[2],
+                        'data_desc': user_data[3],
+                        'data_proto': user_data[4],
+                        'data_type': user_data[5],
+                        'creation': user_data[6],
+                        'last_change': user_data[7], }
                     data.append(data_entry)
+            self.query_done(
+                "User \'%s\' data: %s" % (user, data))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return data
+
+    """
+       user_data_name - Retrieve user data record having given data name from
+                        database
+    """
+
+    def user_data_name(self, user, data_name):
+        db = None
+        cursor = None
+        safe_transaction = False
+        data = {}
+        user_id = self.user_param_to_user_id(user)
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select ud.data_id,\n'
+                   '       ud.data_name,\n'
+                   '       ud.data_value,\n'
+                   '       ud.data_desc,\n'
+                   '       ud.data_proto,\n'
+                   '       ud.data_type,\n'
+                   '       date_format(ud.creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '       date_format(ud.last_change,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                   'from fg_user_data ud\n'
+                   'where ud.user_id=%s\n'
+                   '  and ud.data_id=(select max(data_id)\n'
+                   '                  from fg_user_data\n'
+                   '                  where user_id=ud.user_id\n'
+                   '                    and data_name=ud.data_name)\n'
+                   '  and ud.data_name=%s;')
+            sql_data = (user_id, data_name)
+            logging.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            data_entry = cursor.fetchone()
+            if data_entry is not None:
+                data = {
+                    'data_id': data_entry[0],
+                    'data_name': data_entry[1],
+                    'data_value': data_entry[2],
+                    'data_desc': data_entry[3],
+                    'data_proto': data_entry[4],
+                    'data_type': data_entry[5],
+                    'creation': data_entry[6],
+                    'last_change': data_entry[7]}
             self.query_done(
                 "User \'%s\' data: %s" % (user, data))
         except MySQLdb.Error as e:
@@ -4133,8 +4194,9 @@ class FGAPIServerDB:
             for data in data_entries:
                 sql = ('delete from fg_user_data\n'
                        'where user_id=%s\n'
-                       '  and data_id=%s;')
-                sql_data = (user_id, data.id)
+                       '  and data_name=%s;')
+                sql_data = (user_id,
+                            data.get('data_name', ''))
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 result += [data, ]
@@ -4161,12 +4223,22 @@ class FGAPIServerDB:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             for data in data_entries:
+                sql = ('select max(data_id)\n'
+                       'from fg_user_data\n'
+                       'where user_id=%s\n'
+                       '  and data_name=%s;')
+                sql_data = (user_id,
+                            data.get('data_name', ''))
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                max_data_id = cursor.fetchone()[0]
+                logging.debug("max_data_id: %s" % max_data_id)
                 sql = ('update fg_user_data\n'
                        'set data_value = %s,\n'
                        '    data_desc = %s,\n'
                        '    data_proto = %s,\n'
                        '    data_type = %s,\n'
-                       '    last_change = now(),\n'
+                       '    last_change = now()\n'
                        'where user_id=%s\n'
                        '  and data_id=%s\n'
                        '  and data_name=%s;')
@@ -4175,13 +4247,13 @@ class FGAPIServerDB:
                             data.get('data_proto', ''),
                             data.get('data_type', ''),
                             user_id,
-                            data.id,
-                            data.name)
+                            max_data_id,
+                            data.get('data_name', ''))
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 result += [data, ]
             self.query_done(
-                "deleted data '%s' for user '%s'" %
+                "modified data '%s' for user '%s'" %
                 (result, user))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
@@ -4212,11 +4284,13 @@ class FGAPIServerDB:
                        '                          data_type,\n'
                        '                          creation,\n'
                        '                          last_change)\n'
-                       'select u.id,\n'
-                       '       (select max(data_id)+1\n'
+                       'select %s,\n'
+                       '       (select if(max(data_id) is NULL,\n'
+                       '                  1,\n'
+                       '                  max(data_id)+1)\n'
                        '        from fg_user_data\n'
-                       '        where user_id = %s),\n'
-                       '       %s,\n'
+                       '        where user_id = %s\n'
+                       '          and data_name = %s),\n'
                        '       %s,\n'
                        '       %s,\n'
                        '       %s,\n'
@@ -4225,8 +4299,8 @@ class FGAPIServerDB:
                        '       now(),\n'
                        '       now();')
                 sql_data = (user_id,
-                            data.get('user_id', None),
-                            data.get('data_id', None),
+                            user_id,
+                            data.get('data_name', ''),
                             data.get('data_name', ''),
                             data.get('data_value', ''),
                             data.get('data_desc', ''),
@@ -4268,7 +4342,7 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             for group_record in cursor:
                 groups += [
-                    {"id":  group_record[0],
+                    {"id": group_record[0],
                      "name": group_record[1],
                      "creation": group_record[2],
                      "modified": group_record[3]}]
@@ -4305,12 +4379,12 @@ class FGAPIServerDB:
                    'where u.id = %s\n'
                    '  and u.id = ug.user_id\n'
                    '  and g.id = ug.group_id;')
-            sql_data = (user_id, )
+            sql_data = (user_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             for group_record in cursor:
                 groups += [
-                    {"id":  group_record[0],
+                    {"id": group_record[0],
                      "name": group_record[1],
                      "creation": group_record[2],
                      "modified": group_record[3]}]
@@ -4344,12 +4418,12 @@ class FGAPIServerDB:
                        '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                        'from fg_group\n'
                        'where id=%s;')
-                sql_data = (group_id, )
+                sql_data = (group_id,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 group_record = cursor.fetchone()
                 if group_record is not None:
-                    result = {"id":  group_record[0],
+                    result = {"id": group_record[0],
                               "name": group_record[1],
                               "creation": group_record[2],
                               "modified": group_record[3]}
@@ -4388,18 +4462,18 @@ class FGAPIServerDB:
                        '      application a\n'
                        'where group_id=%s\n'
                        '  and ga.app_id=a.id;')
-                sql_data = (group_id, )
+                sql_data = (group_id,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 for app_record in cursor:
                     applications += [
-                        {"id":  app_record[0],
+                        {"id": app_record[0],
                          "name": app_record[1],
                          "description": app_record[2],
                          "outcome": app_record[3],
                          "creation": app_record[4],
                          "enabled": app_record[5]}]
-                result = {"applications":  applications}
+                result = {"applications": applications}
                 self.query_done(
                     "Applications: %s" % result)
             except MySQLdb.Error as e:
@@ -4424,7 +4498,7 @@ class FGAPIServerDB:
                 cursor = db.cursor()
                 for app_id in app_ids:
                     sql = 'select count(*)>0 from application where id = %s;'
-                    sql_data = (app_id, )
+                    sql_data = (app_id,)
                     logging.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
                     app_exists = cursor.fetchone()
@@ -4433,7 +4507,7 @@ class FGAPIServerDB:
                                '                           app_id,\n'
                                '                           creation)\n'
                                'values (%s, %s, now());')
-                        sql_data = (group_id, app_id, )
+                        sql_data = (group_id, app_id,)
                         logging.debug(sql % sql_data)
                         cursor.execute(sql, sql_data)
                         result += [app_id, ]
@@ -4463,7 +4537,7 @@ class FGAPIServerDB:
                    '       now(),\n'
                    '       now()\n'
                    'from fg_group;')
-            sql_data = (group_name, )
+            sql_data = (group_name,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             sql = ('select id,\n'
@@ -4474,20 +4548,20 @@ class FGAPIServerDB:
                    '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
                    'from fg_group\n'
                    'where name = %s')
-            sql_data = (group_name, )
+            sql_data = (group_name,)
             logging.debug(sql, sql_data)
             cursor.execute(sql, sql_data)
             group_record = cursor.fetchone()
             if (group_record is not None and
-               group_name == group_record[1]):
-                result = {"id":  group_record[0],
+                    group_name == group_record[1]):
+                result = {"id": group_record[0],
                           "name": group_record[1],
                           "creation": group_record[2],
                           "modified": group_record[3]}
             else:
                 result = None
             self.query_done(
-                    "Group: %s successfully created" % group_name)
+                "Group: %s successfully created" % group_name)
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -4583,10 +4657,10 @@ class FGAPIServerDB:
         app_clause = ''
         user_id = self.user_param_to_user_id(user)
         app_id = self.app_param_to_app_id(application)
-        sql_data = (user_id, )
+        sql_data = (user_id,)
         if app_id is not None:
             app_clause = '  and a.id=%s\n'
-            sql_data += (app_id, )
+            sql_data += (app_id,)
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -4717,7 +4791,7 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             for role_record in cursor:
                 roles += [
-                    {"id":  role_record[0],
+                    {"id": role_record[0],
                      "name": role_record[1],
                      "creation": role_record[2],
                      "modified": role_record[3]}]

@@ -11,7 +11,7 @@
 . ./patch_functions.sh
 
 PATCH="0.0.13"
-PATCH_DESC="EnvConfig"
+PATCH_DESC="User data"
 check_patch $PATCH
 
 # Create a temporary SQL file
@@ -33,7 +33,7 @@ create table fg_user_data (
    ,data_type    varchar(128)           -- data type (works with data_proto)
    ,creation     datetime      not null -- When data has been written the first time
    ,last_change  datetime      not null -- When data has been updated
-   ,primary key(user_id,data_id,data_name
+   ,primary key(user_id,data_id,data_name)
    ,foreign key(user_id) references fg_user(id)
 );
 EOF

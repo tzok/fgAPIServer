@@ -33,7 +33,7 @@ fgapiserver_queries = [
      'result': [['test', ], ]},
     {'id': 1,
      'query': 'select version from db_patches order by id desc limit 1;',
-     'result': [['0.0.12b'], ]},
+     'result': [['0.0.13'], ]},
     {'id': 2,
      'query': 'select id\n'
               'from fg_user\n'
@@ -1099,8 +1099,8 @@ fgapiserver_queries = [
               'where token=%s;',
      'result': [['1',
                  'test_user',
-                 None,
-                 None,
+                 '01/01/1970',
+                 '01/01/1970',
                  1,
                  1000, ], ]},
     {'id': 101,

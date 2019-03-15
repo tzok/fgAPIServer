@@ -178,7 +178,31 @@ user_apis_queries = [
               '                           creation)\n'
               'values (%s, %s, now());',
      'result': []},
-
+    {'id': 16,
+     'query': 'select ud.data_id,\n'
+              '       ud.data_name,\n'
+              '       ud.data_value,\n'
+              '       ud.data_desc,\n'
+              '       ud.data_proto,\n'
+              '       ud.data_type,\n'
+              '       date_format(ud.creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(ud.last_change,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+              'from fg_user_data ud\n'
+              'where ud.user_id=%s\n'
+              '  and ud.data_id = (select max(data_id)\n'
+              '                    from fg_user_data\n'
+              '                    where user_id=ud.user_id\n'
+              '                      and data_name=ud.data_name);',
+     'result': [[1,
+                 'TEST_DATA_NAME',
+                 'TEST_DATA_VALUE',
+                 'TEST_DATA_DESCRIPTION',
+                 'TEST_DATA_PROTO',
+                 'TEST_DATA_TYPE',
+                 '01-01-1970',
+                 '01-01-1970'], ]},
 ]
 
 # user_apis tests queries

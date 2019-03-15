@@ -157,7 +157,7 @@ class TestUsersAPIs(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("34fc109845dabbdf2ba6022048c9979d",
+        self.assertEqual("d217201fe601c2cd9475d17d2b779091",
                          self.md5sum_str(result.data))
 
     """
@@ -296,11 +296,12 @@ class TestUsersAPIs(unittest.TestCase):
                % (user, password))
         self.banner("GET '%s'" % url)
         result = self.app.get(url)
-        self.assertEqual(result.status_code, 200)
+        md5val = self.md5sum_str(result.data)
         print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("d499b1c6c90550b83f4ce029fdb166c7",
-                         self.md5sum_str(result.data))
+        self.assertEqual(result.status_code, 200)
+        print "MD5: '%s'" % md5val
+        self.assertEqual("761b5b5b0e064a0e8c44db836b80ab64", md5val)
+
 
     # Get access token from POST auth/ username/base64(password)
     def test_post_auth(self):
@@ -318,7 +319,22 @@ class TestUsersAPIs(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("6dc5ac7125d809b087b0c461ad2ba342",
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
+                         self.md5sum_str(result.data))
+
+    # Get user data of test_user
+    def test_user_data(self):
+        self.banner("GET /v1.0/users/test_user/data")
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        url = '/v1.0/users/test_user/data'
+        result = self.app.get(url,
+                              headers=headers)
+        print result
+        print result.data
+        print "MD5: '%s'" % self.md5sum_str(result.data)
+        self.assertEqual("cb1a9cd6a613502200f149746c3deee6",
                          self.md5sum_str(result.data))
 
     #
