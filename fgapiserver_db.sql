@@ -260,6 +260,20 @@ values (2,'test',sha('test'),'Test','Test','INFN','sgw-admin@lists.indigo-datacl
 insert into fg_user (id,name,password,first_name,last_name,institute,mail,creation,modified)
 values (3,'brunor',sha('brunor'),'Riccardo','Bruno','INFN','riccardo.bruno@ct.infn.it',now(),now());
 
+-- User data table; store persistent data associated to the user
+create table fg_user_data (
+    user_id      int unsigned  not null -- User id owning data
+   ,data_id      int unsigned  not null -- Data identifier (a progressive number)
+   ,data_name    varchar(128)  not null -- name of data field
+   ,data_value   varchar(1024) not null -- value of data field
+   ,data_desc    varchar(2048)          -- data description
+   ,data_proto   varchar(128)           -- data protocol (manages complex data)
+   ,data_type    varchar(128)           -- data type (works with data_proto)
+   ,creation     datetime      not null -- When data has been written the first time
+   ,last_change  datetime      not null -- When data has been updated
+   ,primary key(user_id,data_id,data_name)
+   ,foreign key(user_id) references fg_user(id)
+);
 
 -- Groups table, users may belong to one or more groups defined below
 create table fg_group (
@@ -499,4 +513,4 @@ create table db_patches (
 );
 
 -- Default value for baseline setup (this script)
-insert into db_patches (id,version,name,file,applied) values (1,'0.0.12b','baseline setup','../fgapiserver_db.sql',now());
+insert into db_patches (id,version,name,file,applied) values (1,'0.0.13','baseline setup','../fgapiserver_db.sql',now());

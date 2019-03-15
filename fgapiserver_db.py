@@ -4064,7 +4064,188 @@ class FGAPIServerDB:
         return result
 
     """
-      groups_retrieve - Retrieve groups from database
+          user_data - Retrieve user data records from database
+    """
+
+    def user_data(self, user):
+        db = None
+        cursor = None
+        safe_transaction = False
+        data = []
+        user_id = self.user_param_to_user_id(user)
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            sql = ('select ud.user_id,\n'
+                   '       ud.data_id,\n'
+                   '       ud.data_name,\n'
+                   '       ud.data_value,\n'
+                   '       ud.data_desc,\n'
+                   '       ud.data_proto,\n'
+                   '       ud.data_type,\n'
+                   '       date_format(creation,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') ud.creation,\n'
+                   '       date_format(modified,\n'
+                   '                   \'%%Y-%%m-%%dT%%TZ\') ud.last_change\n'
+                   'from fg_user_data ud\n'
+                   'where ud.user_id=%s\n'
+                   '  and ud.data_id = (select max(data_id)\n'
+                   '                    from fg_user_data\n'
+                   '                    where user_id=ud.user_id\n'
+                   '                      and data_name=ud.data_name);')
+            sql_data = (user_id,)
+            logging.debug(sql % sql_data)
+            cursor.execute(sql, sql_data)
+            for user_data in cursor:
+                if user_data is not None:
+                    data_entry = {
+                        'user_id': user_data[0],
+                        'data_id': user_data[1],
+                        'data_name': user_data[2],
+                        'data_value': user_data[3],
+                        'data_desc': user_data[4],
+                        'data_proto': user_data[5],
+                        'data_type': user_data[6],
+                        'creation': user_data[7],
+                        'last_change': user_data[8], }
+                    data.append(data_entry)
+            self.query_done(
+                "User \'%s\' data: %s" % (user, data))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return data
+
+    """
+       delete_user_data - Delete the given data records to the given user
+    """
+
+    def delete_user_data(self, user, data_entries):
+        db = None
+        cursor = None
+        safe_transaction = True
+        result = []
+        user_id = self.user_param_to_user_id(user)
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            for data in data_entries:
+                sql = ('delete from fg_user_data\n'
+                       'where user_id=%s\n'
+                       '  and data_id=%s;')
+                sql_data = (user_id, data.id)
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                result += [data, ]
+            self.query_done(
+                "deleted data '%s' for user '%s'" %
+                (result, user))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
+        modify_user_data - Modify the given data records to the given user
+    """
+
+    def modify_user_data(self, user, data_entries):
+        db = None
+        cursor = None
+        safe_transaction = True
+        result = []
+        user_id = self.user_param_to_user_id(user)
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            for data in data_entries:
+                sql = ('update fg_user_data\n'
+                       'set data_value = %s,\n'
+                       '    data_desc = %s,\n'
+                       '    data_proto = %s,\n'
+                       '    data_type = %s,\n'
+                       '    last_change = now(),\n'
+                       'where user_id=%s\n'
+                       '  and data_id=%s\n'
+                       '  and data_name=%s;')
+                sql_data = (data.get('data_value', ''),
+                            data.get('data_desc', ''),
+                            data.get('data_proto', ''),
+                            data.get('data_type', ''),
+                            user_id,
+                            data.id,
+                            data.name)
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                result += [data, ]
+            self.query_done(
+                "deleted data '%s' for user '%s'" %
+                (result, user))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
+        add_user_data - Add a given data record to a given user
+    """
+
+    def add_user_data(self, user, data_entries):
+        db = None
+        cursor = None
+        safe_transaction = True
+        result = []
+        user_id = self.user_param_to_user_id(user)
+        try:
+            db = self.connect(safe_transaction)
+            cursor = db.cursor()
+            for data in data_entries:
+                sql = ('insert into fg_user_data (user_id,\n'
+                       '                          data_id,\n'
+                       '                          data_name,\n'
+                       '                          data_value,\n'
+                       '                          data_desc,\n'
+                       '                          data_proto,\n'
+                       '                          data_type,\n'
+                       '                          creation,\n'
+                       '                          last_change)\n'
+                       'select u.id,\n'
+                       '       (select max(data_id)+1\n'
+                       '        from fg_user_data\n'
+                       '        where user_id = %s),\n'
+                       '       %s,\n'
+                       '       %s,\n'
+                       '       %s,\n'
+                       '       %s,\n'
+                       '       %s,\n'
+                       '       %s,\n'
+                       '       now(),\n'
+                       '       now();')
+                sql_data = (user_id,
+                            data.get('user_id', None),
+                            data.get('data_id', None),
+                            data.get('data_name', ''),
+                            data.get('data_value', ''),
+                            data.get('data_desc', ''),
+                            data.get('data_proto', ''),
+                            data.get('data_type', ''))
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+                result += [data, ]
+            self.query_done(
+                "Inserted data '%s' for user '%s'" %
+                (result, user))
+        except MySQLdb.Error as e:
+            self.catch_db_error(e, db, safe_transaction)
+        finally:
+            self.close_db(db, cursor, safe_transaction)
+        return result
+
+    """
+       groups_retrieve - Retrieve groups from database
     """
 
     def groups_retrieve(self):

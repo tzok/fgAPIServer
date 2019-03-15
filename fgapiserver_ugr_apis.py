@@ -437,6 +437,132 @@ def user_tasks_id(user, task_id, apiver=fg_config['fgapiver']):
     return resp
 
 
+@ugr_apis.route('/<apiver>/users/<user>/data',
+                methods=['GET', 'POST', 'DELETE', 'PATCH'])
+@login_required
+def users_user_data(user, apiver=fg_config['fgapiver']):
+    global fgapisrv_db
+
+    logging.debug('user_data(%s)/%s: %s' % (request.method,
+                                            user,
+                                            request.values.to_dict()))
+    api_support, state, message = check_api_ver(apiver)
+    if not api_support:
+        status = 400
+        response = {"message": message}
+    else:
+        user_name = current_user.get_name()
+        user_id = current_user.get_id()
+        logging.debug("user_name: '%s'" % user_name)
+        logging.debug("user_id: '%s'" % user_id)
+        user = request.values.get('user', user)
+        if request.method == 'GET':
+            if fgapisrv_db.user_exists(user):
+                data = fgapisrv_db.user_data(user)
+                status = 200
+                response = {'data': data}
+            else:
+                status = 404
+                response = {
+                    'message': 'User \'%s\' does not exists' % user
+                }
+        elif request.method == 'POST':
+            if not fgapisrv_db.user_exists(user):
+                status = 404
+                response = {
+                    'message': 'User \'%s\' does not exists' % user
+                }
+            else:
+                data = request.get_json()
+                logging.debug("data: '%s'" % data)
+                if data is not None:
+                    data_entries = data.get('data', [])
+                    inserted_data =\
+                        fgapisrv_db.add_user_data(user, data_entries)
+                    if inserted_data is not None:
+                        status = 201
+                        response = {'data': inserted_data}
+                    else:
+                        status = 400
+                        response = {
+                            'message':
+                                ('Unable to add data %s '
+                                 'to user \'%s\'') %
+                                (data_entries, user)
+                        }
+                else:
+                    status = 400
+                    response = {
+                        'message': 'Missing data'
+                    }
+        elif request.method == 'DELETE':
+            if not fgapisrv_db.user_exists(user):
+                status = 404
+                response = {
+                    'message': 'User \'%s\' does not exists' % user
+                }
+            else:
+                data = request.get_json()
+                logging.debug("data: '%s'" % data)
+                if data is not None:
+                    data_entries = data.get('data', [])
+                    deleted_data =\
+                        fgapisrv_db.delete_user_data(user, data_entries)
+                    if deleted_data is not None:
+                        status = 200
+                        response = {'data': deleted_data}
+                    else:
+                        status = 400
+                        response = {
+                            'message':
+                                ('Unable to delete data %s'
+                                 ' to user \'%s\'') %
+                                (data_entries, user)
+                        }
+                else:
+                    status = 400
+                    response = {
+                        'message': 'Missing data'
+                    }
+        elif request.method == 'PATCH':
+            if not fgapisrv_db.user_exists(user):
+                status = 404
+                response = {
+                    'message': 'User \'%s\' does not exists' % user
+                }
+            else:
+                data = request.get_json()
+                logging.debug("data: '%s'" % data)
+                if data is not None:
+                    data_entries = data.get('data', [])
+                    modified_data =\
+                        fgapisrv_db.modify_user_data(user, data_entries)
+                    if modified_data is not None:
+                        status = 200
+                        response = {'data': modified_data}
+                    else:
+                        status = 400
+                        response = {
+                            'message':
+                                ('Unable to modify data %s'
+                                 ' to user \'%s\'') %
+                                (data_entries, user)
+                        }
+                else:
+                    status = 400
+                    response = {
+                        'message': 'Missing data'
+                    }
+        else:
+            status = 400
+            response = {"message": "Unhandled method: '%s'" % request.method}
+    logging.debug('message: %s' % response.get('message', 'success'))
+    js = json.dumps(response, indent=fg_config['fgjson_indent'])
+    resp = Response(js, status=status, mimetype='application/json')
+    resp.headers['Content-type'] = 'application/json'
+    return resp
+
+
 @ugr_apis.route('/<apiver>/groups', methods=['GET', 'POST'])
 @login_required
 def groups(apiver=fg_config['fgapiver']):
