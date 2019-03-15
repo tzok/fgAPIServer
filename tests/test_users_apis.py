@@ -302,7 +302,6 @@ class TestUsersAPIs(unittest.TestCase):
         print "MD5: '%s'" % md5val
         self.assertEqual("761b5b5b0e064a0e8c44db836b80ab64", md5val)
 
-
     # Get access token from POST auth/ username/base64(password)
     def test_post_auth(self):
         self.banner("API: POST auth/ username/base64(password)")

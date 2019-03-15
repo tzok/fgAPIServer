@@ -604,7 +604,7 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
                 logging.debug("data: '%s'" % data)
                 if data is not None:
                     data_entries = {
-                        'data': [ data ]}
+                        'data': [data]}
                     inserted_data =\
                         fgapisrv_db.add_user_data(user, data_entries)
                     if inserted_data is not None:

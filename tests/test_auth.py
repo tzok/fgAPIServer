@@ -71,7 +71,7 @@ class TestUsersAPIs(unittest.TestCase):
         return hashlib.md5(string).hexdigest()
 
     #
-    # auth/ endpoint 
+    # auth/endpoint
     #
 
     # Baseline authentication must be activated
@@ -132,7 +132,7 @@ class TestUsersAPIs(unittest.TestCase):
     # MD5 values are taken from the self.md5sum_str(result.data) value
     # then they are hardcoded in the assertEqual statement
 
-    # Token in header, just shows token info 
+    # Token in header, just shows token info
     def test_get_log_token_header(self):
         self.banner("GET /v1.0/auth")
         headers = {
@@ -160,7 +160,6 @@ class TestUsersAPIs(unittest.TestCase):
         self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
                          self.md5sum_str(result.data))
 
-     
     # Session token creation user:password
     def test_post_users_column(self):
         self.banner("POST /v1.0/auth")
