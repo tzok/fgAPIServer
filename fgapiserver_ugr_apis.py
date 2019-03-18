@@ -509,7 +509,7 @@ def users_user_data(user, apiver=fg_config['fgapiver']):
                     deleted_data =\
                         fgapisrv_db.delete_user_data(user, data_entries)
                     if deleted_data is not None:
-                        status = 200
+                        status = 201
                         response = {'data': deleted_data}
                     else:
                         status = 400
@@ -538,7 +538,7 @@ def users_user_data(user, apiver=fg_config['fgapiver']):
                     modified_data =\
                         fgapisrv_db.modify_user_data(user, data_entries)
                     if modified_data is not None:
-                        status = 200
+                        status = 201
                         response = {'data': modified_data}
                     else:
                         status = 400
@@ -601,10 +601,9 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
                 }
             else:
                 data = request.get_json()
-                logging.debug("data: '%s'" % data)
+                data['data_name'] = data_name
                 if data is not None:
-                    data_entries = {
-                        'data': [data]}
+                    data_entries = [data, ]
                     inserted_data =\
                         fgapisrv_db.add_user_data(user, data_entries)
                     if inserted_data is not None:
@@ -630,15 +629,13 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
                     'message': 'User \'%s\' does not exists' % user
                 }
             else:
-                data = request.get_json()
-                logging.debug("data: '%s'" % data)
+                data = {'data_name': data_name}
                 if data is not None:
-                    data_entries = {
-                        'data': [data]}
+                    data_entries = [data, ]
                     deleted_data =\
                         fgapisrv_db.delete_user_data(user, data_entries)
                     if deleted_data is not None:
-                        status = 200
+                        status = 201
                         response = {'data': deleted_data}
                     else:
                         status = 400
@@ -661,14 +658,14 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
                 }
             else:
                 data = request.get_json()
+                data['data_name'] = data_name
                 logging.debug("data: '%s'" % data)
                 if data is not None:
-                    data_entries = {
-                        'data': [data]}
+                    data_entries = [data, ]
                     modified_data =\
                         fgapisrv_db.modify_user_data(user, data_entries)
                     if modified_data is not None:
-                        status = 200
+                        status = 201
                         response = {'data': modified_data}
                     else:
                         status = 400
