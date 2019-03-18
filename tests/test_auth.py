@@ -27,12 +27,14 @@ import base64
 from fgapiserver import app
 from mklogtoken import token_encode
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-18 15:18:20'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -144,7 +146,7 @@ class TestUsersAPIs(unittest.TestCase):
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
     # Session token from credentials as filter
@@ -157,7 +159,7 @@ class TestUsersAPIs(unittest.TestCase):
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
     # Session token creation user:password
@@ -178,7 +180,7 @@ class TestUsersAPIs(unittest.TestCase):
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
     # Session token creation user/password
@@ -199,7 +201,7 @@ class TestUsersAPIs(unittest.TestCase):
         print result
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
 

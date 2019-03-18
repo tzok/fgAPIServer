@@ -28,12 +28,14 @@ from mklogtoken import token_encode, token_decode, token_info
 from fgapiserver_user import User
 from fgapiserver_tools import get_fgapiserver_db
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-18 15:18:20'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -112,7 +114,7 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_checkDbVer(self):
         self.banner("checkDbVer()")
-        self.assertEqual('0.0.12b', fgapiserver.check_db_ver())
+        self.assertEqual('0.0.13', fgapiserver.check_db_ver())
 
     def test_fgapiserver(self):
         self.banner("get_task_app_id(1)")
@@ -160,12 +162,13 @@ class TestfgAPIServer(unittest.TestCase):
         self.banner("Testing fgapiserverdb get_token_info")
         result = self.fgapisrv_db.get_token_info('TESTSESSIONTOKEN')
         state = self.fgapisrv_db.get_state()
-        print "DB state: %s" % (state,)
+        print "DB state: %s" % (state, )
+        print "Result: %s" % result
         assert state[0] is False
         expected_result = {
             'user_id': '1',
-            'creation': None,
-            'expiry': None,
+            'creation': '01/01/1970',
+            'expiry': '01/01/1970',
             'token': 'TESTSESSIONTOKEN',
             'valid': True,
             'user_name': 'test_user',
