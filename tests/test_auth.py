@@ -34,7 +34,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 10:14:03'
+__update__ = '2019-03-19 11:47:47'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -55,10 +55,11 @@ class TestUsersAPIs(unittest.TestCase):
 
     @staticmethod
     def banner(test_name):
-        print ""
-        print "------------------------------------------------"
-        print " Testing: %s" % test_name
-        print "------------------------------------------------"
+        print("\n"
+              "------------------------------------------------\n"
+              " Testing: %s\n"
+              "------------------------------------------------\n"
+              % test_name)
 
     @staticmethod
     def md5sum(filename, blocksize=65536):
@@ -143,9 +144,9 @@ class TestUsersAPIs(unittest.TestCase):
         url = '/v1.0/auth'
         result = self.app.get(url,
                               headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
@@ -156,9 +157,9 @@ class TestUsersAPIs(unittest.TestCase):
         test_password_b64 = base64.b64encode(test_password)
         url = '/v1.0/auth?username=test_user&password=%s' % test_password_b64
         result = self.app.get(url)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
@@ -177,9 +178,9 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
@@ -198,16 +199,16 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
 
 if __name__ == '__main__':
-    print "----------------------------------"
-    print "Starting unit tests ..."
-    print "----------------------------------"
+    print("----------------------------------\n"
+          "Starting unit tests ...\n"
+          "----------------------------------\n")
     unittest.main(failfast=stop_at_fail)
-    print "Tests completed"
+    print("Tests completed")

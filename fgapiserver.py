@@ -58,7 +58,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 10:14:03'
+__update__ = '2019-03-19 11:47:47'
 
 
 # setup path
@@ -267,7 +267,7 @@ def load_user(req):
                                     group_found = group
                                     break
                                 else:
-                                    print "  nomatch"
+                                    logger.debug("  nomatch")
                             if group_found != '':
                                 logger.debug("LoadUser: mapped group %s <- %s"
                                              % (user, group_found))
@@ -1802,7 +1802,7 @@ check_db_reg(fg_config)
 # Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":
     # Inform user about server activity
-    print "fgAPIServer running in stand-alone mode ..."
+    print("fgAPIServer running in stand-alone mode ...")
 
     # Starting-up server
     if len(fg_config['fgapisrv_crt']) > 0 and \

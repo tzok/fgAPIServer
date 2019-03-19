@@ -28,7 +28,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 10:14:03'
+__update__ = '2019-03-19 11:47:47'
 
 
 class TestfgAPIServerConfig(unittest.TestCase):
@@ -38,10 +38,11 @@ class TestfgAPIServerConfig(unittest.TestCase):
 
     @staticmethod
     def banner(test_name):
-        print ""
-        print "------------------------------------------------"
-        print " Testing: %s" % test_name
-        print "------------------------------------------------"
+        print("\n"
+              "------------------------------------------------\n"
+              " Testing: %s\n"
+              "------------------------------------------------\n"
+              % test_name)
 
     @staticmethod
     def md5sum(filename, blocksize=65536):
@@ -66,7 +67,7 @@ class TestfgAPIServerConfig(unittest.TestCase):
         """
         self.banner("Defaults config")
         cfg = FGApiServerConfig('')
-        print "Configuration: %s" % cfg
+        print("Configuration: %s" % cfg)
         for key in cfg.keys():
             for sec in cfg.defaults.keys():
                 for def_key in cfg.defaults[sec]:
@@ -96,10 +97,10 @@ class TestfgAPIServerConfig(unittest.TestCase):
                                 cfg.defaults[sec][def_key].lower() == 'true')
                             break
                         else:
-                            print "Unexpected type: '%s' for parameter: '%s'"\
-                                  % (type(cfg[key]), key)
+                            print("Unexpected type: '%s' for parameter: '%s'"
+                                  % (type(cfg[key]), key))
                             self.assertEqual(0, 1)
-                        print "Reached end while scanning keys"
+                        print("Reached end while scanning keys")
                         self.assertEqual(0, 1)
 
     def test_NoneConfigFile(self):
@@ -138,10 +139,10 @@ class TestfgAPIServerConfig(unittest.TestCase):
                                 cfg.defaults[sec][def_key].lower() == 'true')
                             break
                         else:
-                            print "Unexpected type: '%s' for parameter: '%s'"\
-                                  % (type(cfg[key]), key)
+                            print("Unexpected type: '%s' for parameter: '%s'"
+                                  % (type(cfg[key]), key))
                             self.assertEqual(0, 1)
-                        print "Reached end while scanning keys"
+                        print("Reached end while scanning keys")
                         self.assertEqual(0, 1)
 
     def test_DefConfigFile(self):
@@ -181,10 +182,10 @@ class TestfgAPIServerConfig(unittest.TestCase):
                                 cfg.defaults[sec][def_key].lower() == 'true')
                             break
                         else:
-                            print "Unexpected type: '%s' for parameter: '%s'" \
-                                  % (type(cfg[key]), key)
+                            print("Unexpected type: '%s' for parameter: '%s'"
+                                  % (type(cfg[key]), key))
                             self.assertEqual(0, 1)
-                        print "Reached end while scanning keys"
+                        print("Reached end while scanning keys")
                         self.assertEqual(0, 1)
 
     def test_BothConfig(self):
@@ -195,10 +196,10 @@ class TestfgAPIServerConfig(unittest.TestCase):
         self.banner("Both config are matching")
         cfg_class = FGApiServerConfig('')
         cfg_file = FGApiServerConfig('fgapiserver.conf')
-        print "Class Configuration: %s" % cfg_class
-        print "MD5_class: '%s': " % self.md5sum_str("%s" % cfg_class)
-        print "File Configuration: %s" % cfg_file
-        print "MD5_file:  '%s': " % self.md5sum_str("%s" % cfg_file)
+        print("Class Configuration: %s" % cfg_class)
+        print("MD5_class: '%s': " % self.md5sum_str("%s" % cfg_class))
+        print("File Configuration: %s" % cfg_file)
+        print("MD5_file:  '%s': " % self.md5sum_str("%s" % cfg_file))
         self.assertEqual(self.md5sum_str("%s" % cfg_class),
                          self.md5sum_str("%s" % cfg_file))
 
@@ -247,16 +248,16 @@ class TestfgAPIServerConfig(unittest.TestCase):
             msg = "Checking type for param: '%s'" % param
             if not (param in cfg.int_types or
                     param in cfg.bool_types):
-                print "%s is string" % msg
+                print("%s is string" % msg)
                 self.assertEqual(type(cfg[param]), type(''))
             elif param in cfg.int_types:
-                print "%s is integer" % msg
+                print("%s is integer" % msg)
                 self.assertEqual(type(cfg[param]), type(1))
             elif param in cfg.bool_types:
-                print "%s is boolean" % msg
+                print("%s is boolean" % msg)
                 self.assertEqual(type(cfg[param]), type(True))
             else:
-                print "%s is unexpected (%s)" % (msg, type(param))
+                print("%s is unexpected (%s)" % (msg, type(param)))
                 self.assertEqual(0, 1)
 
     def test_LoadConfig(self):
@@ -312,8 +313,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
 
         # Check that all keys and values are matching
         for param in cfg_load.keys():
-            print "cfg['%s'] = '%s' <-> cfg_load['%s'] = '%s'" \
-                  % (param, cfg[param], param, cfg_load[param])
+            print("cfg['%s'] = '%s' <-> cfg_load['%s'] = '%s'"
+                  % (param, cfg[param], param, cfg_load[param]))
             if not (param in cfg.int_types or
                     param in cfg.bool_types):
                 self.assertEqual(cfg_load[param], param)
@@ -322,8 +323,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
             elif param in cfg_load.bool_types:
                 self.assertEqual(cfg_load[param], not cfg[param])
             else:
-                print "Unexpected type: '%s' for parameter: '%s'" \
-                      % (type(cfg_load['param']), param)
+                print("Unexpected type: '%s' for parameter: '%s'"
+                      % (type(cfg_load['param']), param))
                 self.assertEqual(0, 1)
 
     def test_EnvOverload(self):
@@ -385,9 +386,9 @@ class TestfgAPIServerConfig(unittest.TestCase):
 
         cfg_new = FGApiServerConfig('fgapiserver.conf')
         for key in cfg_new.keys():
-            print "cfg['%s'] = '%s' <-> %s=%s" \
+            print("cfg['%s'] = '%s' <-> %s=%s"
                   % (key, cfg_new[key],
-                     key.upper(), os.environ[key.upper()])
+                     key.upper(), os.environ[key.upper()]))
             if not (key in cfg_new.int_types or
                     key in cfg_new.bool_types):
                 self.assertEqual(cfg_new[key], os.environ[key.upper()])
@@ -398,7 +399,7 @@ class TestfgAPIServerConfig(unittest.TestCase):
                 self.assertEqual(cfg_new[key],
                                  os.environ[key.upper()].lower() == "true")
             else:
-                print "type %s is unexpected" % type(cfg_new[key])
+                print("type %s is unexpected" % type(cfg_new[key]))
                 self.assertEqual(0, 1)
 
         # Unset environment variables
@@ -407,7 +408,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print "----------------------------------"
-    print "Starting unit tests ..."
-    print "----------------------------------"
+    print("----------------------------------\n"
+          "Starting unit tests ...\n"
+          "----------------------------------\n")
     unittest.main(failfast=True)
+    print("Tests completed")

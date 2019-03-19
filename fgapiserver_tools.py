@@ -41,7 +41,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 10:14:03'
+__update__ = '2019-03-19 11:47:47'
 
 
 # setup path
@@ -136,7 +136,7 @@ def check_db_ver():
     if fgapisrv_db is None:
         msg = "Unable to connect to the database!"
         logging.error(msg)
-        print msg
+        print(msg)
         sys.exit(1)
     else:
         # getDBVersion
@@ -151,7 +151,6 @@ def check_db_ver():
                    "new available patches."
                    % (db_ver, fg_config['fgapisrv_dbver']))
             logging.error(msg)
-            print msg
             sys.exit(1)
     logging.debug("Check database version passed")
     return db_ver
@@ -253,11 +252,11 @@ def process_log_token(logtoken):
     obj=ARC4.new(secret)
     b64em = base64.b64encode(obj.encrypt("username=%s:password=%s:timestamp=%s"
                              % (username,password,int(time.time()))))
-    print b64em
+    print(b64em)
     # Decode
     obj=ARC4.new(secret)
     creds = obj.decrypt(base64.b64decode(b64em))
-    print creds
+    print(creds)
 
     :param logtoken: The encripted string containing the:
                  username=<username>:password=<password>:timestamp=<timestamp>

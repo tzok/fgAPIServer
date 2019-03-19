@@ -40,7 +40,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 10:14:03'
+__update__ = '2019-03-19 11:47:47'
 
 # setup path
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -69,7 +69,7 @@ def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
-    print "Ckecking for: %s - %s" % (username, password)
+    print("Ckecking for: %s - %s" % (username, password))
     return (username == fg_config['fgapisrv_ptvuser'] and
             password == fg_config['fgapisrv_ptvpass'])
 
@@ -427,16 +427,16 @@ def orchestrator_deployments_get(uuid):
     dep_status = 404
     token = request.headers.get('Authorization')
     if request.method == 'GET':
-        print "endpoint: /orchestrator/deployments/%s (GET)" % uuid
-        print "token: %s" % token
+        print("endpoint: /orchestrator/deployments/%s (GET)" % uuid)
+        print("token: %s" % token)
         response, dep_status = create_complete()
         # response, dep_status = create_inprogress()
         # response, dep_status = create_failed()
     elif request.method == 'DELETE':
-        print "endpoint: /orchestrator/deployments/%s (DELETE)" % uuid
+        print("endpoint: /orchestrator/deployments/%s (DELETE)" % uuid)
         dep_status = 404
         response = {"error": "Method not yet implemented"}
-    print "response: '%s'" % response
+    print("response: '%s'" % response)
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=dep_status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
@@ -452,14 +452,15 @@ def orchestrator_deployments():
         dep_status = 404
         response = {"error": "Method not supported"}
     elif request.method == 'POST':
-        print "endpoint: /orchestrator/deployments (POST)"
-        print "token: %s" % token
+        print("endpoint: /orchestrator/deployments (POST)")
+        print("token: %s" % token)
         # Enable below lines for successful deployment
         response, dep_status = create_inprogress()
-        print "Returned create in progress: '%s' (%s)" % (response, dep_status)
+        print("Returned create in progress: '%s' (%s)"
+              % (response, dep_status))
         # Enable below lnes for failed request due to bad request
         # response, dep_status = create_badreq()
-        # print "Returned bad request: '%s' (%s)" % (response, dep_status)
+        # print("Returned bad request: '%s' (%s)" % (response, dep_status))
     js = json.dumps(response, indent=fg_config['fgjson_indent'])
     resp = Response(js, status=dep_status, mimetype='application/json')
     resp.headers['Content-type'] = 'application/json'
