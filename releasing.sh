@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# releasing - script that updates release values on python code files
+# releasing.sh - script to check codestyle, perform unit tests and update release values on python sources
 #
 # Author: Riccardo Bruno <riccardo.bruno@ct.infn.it>
 #
@@ -14,7 +14,7 @@ EMAIL=riccardo.bruno@ct.infn.it
 STATUS=devel
 UPDATE=$(date +"%Y-%m-%d %H:%M:%S")
 
-
+# Source code header generator
 set_code_headers() {
   TMP=$(mktemp)
   cat >$TMP <<EOF
@@ -45,6 +45,7 @@ check_style() {
   pycodestyle tests/*.py
 }
 
+# Execute a given unittest suite of scripts specified in array variable: TEST_SUITE
 test_suite() {
   NUM_TESTS=${#TEST_SUITE[@]}
   if [ $((NUM_TESTS)) -ne 0 ]; then
@@ -59,9 +60,8 @@ test_suite() {
   return $RES
 }
 
-# Unittests
+# Configure and execute unit tests suites
 unit_tests() {
-  RES=1
   cd tests
   export PYTHONPATH=$PYTHONPATH:..:.
   export FGTESTS_STOPATFAIL=1
@@ -86,7 +86,7 @@ unit_tests() {
 }
 
 # Releasing
-echo "Starting releasing ..." &&\
+echo "Starting releasing fgAPIServer ..." &&\
 check_style &&\
 unit_tests &&\
 set_code_headers &&

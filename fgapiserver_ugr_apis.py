@@ -41,7 +41,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-18 15:18:20'
+__update__ = '2019-03-19 10:14:03'
 
 # setup path
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -610,7 +610,7 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
                         fgapisrv_db.add_user_data(user, data_entries)
                     if inserted_data is not None:
                         status = 201
-                        response = {'data': inserted_data}
+                        response = inserted_data[0]
                     else:
                         status = 400
                         response = {
@@ -638,7 +638,7 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
                         fgapisrv_db.delete_user_data(user, data_entries)
                     if deleted_data is not None:
                         status = 201
-                        response = {'data': deleted_data}
+                        response = deleted_data[0]
                     else:
                         status = 400
                         response = {
@@ -668,7 +668,7 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
                         fgapisrv_db.modify_user_data(user, data_entries)
                     if modified_data is not None:
                         status = 201
-                        response = {'data': modified_data}
+                        response = modified_data[0]
                     else:
                         status = 400
                         response = {

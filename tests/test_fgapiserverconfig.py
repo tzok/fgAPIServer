@@ -28,7 +28,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-18 15:18:20'
+__update__ = '2019-03-19 10:14:03'
 
 
 class TestfgAPIServerConfig(unittest.TestCase):
@@ -71,8 +71,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
             for sec in cfg.defaults.keys():
                 for def_key in cfg.defaults[sec]:
                     if key == def_key:
-                        print ("cfg['%s'] = '%s' <-> "
-                               "cfg.defaults['%s']['%s'] = '%s'") \
+                        print("cfg['%s'] = '%s' <-> "
+                              "cfg.defaults['%s']['%s'] = '%s'") \
                               % (key, cfg[key], sec, def_key,
                                  cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
@@ -113,8 +113,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
             for sec in cfg.defaults.keys():
                 for def_key in cfg.defaults[sec]:
                     if key == def_key:
-                        print ("cfg['%s'] = '%s' <-> "
-                               "cfg.defaults['%s']['%s'] = '%s'")\
+                        print("cfg['%s'] = '%s' <-> "
+                              "cfg.defaults['%s']['%s'] = '%s'")\
                               % (key, cfg[key], sec, def_key,
                                  cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or
@@ -156,8 +156,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
             for sec in cfg.defaults.keys():
                 for def_key in cfg.defaults[sec]:
                     if key == def_key:
-                        print ("cfg['%s'] = '%s' <-> "
-                               "cfg.defaults['%s']['%s'] = '%s'") \
+                        print("cfg['%s'] = '%s' <-> "
+                              "cfg.defaults['%s']['%s'] = '%s'") \
                               % (key, cfg[key], sec, def_key,
                                  cfg.defaults[sec][def_key])
                         if not (key in cfg.int_types or

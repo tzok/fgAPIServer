@@ -58,7 +58,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-18 15:18:20'
+__update__ = '2019-03-19 10:14:03'
 
 
 # setup path

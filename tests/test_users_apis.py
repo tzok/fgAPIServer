@@ -34,7 +34,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-18 15:18:20'
+__update__ = '2019-03-19 10:14:03'
 
 
 # FGTESTS_STOPATFAIL environment controls the execution
@@ -479,7 +479,7 @@ class TestUsersAPIs(unittest.TestCase):
         self.assertEqual(result.status_code, 201)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("eaa0d12ee7f8874334db84cbcc6ae87c",
+        self.assertEqual("94439e3f4fdfe6db1eb77d748b6432e0",
                          self.md5sum_str(result.data))
 
     # Modify user data TEST_DATA_NAME to test_user
@@ -525,7 +525,7 @@ class TestUsersAPIs(unittest.TestCase):
         self.assertEqual(result.status_code, 201)
         print result.data
         print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("21a94e203b2ecb70f9fa1ea1ee09c119",
+        self.assertEqual("cf004012cf8b5bfd10cb415ecf03269e",
                          self.md5sum_str(result.data))
 
     #

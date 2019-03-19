@@ -40,7 +40,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-18 15:18:20'
+__update__ = '2019-03-19 10:14:03'
 
 # setup path
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -116,8 +116,8 @@ def get_token_file(tokenfile):
         token = tkn_f.read()[:-1]
         tkn_f.close()
     except IOError:
-        print ("Token file '%s' could not be accessed; using default"
-               % tokenfile)
+        print("Token file '%s' could not be accessed; using default"
+              % tokenfile)
     return token
 
 
@@ -133,8 +133,8 @@ def get_subject_file(subjectfile):
         subject = sbj_f.read()[:-1]
         sbj_f.close()
     except IOError:
-        print ("Subject file '%s' could not be accessed; using default"
-               % subjectfile)
+        print("Subject file '%s' could not be accessed; using default"
+              % subjectfile)
     return subject
 
 
@@ -151,8 +151,8 @@ def get_groups_file(groupsfile):
         groups = [grp[:-1] for grp in grp_f]
         grp_f.close()
     except IOError:
-        print ("Groups file '%s' could not be accessed; using default"
-               % groupsfile)
+        print("Groups file '%s' could not be accessed; using default"
+              % groupsfile)
     return groups
 
 ##

@@ -35,7 +35,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-18 15:18:20'
+__update__ = '2019-03-19 10:14:03'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -656,15 +656,15 @@ class TestfgAPIServer(unittest.TestCase):
         password = 'testpwd'
         token = token_encode(key, username, password)
         tinfo = token_decode(key, token)
-        print ("Token with key: '%s':"
-               "encoding: 'username:=%s:"
-               "password=%s:"
-               "timestamp=<issue_time>' is '%s'"
-               % (key, username, password, token))
+        print("Token with key: '%s':"
+              "encoding: 'username:=%s:"
+              "password=%s:"
+              "timestamp=<issue_time>' is '%s'"
+              % (key, username, password, token))
         print "Decoded token: '%s' -> '%s'" % (token, tinfo)
         username2, password2, timestamp2 = token_info(key, token)
-        print ("Token info: 'username=%s:password=%s:timestamp=%s'"
-               % (username2, password2, timestamp2))
+        print("Token info: 'username=%s:password=%s:timestamp=%s'"
+              % (username2, password2, timestamp2))
         self.assertEqual("%s:%s" % (username, password), "%s:%s" % (username2,
                                                                     password2))
 
