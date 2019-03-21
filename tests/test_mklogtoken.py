@@ -26,7 +26,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-03-21 16:25:52'
 
 
 class TestMkLogToken(unittest.TestCase):
@@ -40,14 +40,14 @@ class TestMkLogToken(unittest.TestCase):
         password = "test"
         token = token_encode(key, username, password)
         # Check decoded token
-        decoded_token = token_decode(key, token).split(':')
+        decoded_token = str(token_decode(key, token)).split(':')
         self.assertEqual(username, decoded_token[0].split('=')[1])
         self.assertEqual(password, decoded_token[1].split('=')[1])
         #  Check token_info
         tusrnm, tpaswd, tkntms = token_info(key, token)
         self.assertEqual(username, tusrnm)
         self.assertEqual(password, tpaswd)
-        self.assertGreater(tkntms, 0, '')
+        self.assertGreater(int(tkntms), 0, '')
 
 
 if __name__ == '__main__':

@@ -25,24 +25,24 @@ from flask_login import LoginManager
 from flask_login import login_required
 from flask_login import current_user
 from werkzeug import secure_filename
-from fgapiserver_config import FGApiServerConfig
+from fgapiserver_config import fg_config
+from fgapiserver_db import fgapisrv_db
 from fgapiserverptv import FGAPIServerPTV
 from fgapiserver_user import User
 from fgapiserver_ugr_apis import ugr_apis
 from fgapiserver_auth import authorize_user
-from fgapiserver_tools import get_fgapiserver_db,\
-                              json_bool,\
-                              check_api_ver,\
-                              check_db_ver,\
-                              check_db_reg,\
-                              update_db_config,\
-                              paginate_response,\
-                              get_task_app_id,\
-                              create_session_token,\
-                              header_links,\
-                              not_allowed_method
+from fgapiserver_tools import\
+    json_bool,\
+    check_api_ver,\
+    check_db_ver,\
+    check_db_reg,\
+    update_db_config,\
+    paginate_response,\
+    get_task_app_id,\
+    create_session_token,\
+    header_links,\
+    not_allowed_method
 import os
-import sys
 import json
 import base64
 import logging.config
@@ -58,24 +58,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
-
-
-# setup path
-fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# fgapiserver configuration file
-fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
-
-# Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
-
-# FutureGateway database object
-fgapisrv_db = get_fgapiserver_db()
-
-# Load configuration
-logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
+__update__ = '2019-03-21 16:25:52'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
@@ -377,8 +360,7 @@ def auth(apiver=fg_config['fgapiver']):
             session_token, delegated_token = create_session_token(
                 logtoken=logtoken,
                 user=user)
-        elif (len(username) > 0 and
-              len(password) > 0):
+        elif len(username) > 0 and len(password) > 0:
             # Retrieve token from given username and password
             session_token, delegated_token = create_session_token(
                 username=username,
@@ -854,8 +836,7 @@ def task_id(apiver=fg_config['fgapiver'], taskid=None):
                     response = {
                         "message": "Successfully patched task with id: %s" %
                                    taskid}
-    elif (request.method == 'PUT' or
-          request.method == 'POST'):
+    elif request.method == 'PUT' or request.method == 'POST':
         state = 405
         response = {
             "message": "This method is not allowed for this endpoint"
@@ -1586,7 +1567,7 @@ def infrastructures(apiver=fg_config['fgapiver']):
                 enabled,
                 vinfra,
                 infrastructure_parameters)
-            if infraid < 0:
+            if int(infraid) < 0:
                 init_state = fgapisrv_db.get_state()
                 # Error initializing infrastructure
                 # Prepare for 410 error

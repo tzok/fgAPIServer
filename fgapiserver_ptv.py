@@ -22,9 +22,7 @@ from flask import Flask
 from flask import request
 from flask import Response
 from functools import wraps
-from fgapiserver_config import FGApiServerConfig
-import os
-import sys
+from fgapiserver_config import fg_config
 import json
 import logging.config
 from fgapiserver_tools import check_api_ver
@@ -40,17 +38,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
-
-# setup path
-fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# fgapiserver configuration file
-fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
-
-# Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
+__update__ = '2019-03-21 16:25:52'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
@@ -69,9 +57,10 @@ def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
+    conf_ptv_uname = fg_config['fgapisrv_ptvuser']
+    conf_ptv_upass = fg_config['fgapisrv_ptvpass']
     print("Ckecking for: %s - %s" % (username, password))
-    return (username == fg_config['fgapisrv_ptvuser'] and
-            password == fg_config['fgapisrv_ptvpass'])
+    return username == conf_ptv_uname and password == conf_ptv_upass
 
 
 def authenticate():
@@ -493,10 +482,10 @@ if __name__ == "__main__":
         context = (fg_config['fgapisrv_crt'],
                    fg_config['fgapisrv_key'])
         app.run(host=fg_config['fgapisrv_host'],
-                port=fg_config['fgapisrv_port']+1,
+                port=fg_config['fgapisrv_port'] + 1,
                 ssl_context=context,
                 debug=fg_config['fgapisrv_debug'])
     else:
         app.run(host=fg_config['fgapisrv_host'],
-                port=fg_config['fgapisrv_port']+1,
+                port=fg_config['fgapisrv_port'] + 1,
                 debug=fg_config['fgapisrv_debug'])

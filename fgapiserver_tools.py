@@ -20,15 +20,14 @@ from flask import request
 import logging.config
 import socket
 import uuid
-
 from Crypto.Cipher import ARC4
-from fgapiserver_config import FGApiServerConfig
-from fgapiserver_db import get_db
-import os
+from fgapiserver_config import fg_config
+from fgapiserver_db import fgapisrv_db
 import sys
 import time
 import base64
 import logging
+
 
 """
   FutureGateway APIServer tools
@@ -41,27 +40,13 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
-
-
-# setup path
-fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# fgapiserver configuration file
-fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
-
-# Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
-
-# FutureGateway database object
-fgapisrv_db = None
+__update__ = '2019-03-21 16:25:52'
 
 # Logging
-logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
+logger = logging.getLogger(__name__)
 
 #
-# Tooling functions commonly used by fgapiserber_ source codes
+# Tooling functions commonly used by fgapiserver* source codes
 #
 
 
@@ -83,26 +68,6 @@ def json_bool(bool_value):
     return bool_value
 
 
-def get_fgapiserver_db():
-    """
-    Retrieve the fgAPIServer database object instance
-
-    :return: Return the fgAPIServer database object or None if the
-             database connection fails
-    """
-    db, message = get_db(
-        db_host=fg_config['fgapisrv_db_host'],
-        db_port=fg_config['fgapisrv_db_port'],
-        db_user=fg_config['fgapisrv_db_user'],
-        db_pass=fg_config['fgapisrv_db_pass'],
-        db_name=fg_config['fgapisrv_db_name'],
-        iosandbbox_dir=fg_config['fgapisrv_iosandbox'],
-        fgapiserverappid=fg_config['fgapisrv_geappid'])
-    if db is None:
-        logging.error(message)
-    return db
-
-
 def check_api_ver(apiver):
     """
     Check the API version
@@ -114,6 +79,8 @@ def check_api_ver(apiver):
               - 404 error code in case versions are not matching
               - The error message in case versions are not matching
     """
+    logging.debug("APIVER param: %s - config: %s"
+                  % (apiver, fg_config['fgapiver']))
     if apiver == fg_config['fgapiver']:
         ret_value = (True, 200, 'Supported API version %s' % apiver)
     else:
@@ -130,9 +97,6 @@ def check_db_ver():
              database schema version is not aligned with the version
              required by the code; see fgapisrv_dbver in configuration file
     """
-    global fgapisrv_db
-
-    fgapisrv_db = get_fgapiserver_db()
     if fgapisrv_db is None:
         msg = "Unable to connect to the database!"
         logging.error(msg)
@@ -186,7 +150,7 @@ def paginate_response(response, page, per_page, page_url):
         ppg = int(per_page)
         if pg > len(response) / ppg:
             pg = len(response) / ppg
-        max_pages = len(response) / ppg + (1 * len(response) % ppg)
+        max_pages = int(len(response) / ppg + (1 * len(response) % ppg))
         record_from = pg * ppg
         record_to = record_from + ppg
         paginated_response = response[record_from:record_to]
@@ -271,7 +235,11 @@ def process_log_token(logtoken):
     password = ""
     timestamp = 0
     obj = ARC4.new(fg_config['fgapisrv_secret'])
-    creds = obj.decrypt(base64.b64decode(logtoken))
+    token_data = obj.decrypt(base64.b64decode(logtoken))
+    try:
+        creds = str(token_data, 'utf-8')
+    except TypeError:
+        creds = str(token_data).encode('utf-8')
     credfields = creds.split(":")
     if len(credfields) > 0:
         username = credfields[0].split("=")[1]
@@ -297,7 +265,6 @@ def create_session_token(**kwargs):
     :return: An access token to be used by any further transaction with
              the APIServer front-end
     """
-    global fgapisrv_db
     timestamp = int(time.time())
     user = kwargs.get("user", "")
     logtoken = kwargs.get("logtoken", "")
@@ -365,9 +332,8 @@ def header_links(req, resp, json_dict):
 # Not allowed method common answer
 #
 def not_allowed_method():
-    return 400,\
-           {"message": "Method '%s' is not allowed for this endpoint"
-                       % request.method}
+    return 400, {"message": "Method '%s' is not allowed for this endpoint"
+                            % request.method}
 
 
 #

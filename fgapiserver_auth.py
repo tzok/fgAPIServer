@@ -21,9 +21,9 @@
 from fgapiserver_db import FGAPIServerDB
 from fgapiserver_config import FGApiServerConfig
 
-import os
-import sys
 import logging.config
+from fgapiserver_config import fg_config
+from fgapiserver_db import fgapisrv_db
 
 """
   FutureGateway APIServer authN/Z functions
@@ -36,62 +36,10 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
-
-
-# setup path
-fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# fgapiserver configuration file
-fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
-
-# Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
+__update__ = '2019-03-21 16:25:52'
 
 # Logging
-logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
 logger = logging.getLogger(__name__)
-
-
-def get_fgapiserver_db():
-    """
-    Retrieve the fgAPIServer database object
-
-    :return: Return the fgAPIServer database object or None if the
-             database connection fails
-    """
-    db_host = fg_config['fgapisrv_db_host']
-    db_port = fg_config['fgapisrv_db_port']
-    db_user = fg_config['fgapisrv_db_user']
-    db_pass = fg_config['fgapisrv_db_pass']
-    db_name = fg_config['fgapisrv_db_name']
-    iosandbbox_dir = fg_config['fgapisrv_iosandbox']
-    fgapiserverappid = fg_config['fgapisrv_geappid']
-
-    apiserver_db = FGAPIServerDB(
-        db_host=db_host,
-        db_port=db_port,
-        db_user=db_user,
-        db_pass=db_pass,
-        db_name=db_name,
-        iosandbbox_dir=iosandbbox_dir,
-        fgapiserverappid=fgapiserverappid)
-    db_state = apiserver_db.get_state()
-    if db_state[0] != 0:
-        logger.error("Unbable to connect to the database:\n"
-                     "  host: %s\n"
-                     "  port: %s\n"
-                     "  user: %s\n"
-                     "  pass: %s\n"
-                     "  name: %s\n"
-                     % (db_host,
-                        db_port,
-                        db_user,
-                        db_pass,
-                        db_name))
-        return None
-    return apiserver_db
 
 
 def authorize_user(current_user, app_id, user, reqroles):
@@ -107,7 +55,6 @@ def authorize_user(current_user, app_id, user, reqroles):
     :return:
     """
     logger.debug("AuthUser: (begin)")
-    global fgapisrv_db
 
     # Return True if token management is disabled
     # if fgapisrv_notoken:
@@ -158,7 +105,3 @@ def authorize_user(current_user, app_id, user, reqroles):
             message = ("User '%s' cannot perform any activity on application "
                        "having id: '%s'\n") % (user_name, app_id)
     return auth_z, message
-
-
-# Get the database object
-fgapisrv_db = get_fgapiserver_db()

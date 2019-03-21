@@ -20,6 +20,7 @@ import unittest
 import hashlib
 import os
 from fgapiserver_config import FGApiServerConfig
+from fgapiserver_config import fgapiserver_config_file
 
 __author__ = 'Riccardo Bruno'
 __copyright__ = '2019'
@@ -28,10 +29,13 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-03-21 16:25:52'
 
 
 class TestfgAPIServerConfig(unittest.TestCase):
+
+    # FutureGateway Database schema version
+    db_ver = '0.0.13'
 
     def setUp(self):
         pass
@@ -53,8 +57,11 @@ class TestfgAPIServerConfig(unittest.TestCase):
         return hash_value.hexdigest()
 
     @staticmethod
-    def md5sum_str(string):
-        return hashlib.md5(string).hexdigest()
+    def md5sum_str(string_value):
+        str = u'%s' % string_value
+        str = str.encode('utf-8')
+        md5_value = hashlib.md5(str).hexdigest()
+        return md5_value
 
     #
     # fgapiserverconfig
@@ -73,9 +80,9 @@ class TestfgAPIServerConfig(unittest.TestCase):
                 for def_key in cfg.defaults[sec]:
                     if key == def_key:
                         print("cfg['%s'] = '%s' <-> "
-                              "cfg.defaults['%s']['%s'] = '%s'") \
+                              "cfg.defaults['%s']['%s'] = '%s'"
                               % (key, cfg[key], sec, def_key,
-                                 cfg.defaults[sec][def_key])
+                                 cfg.defaults[sec][def_key]))
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
                             # fgapisrv_notokenusr param is 'test' for Tests
@@ -115,9 +122,9 @@ class TestfgAPIServerConfig(unittest.TestCase):
                 for def_key in cfg.defaults[sec]:
                     if key == def_key:
                         print("cfg['%s'] = '%s' <-> "
-                              "cfg.defaults['%s']['%s'] = '%s'")\
+                              "cfg.defaults['%s']['%s'] = '%s'"
                               % (key, cfg[key], sec, def_key,
-                                 cfg.defaults[sec][def_key])
+                                 cfg.defaults[sec][def_key]))
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
                             # fgapisrv_notokenusr param is 'test' for Tests
@@ -152,15 +159,15 @@ class TestfgAPIServerConfig(unittest.TestCase):
         :return:
         """
         self.banner("Default configuration file")
-        cfg = FGApiServerConfig('fgapiserver.conf')
+        cfg = FGApiServerConfig('fgapiserver.yaml')
         for key in cfg.keys():
             for sec in cfg.defaults.keys():
                 for def_key in cfg.defaults[sec]:
                     if key == def_key:
                         print("cfg['%s'] = '%s' <-> "
-                              "cfg.defaults['%s']['%s'] = '%s'") \
+                              "cfg.defaults['%s']['%s'] = '%s'"
                               % (key, cfg[key], sec, def_key,
-                                 cfg.defaults[sec][def_key])
+                                 cfg.defaults[sec][def_key]))
                         if not (key in cfg.int_types or
                                 key in cfg.bool_types):
                             # fgapisrv_notokenusr param is 'test' for Tests
@@ -195,11 +202,11 @@ class TestfgAPIServerConfig(unittest.TestCase):
         """
         self.banner("Both config are matching")
         cfg_class = FGApiServerConfig('')
-        cfg_file = FGApiServerConfig('fgapiserver.conf')
+        cfg_file = FGApiServerConfig('fgapiserver.yaml')
         print("Class Configuration: %s" % cfg_class)
         print("MD5_class: '%s': " % self.md5sum_str("%s" % cfg_class))
         print("File Configuration: %s" % cfg_file)
-        print("MD5_file:  '%s': " % self.md5sum_str("%s" % cfg_file))
+        print("MD5_file:  '%s': " % self.md5sum_str(cfg_file))
         self.assertEqual(self.md5sum_str("%s" % cfg_class),
                          self.md5sum_str("%s" % cfg_file))
 
@@ -209,8 +216,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
         :return:
         """
         self.banner("Config dictionary check")
-        cfg = FGApiServerConfig('fgapiserver.conf')
-        self.assertEqual("%s" % cfg['fgapiver'], '1.0')
+        cfg = FGApiServerConfig('fgapiserver.yaml')
+        self.assertEqual("%s" % cfg['fgapiver'], 'v1.0')
         self.assertEqual("%s" % cfg['fgapiserver_name'],
                          'FutureGateway API Server v0.0.10')
         self.assertEqual("%s" % cfg['fgapisrv_host'], 'localhost')
@@ -221,7 +228,7 @@ class TestfgAPIServerConfig(unittest.TestCase):
         self.assertEqual("%s" % cfg['fgapisrv_key'], '')
         self.assertEqual("%s" % cfg['fgapisrv_crt'], '')
         self.assertEqual("%s" % cfg['fgapisrv_logcfg'], 'fgapiserver_log.conf')
-        self.assertEqual("%s" % cfg['fgapisrv_dbver'], '')
+        self.assertEqual("%s" % cfg['fgapisrv_dbver'], self.db_ver)
         self.assertEqual("%s" % cfg['fgapisrv_secret'], '0123456789ABCDEF')
         # fgapisrv_notoken is ever True in tests
         self.assertEqual("%s" % cfg['fgapisrv_notoken'], 'True')
@@ -243,9 +250,11 @@ class TestfgAPIServerConfig(unittest.TestCase):
         :return:
         """
         self.banner("Check param types")
-        cfg = FGApiServerConfig('fgapiserver.conf')
+        cfg = FGApiServerConfig(fgapiserver_config_file)
         for param in cfg.keys():
             msg = "Checking type for param: '%s'" % param
+            if cfg[param] is None:
+                continue
             if not (param in cfg.int_types or
                     param in cfg.bool_types):
                 print("%s is string" % msg)
@@ -266,8 +275,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
         :return:
         """
         self.banner("Check param types")
-        cfg = FGApiServerConfig('fgapiserver.conf')
-        cfg_load = FGApiServerConfig('fgapiserver.conf')
+        cfg = FGApiServerConfig(fgapiserver_config_file)
+        cfg_load = FGApiServerConfig(fgapiserver_config_file)
         # Configuration with names and keys matching
         # String types have the key == value
         # Bool types are inverted
@@ -340,7 +349,7 @@ class TestfgAPIServerConfig(unittest.TestCase):
         # Bool types are inverted
         # Integer types are multiplied by -1
 
-        cfg = FGApiServerConfig('fgapiserver.conf')
+        cfg = FGApiServerConfig(fgapiserver_config_file)
 
         cfg_dict = {
             # FGDB
@@ -384,7 +393,7 @@ class TestfgAPIServerConfig(unittest.TestCase):
         for key in cfg_dict:
             os.environ[key.upper()] = "%s" % cfg_dict[key]
 
-        cfg_new = FGApiServerConfig('fgapiserver.conf')
+        cfg_new = FGApiServerConfig(fgapiserver_config_file)
         for key in cfg_new.keys():
             print("cfg['%s'] = '%s' <-> %s=%s"
                   % (key, cfg_new[key],

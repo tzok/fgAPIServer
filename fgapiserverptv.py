@@ -15,14 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import urllib2
-import base64
 import requests
-import json
 import logging
 import logging.config
-from fgapiserver_config import FGApiServerConfig
-from fgapiserver_user import User
 
 __author__ = 'Riccardo Bruno'
 __copyright__ = '2019'
@@ -31,7 +26,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-03-21 16:25:52'
 
 """
   fgapiserver_ptv - APIServer Portal Token Validator
@@ -126,8 +121,8 @@ class FGAPIServerPTV:
             response.close()
             self.log.debug("Retrieved token info:\n"
                            "%s" % token_info)
-        except requests.ConnectionError, e:
-            self.log.error("Unable to get token info: '%s'", e)
+        except requests.ConnectionError as connError:
+            self.log.error("Unable to get token info: '%s'", connError)
 
         # Now fill class values
         self.portal_validate = \

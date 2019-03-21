@@ -13,6 +13,10 @@ MAINTANIER=$AUTHOR
 EMAIL=riccardo.bruno@ct.infn.it
 STATUS=devel
 UPDATE=$(date +"%Y-%m-%d %H:%M:%S")
+VENV2=venv2
+VENV3=venv3
+PYTHON2=python2
+PYTHON3=python3
 
 # Source code header generator
 set_code_headers() {
@@ -41,7 +45,7 @@ EOF
 
 # Call checkstyle
 check_style() {
-  pycodestyle *.py &&\
+  pycodestyle --ignore=E402 *.py &&\
   pycodestyle tests/*.py
 }
 
@@ -82,12 +86,96 @@ unit_tests() {
   )
   test_suite || return 1
   cd -
+  return 0
+}
+
+# Prepare test environment for Python v2
+venv2() {
+  echo "Preparing virtualenv for Python2"
+  $PYTHON2 -m virtualenv $VENV2 &&\
+  source ./$VENV2/bin/activate &&\
+  pip install -r requirements.txt &&\
+  pip install pycodestyle
+}
+
+# Perform tests for Python v2
+tests_py2() {
+  echo "Testing for Python v2" &&\
+  unit_tests
+}
+
+# Prepare test environment for Python v3
+venv3() {
+  echo "Preparing virtualenv for Python3"
+  $PYTHON3 -m venv $VENV3 &&\
+  source ./$VENV3/bin/activate &&\
+  pip install -r requirements.txt &&\
+  pip install pycodestyle
+}
+
+# Perform tests for Python v3
+tests_py3() {
+  echo "Testing for Python v3" &&\
+  unit_tests
+}
+
+
+# Setup Virtual environment and start check style and unittests
+check_style_and_tests() {
+
+  # Check existing virtual environments
+  [ "$VIRTUAL_ENV" != "" ] &&\
+      echo "An active virtual environment is present at: '$VIRTUAL_ENV'" &&\
+      echo "Call 'deactivate' command before to run this script" &&\
+      return 1
+
+  RES=0
+  PY2DONE=0
+  PYTHON_2=$(which $PYTHON2)
+  if [ "$PYTHON_2" != "" ]; then
+    venv2 &&\
+    check_style &&\
+    tests_py2 &&\
+    PY2_DONE=1 ||\
+    echo "Unit tests failed while testing for python2"
+  else
+    echo "No python 2 found, skipping tests for this version"
+  fi
+
+  PY3DONE=0
+  PYTHON_3=$(which $PYTHON3)
+  if [ "$PYTHON_3" != "" ]; then
+    venv3 &&\
+    check_style &&\
+    tests_py3 &&\
+    PY3_DONE=1 ||\
+    echo "Unit tests failed while testing for python3"
+  else
+    echo "No python 3 found, skipping tests for this version"
+  fi
+
+  # No python found at all
+  [ $((PY2_DONE)) -eq 0 -a\
+    $((PY3_DONE)) -eq 0 ] &&\
+    echo "Neither python2 nor python3 found" &&\
+    RES=1
+  # Python2 found but tests failed
+  [  "$PYTHON_2" != "" -a $((PY2_DONE)) -eq 0 ] &&\
+    echo "Python2 tests failed" &&\
+    RES=1
+  # Python3 found but tests failed
+  [  "$PYTHON_3" != "" -a $((PY3_DONE)) -eq 0 ] &&\
+    echo "Python3 tests failed" &&\
+    RES=1
+  # If no error RES will be 0
   return $RES
 }
 
+#
 # Releasing
+#
 echo "Starting releasing fgAPIServer ..." &&\
-check_style &&\
-unit_tests &&\
-set_code_headers &&
-echo "Done"
+check_style_and_tests &&\
+set_code_headers &&\
+echo "Done" ||\
+echo "Failed"

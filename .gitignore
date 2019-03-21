@@ -1,6 +1,6 @@
 *.pyc
 *.log
 .idea
-.venv
-venv
+.venv*
+venv*
 tests/apps/

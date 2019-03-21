@@ -16,7 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import MySQLdb
 import uuid
 import os
 import sys
@@ -24,7 +23,14 @@ import urllib
 import shutil
 import logging
 import json
-from fgapiserver_config import FGApiServerConfig
+from fgapiserver_config import fg_config
+import pymysql
+pymysql.install_as_MySQLdb()
+import MySQLdb
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 
 """
   GridEngine API Server database
@@ -36,7 +42,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-03-21 16:25:52'
 
 """
  Database connection default settings
@@ -54,18 +60,8 @@ def_db_name = 'fgapiserver'
 def_iosandbbox_dir = '/tmp'
 def_geapiserverappid = '10000'  # GridEngine sees API server as an application
 
-# setup path
-fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# fgapiserver configuration file
-fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
-
-# Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
-
 # Logging
-logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
+logger = logging.getLogger(__name__)
 
 
 def get_db(**kwargs):
@@ -77,7 +73,7 @@ def get_db(**kwargs):
     """
     args = {}
     if kwargs is not None:
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             args[key] = value
     db_host = args.get('db_host', def_db_host)
     db_port = args.get('db_port', def_db_port)
@@ -86,6 +82,12 @@ def get_db(**kwargs):
     db_name = args.get('db_name', def_db_name)
     io_sbox = args.get('iosandbbox_dir', def_iosandbbox_dir)
     ge_apid = args.get('iosandbbox_dir', def_geapiserverappid)
+    logging.debug("FutureGateway DB object")
+    logging.debug("  DB_HOST: %s" % db_host)
+    logging.debug("  DB_PORT: %s" % db_port)
+    logging.debug("  DB_USER: %s" % db_user)
+    logging.debug("  DB_PASS: %s" % db_pass)
+    logging.debug("  DB_NAME: %s" % db_name)
     fgapiserver_db = FGAPIServerDB(
         db_host=db_host,
         db_port=db_port,
@@ -291,10 +293,10 @@ class FGAPIServerDB:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
             sql = 'select count(*)>0 from srv_registry where uuid = %s;'
-            sql_data = (service_uuid,)
+            sql_data = (str(service_uuid), )
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            is_reg = cursor.fetchone()[0]
+            is_reg = bool(cursor.fetchone()[0])
             self.query_done("Service registration '%s' is '%s'"
                             % (service_uuid, is_reg))
         except MySQLdb.Error as e:
@@ -758,7 +760,7 @@ class FGAPIServerDB:
         self.query_done(
             ("role(s) '%s' for user_id '%s' is %s'" % (roles,
                                                        user_id,
-                                                       result > 0)))
+                                                       int(result) > 0)))
         return result != 0
 
     """
@@ -924,7 +926,7 @@ class FGAPIServerDB:
                 "User id '%s' access to application "
                 "id '%s' is %s'" % (user_id,
                                     app_id,
-                                    result > 0))
+                                    int(result) > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -963,7 +965,7 @@ class FGAPIServerDB:
                 ("same group for user '%s' "
                  "and '%s' is %s" % (user_1,
                                      user_2,
-                                     result > 0)))
+                                     int(result) > 0)))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
@@ -1034,8 +1036,8 @@ class FGAPIServerDB:
                 sql_data = (group,)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
-                record = cursor.fetchone()[0]
-                if record > 0:
+                count = int(cursor.fetchone()[0])
+                if count > 0:
                     fg_groups.append(group)
                 else:
                     logging.warn("Group '%s' does not exists" % group)
@@ -1237,8 +1239,8 @@ class FGAPIServerDB:
                         "name": ifile[0],
                         "status": ifile[1],
                         "url": 'file?%s'
-                               % urllib.urlencode({"path": ifile[2],
-                                                   "name": ifile[0]}),
+                               % urlencode({"path": ifile[2],
+                                            "name": ifile[0]}),
                     }
                 task_ifiles += [ifile_entry, ]
             # Task output files
@@ -1254,8 +1256,8 @@ class FGAPIServerDB:
             for ofile in cursor:
                 file_url = ''
                 if ofile[1] != '':
-                    file_url = 'file?%s' % urllib.urlencode({"path": ofile[1],
-                                                             "name": ofile[0]})
+                    file_url = 'file?%s' % urlencode({"path": ofile[1],
+                                                      "name": ofile[0]})
                 ofile_entry = {"name": ofile[0],
                                "url": file_url}
                 task_ofiles += [ofile_entry, ]
@@ -1579,7 +1581,7 @@ class FGAPIServerDB:
             # Create the Task IO Sandbox
             iosandbox = '%s/%s' % (self.iosandbbox_dir, str(uuid.uuid1()))
             os.makedirs(iosandbox)
-            os.chmod(iosandbox, 0770)
+            os.chmod(iosandbox, 0o770)
             # Insert new Task record
             db = self.connect(safe_transaction)
             cursor = db.cursor()
@@ -1903,8 +1905,8 @@ class FGAPIServerDB:
         if task_status != 'WAITING':
             self.err_flag = True
             self.err_msg = ('Wrong status (\'%s\') '
-                            'to ask submission for task_id: %s') % (
-                               task_status, task_id)
+                            'to ask submission for task_id: %s'
+                            % (task_status, task_id))
             return False
         # Application must be also enabled
         if not bool(app_info['enabled']):
@@ -2162,7 +2164,7 @@ class FGAPIServerDB:
                     self.err_msg = ("[ERROR] Unable to patch task id: %s"
                                     % task_id)
                 else:
-                    data_count = result[0]
+                    data_count = int(result[0])
                     if data_count == 0:
                         # First data insertion
                         sql = (
@@ -2413,7 +2415,7 @@ class FGAPIServerDB:
             sql_data = (task_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            callback_count = cursor.fetchone()
+            callback_count = int(cursor.fetchone())
             if callback_count == 0:
                 # 1st Callback entry
                 sql = ('insert into as_queue (task_id,\n'
@@ -2481,7 +2483,7 @@ class FGAPIServerDB:
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            count = cursor.fetchone()[0]
+            count = int(cursor.fetchone()[0])
             self.query_done(
                 "App \'%s\' existing is %s" % (app_id, count > 0))
         except MySQLdb.Error as e:
@@ -2595,7 +2597,7 @@ class FGAPIServerDB:
                 # Downloadable application files
                 # Add url field in case the path exists
                 if ifile[1] is not None and len(ifile[1]) > 0:
-                    ifile_entry['url'] = 'file?%s' % urllib.urlencode(
+                    ifile_entry['url'] = 'file?%s' % urlencode(
                         {"path": ifile[1],
                          "name": ifile[0]})
                 app_ifiles += [ifile_entry, ]
@@ -2936,7 +2938,7 @@ class FGAPIServerDB:
             sql_data = (app_id, file_name)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            count = cursor.fetchone()[0]
+            count = int(cursor.fetchone()[0])
             if count > 0:
                 sql = ('update application_file\n'
                        'set path = %s\n'
@@ -3085,12 +3087,13 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             count = cursor.fetchone()[0]
             self.query_done(
-                "Infrastructure '%s' exists is: %s" % (infra_id, count > 0))
+                "Infrastructure '%s' exists is: %s"
+                % (infra_id, int(count) > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
             self.close_db(db, cursor, safe_transaction)
-        return count > 0
+        return int(count) > 0
 
     """
       get_infra_list - Get the list of infrastructures; if app_id is not None
@@ -3884,7 +3887,7 @@ class FGAPIServerDB:
             sql_data = (user_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            count = cursor.fetchone()[0]
+            count = int(cursor.fetchone()[0])
             self.query_done(
                 "User \'%s\' existing is %s" % (user, count > 0))
         except MySQLdb.Error as e:
@@ -4006,7 +4009,7 @@ class FGAPIServerDB:
                         user_data['mail'])
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
-            count = cursor.fetchone()[0]
+            count = int(cursor.fetchone()[0])
             if count == 0:
                 # Insert the new user only if it does not exist
                 sql = ('insert into fg_user (id\n'
@@ -4503,7 +4506,7 @@ class FGAPIServerDB:
                     sql_data = (app_id,)
                     logging.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
-                    app_exists = cursor.fetchone()
+                    app_exists = bool(cursor.fetchone())
                     if app_exists > 0:
                         sql = ('insert into fg_group_apps (group_id,\n'
                                '                           app_id,\n'
@@ -4554,8 +4557,7 @@ class FGAPIServerDB:
             logging.debug(sql, sql_data)
             cursor.execute(sql, sql_data)
             group_record = cursor.fetchone()
-            if (group_record is not None and
-                    group_name == group_record[1]):
+            if group_record is not None and group_name == group_record[1]:
                 result = {"id": group_record[0],
                           "name": group_record[1],
                           "creation": group_record[2],
@@ -4661,7 +4663,7 @@ class FGAPIServerDB:
         app_id = self.app_param_to_app_id(application)
         sql_data = (user_id,)
         if app_id is not None:
-            app_clause = '  and a.id=%s\n'
+            app_clause = '  and a.id=%s'
             sql_data += (app_id,)
         try:
             db = self.connect(safe_transaction)
@@ -4670,8 +4672,7 @@ class FGAPIServerDB:
                    'from task t,\n'
                    '     fg_user u,\n'
                    '     application a\n'
-                   'where u.id=%s\n' +
-                   app_clause +
+                   'where u.id=%s\n' + app_clause + '\n'
                    '  and t.status != \'PURGED\'\n'
                    '  and t.user=u.name\n'
                    '  and t.app_id=a.id\n'
@@ -4751,8 +4752,8 @@ class FGAPIServerDB:
                     sql_data = (role_id,)
                     logging.debug(sql % sql_data)
                     cursor.execute(sql, sql_data)
-                    role_exists = cursor.fetchone()
-                    if role_exists > 0:
+                    role_exists = bool(cursor.fetchone())
+                    if role_exists:
                         sql = ('insert into fg_group_role (group_id,\n'
                                '                           role_id,\n'
                                '                           creation)\n'
@@ -4804,3 +4805,16 @@ class FGAPIServerDB:
         finally:
             self.close_db(db, cursor, safe_transaction)
         return roles
+
+
+# Create the fgapisrv_db object
+fgapisrv_db, message = get_db(
+    db_host=fg_config['fgapisrv_db_host'],
+    db_port=fg_config['fgapisrv_db_port'],
+    db_user=fg_config['fgapisrv_db_user'],
+    db_pass=fg_config['fgapisrv_db_pass'],
+    db_name=fg_config['fgapisrv_db_name'],
+    iosandbbox_dir=fg_config['fgapisrv_iosandbox'],
+    fgapiserverappid=fg_config['fgapisrv_geappid'])
+if fgapisrv_db is None:
+    logging.error(message)

@@ -27,7 +27,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-03-21 16:25:52'
 
 key = "0123456789ABCDEF"  # (!) Please use fgapiserver_secret value
 username = "futuregateway"
@@ -51,12 +51,12 @@ def token_decode(key, token):
 
 
 def token_info(key, token):
-    tinfo = token_decode(key, token)
+    tinfo = str(token_decode(key, token))
     tinfo_fields = tinfo.split(':')
     return \
         tinfo_fields[0].split("=")[1], \
         tinfo_fields[1].split("=")[1], \
-        tinfo_fields[2].split("=")[1]
+        tinfo_fields[2].split("=")[1][:-1]
 
 
 if __name__ == "__main__":

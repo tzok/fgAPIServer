@@ -18,10 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from flask_login import UserMixin
-import os
-import sys
 import logging.config
-from fgapiserver_config import FGApiServerConfig
+from fgapiserver_config import fg_config
+from fgapiserver_db import fgapisrv_db
 
 """
   FutureGateway APIServer User class
@@ -33,20 +32,9 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
-
-# setup path
-fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# fgapiserver configuration file
-fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
-
-# Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
+__update__ = '2019-03-21 16:25:52'
 
 # Logging
-logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
 logger = logging.getLogger(__name__)
 
 

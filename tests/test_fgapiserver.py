@@ -21,12 +21,19 @@ import fgapiserver
 import hashlib
 import json
 import os
+import io
 import shutil
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from fgapiserver import app
-from mklogtoken import token_encode, token_decode, token_info
+from mklogtoken import\
+    token_encode,\
+    token_decode,\
+    token_info
 from fgapiserver_user import User
-from fgapiserver_tools import get_fgapiserver_db
+from fgapiserver_db import fgapisrv_db
 
 __author__ = 'Riccardo Bruno'
 __copyright__ = '2019'
@@ -35,7 +42,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-03-21 16:25:52'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -67,14 +74,18 @@ class TestfgAPIServer(unittest.TestCase):
         return hash_value.hexdigest()
 
     @staticmethod
-    def md5sum_str(string):
-        return hashlib.md5(string).hexdigest()
+    def md5sum_str(string_value):
+        str = u'%s' % string_value
+        str = str.encode('utf-8')
+        md5_value = hashlib.md5(str).hexdigest()
+        return md5_value
 
     #
     # fgapiserver
     #
 
     # Baseline authentication must be activated
+
     def test_CkeckConfig(self):
         self.banner("Check configuration settings")
         self.assertEqual(
@@ -124,36 +135,35 @@ class TestfgAPIServer(unittest.TestCase):
     #
     # fgapiserverdb
     #
-    fgapisrv_db = get_fgapiserver_db()
 
     def test_dbobject(self):
         self.banner("Testing fgapiserverdb get DB object")
-        assert self.fgapisrv_db is not None
+        assert fgapisrv_db is not None
 
     def test_dbobj_connect(self):
         self.banner("Testing fgapiserverdb connect")
-        conn = self.fgapisrv_db.connect()
+        conn = fgapisrv_db.connect()
         assert conn is not None
 
     def test_dbobj_test(self):
         self.banner("Testing fgapiserverdb test")
-        result = self.fgapisrv_db.test()
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.test()
+        state = fgapisrv_db.get_state()
         print(result)
         print("DB state: %s" % (state,))
         assert state[0] is False
 
     def test_dbobj_create_session_token(self):
         self.banner("Testing fgapiserverdb create_session_token")
-        self.fgapisrv_db.create_session_token('test', 'test', 'logts')
-        state = self.fgapisrv_db.get_state()
+        fgapisrv_db.create_session_token('test', 'test', 'logts')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
 
     def test_dbobj_verify_session_token(self):
         self.banner("Testing fgapiserverdb verify_session_token")
-        result = self.fgapisrv_db.verify_session_token('TESTSESSIONTOKEN')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.verify_session_token('TESTSESSIONTOKEN')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result[0] == '1'
@@ -161,8 +171,8 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_get_token_info(self):
         self.banner("Testing fgapiserverdb get_token_info")
-        result = self.fgapisrv_db.get_token_info('TESTSESSIONTOKEN')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_token_info('TESTSESSIONTOKEN')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state, ))
         print("Result: %s" % result)
         assert state[0] is False
@@ -178,49 +188,49 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_register_token(self):
         self.banner("Testing fgapiserverdb register_token")
-        result = self.fgapisrv_db.register_token(1, 'TESTSESSIONTOKEN', 'SUBJ')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.register_token(1, 'TESTSESSIONTOKEN', 'SUBJ')
+        state = fgapisrv_db.get_state()
         print(result)
         print("DB state: %s" % (state,))
         assert state[0] is False
 
     def test_dbobj_verify_user_role(self):
         self.banner("Testing fgapiserverdb verify_user_role")
-        result = self.fgapisrv_db.verify_user_role(1, 'test_role')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.verify_user_role(1, 'test_role')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result > 0
 
     def test_dbobj_verify_user_app(self):
         self.banner("Testing fgapiserverdb verify_user_app")
-        result = self.fgapisrv_db.verify_user_app(1, 1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.verify_user_app(1, 1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == '1'
 
     def test_dbobj_same_group(self):
         self.banner("Testing fgapiserverdb same_group")
-        result = self.fgapisrv_db.same_group('test_user1', 'test_user2')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.same_group('test_user1', 'test_user2')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == '1'
 
     def test_dbobj_get_user_info_by_name(self):
         self.banner("Testing fgapiserverdb get_user_info_by_name")
-        result = self.fgapisrv_db.get_user_info_by_name('test_user1')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_user_info_by_name('test_user1')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
 
     def test_dbobj_get_ptv_groups(self):
         self.banner("Testing fgapiserverdb get_ptv_groups")
-        result = self.fgapisrv_db.get_ptv_groups(['test_group1',
-                                                  'test_group2'])
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_ptv_groups(['test_group1',
+                                             'test_group2'])
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert 'test_group1' in result
@@ -228,10 +238,10 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_register_ptv_subjec(self):
         self.banner("Testing fgapiserverdb register_ptv_subject")
-        result = self.fgapisrv_db.register_ptv_subject('test_user',
-                                                       ['test_group1',
-                                                        'test_group2'])
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.register_ptv_subject('test_user',
+                                                  ['test_group1',
+                                                   'test_group2'])
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result[0] == 1
@@ -239,16 +249,16 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_register_task_exists(self):
         self.banner("Testing fgapiserverdb task_exists")
-        result = self.fgapisrv_db.task_exists(1, 1, [1])
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.task_exists(1, 1, [1])
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
 
     def test_dbobj_get_task_record(self):
         self.banner("Testing fgapiserverdb get_task_record")
-        result = self.fgapisrv_db.get_task_record(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_record(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
@@ -257,16 +267,16 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_task_status(self):
         self.banner("Testing fgapiserverdb get_task_status")
-        result = self.fgapisrv_db.get_task_status(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_status(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == 'WAITING'
 
     def test_dbobj_get_task_input_files(self):
         self.banner("Testing fgapiserverdb get_task_input_files")
-        result = self.fgapisrv_db.get_task_input_files(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_input_files(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
@@ -274,8 +284,8 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_task_output_files(self):
         self.banner("Testing fgapiserverdb get_task_output_files")
-        result = self.fgapisrv_db.get_task_output_files(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_output_files(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
@@ -283,8 +293,8 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_app_detail(self):
         self.banner("Testing fgapiserverdb get_app_detail")
-        result = self.fgapisrv_db.get_app_detail(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_app_detail(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
@@ -292,8 +302,8 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_task_app_detail(self):
         self.banner("Testing fgapiserverdb get_task_app_detail")
-        result = self.fgapisrv_db.get_task_app_detail(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_app_detail(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
@@ -301,8 +311,8 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_task_info(self):
         self.banner("Testing fgapiserverdb get_task_info")
-        result = self.fgapisrv_db.get_task_info(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_info(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
@@ -310,8 +320,8 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_app_files(self):
         self.banner("Testing fgapiserverdb get_app_files")
-        result = self.fgapisrv_db.get_app_files(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_app_files(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is not None
@@ -334,19 +344,19 @@ class TestfgAPIServer(unittest.TestCase):
     def test_dbobj_init_task(self):
         self.banner("Testing fgapiserverdb init_task")
         self.create_test_json()
-        result = self.fgapisrv_db.init_task(1,
-                                            'test_application',
-                                            'test_user',
-                                            ['arg 1', 'arg 2'],
-                                            [{'name': 'test_ifile1',
-                                              'path': '/path/to/file1',
-                                              'override': False},
-                                             {'name': 'test_ifile2',
-                                              'path': '/path/to/file2',
-                                              'override': True}, ],
-                                            [{'name': 'test_ofile_1'},
-                                             {'name': 'test_ofile_2'}, ])
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.init_task(1,
+                                       'test_application',
+                                       'test_user',
+                                       ['arg 1', 'arg 2'],
+                                       [{'name': 'test_ifile1',
+                                         'path': '/path/to/file1',
+                                         'override': False},
+                                        {'name': 'test_ifile2',
+                                         'path': '/path/to/file2',
+                                         'override': True}, ],
+                                       [{'name': 'test_ofile_1'},
+                                        {'name': 'test_ofile_2'}, ])
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         self.destroy_test_json()
         assert state[0] is False
@@ -354,26 +364,26 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_task_io_sandbox(self):
         self.banner("Testing fgapiserverdb get_task_io_sandbox")
-        result = self.fgapisrv_db.get_task_io_sandbox(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_io_sandbox(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == '/tmp/iosandbox'
 
     def test_dbobj_update_iniput_sandbox_file(self):
         self.banner("Testing fgapiserverdb update_iniput_sandbox_file")
-        result = self.fgapisrv_db.update_input_sandbox_file(1,
-                                                            'test_file1',
-                                                            '/path/to/file')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.update_input_sandbox_file(1,
+                                                       'test_file1',
+                                                       '/path/to/file')
+        state = fgapisrv_db.get_state()
         print(result)
         print("DB state: %s" % (state,))
         assert state[0] is False
 
     def test_dbobj_is_input_sandbox_ready(self):
         self.banner("Testing fgapiserverdb is_input_sandbox_ready")
-        result = self.fgapisrv_db.is_input_sandbox_ready(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.is_input_sandbox_ready(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
@@ -381,8 +391,8 @@ class TestfgAPIServer(unittest.TestCase):
     def test_dbobj_submit_task(self):
         self.banner("Testing fgapiserverdb submit_task")
         self.create_test_json()
-        result = self.fgapisrv_db.submit_task(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.submit_task(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         self.destroy_test_json()
         assert state[0] is False
@@ -391,7 +401,7 @@ class TestfgAPIServer(unittest.TestCase):
     def test_dbobj_enqueue_task_request(self):
         self.banner("Testing fgapiserverdb enqueue_task_request")
         self.create_test_json()
-        result = self.fgapisrv_db.enqueue_task_request(
+        result = fgapisrv_db.enqueue_task_request(
             {'status': 'WAITING',
              'description': 'test task',
              'creation': '1970-01-01T00:00:00',
@@ -451,7 +461,7 @@ class TestfgAPIServer(unittest.TestCase):
                                       'input_file_2'),
                               'name': 'input_file_2'}],
              'last_change': '1970-01-01T00:00:00'})
-        state = self.fgapisrv_db.get_state()
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         self.destroy_test_json()
         assert state[0] is False
@@ -459,23 +469,23 @@ class TestfgAPIServer(unittest.TestCase):
 
     def test_dbobj_get_task_list(self):
         self.banner("Testing fgapiserverdb get_task_list")
-        result = self.fgapisrv_db.get_task_list((1, 'test_user'), 1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_task_list((1, 'test_user'), 1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == [1]
 
     def test_dbobj_delete(self):
         self.banner("Testing fgapiserverdb delete")
-        result = self.fgapisrv_db.delete(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.delete(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
 
     def test_dbobj_patch_task(self):
         self.banner("Testing fgapiserverdb patch_task")
-        result = self.fgapisrv_db.patch_task(
+        result = fgapisrv_db.patch_task(
             1,
             [{'data_name': 'test_data_name1',
               'data_value': 'test_data_value1',
@@ -487,63 +497,63 @@ class TestfgAPIServer(unittest.TestCase):
               'data_desc': 'test_data_desc2',
               'data_type': 'test_data_type2',
               'data_proto': 'test_data_proto2'}])
-        state = self.fgapisrv_db.get_state()
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
 
     def test_dbobj_is_overridden_sandbox(self):
         self.banner("Testing fgapiserverdb is_overridden_sandbox")
-        result = self.fgapisrv_db.is_overridden_sandbox(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.is_overridden_sandbox(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
 
     def test_dbobj_get_file_task_id(self):
         self.banner("Testing fgapiserverdb get_file_task_id")
-        result = self.fgapisrv_db.get_file_task_id('test_file',
-                                                   '/tmp/testdir')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_file_task_id('test_file',
+                                              '/tmp/testdir')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == '1'
 
     def test_dbobj_status_change(self):
         self.banner("Testing fgapiserverdb status_change")
-        result = self.fgapisrv_db.status_change(1, 'TEST')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.status_change(1, 'TEST')
+        state = fgapisrv_db.get_state()
         print(result)
         print("DB state: %s" % (state,))
         assert state[0] is False
 
     def test_dbobj_app_exists(self):
         self.banner("Testing fgapiserverdb app_exists")
-        result = self.fgapisrv_db.app_exists(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.app_exists(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
 
     def test_dbobj_get_app_list(self):
         self.banner("Testing fgapiserverdb get_app_list")
-        result = self.fgapisrv_db.get_app_list()
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_app_list()
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == [1]
 
     def test_dbobj_get_app_record(self):
         self.banner("Testing fgapiserverdb get_app_record")
-        result = self.fgapisrv_db.get_app_record(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_app_record(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result['name'] == 'test application'
 
     def test_dbobj_init_app(self):
         self.banner("Testing fgapiserverdb init_app")
-        result = self.fgapisrv_db.init_app(
+        result = fgapisrv_db.init_app(
             'test application',
             'test application description',
             'JOB',
@@ -558,38 +568,38 @@ class TestfgAPIServer(unittest.TestCase):
             [{'name': 'test_app_file1'},
              {'name': 'test_app_file2'}],
             [1])
-        state = self.fgapisrv_db.get_state()
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == 1
 
     def test_dbobj_get_infra_record(self):
         self.banner("Testing fgapiserverdb get_infra_record")
-        result = self.fgapisrv_db.get_infra_record(1)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.get_infra_record(1)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result['name'] == 'test infra'
 
     def test_dbobj_insert_or_update_app_file(self):
         self.banner("Testing fgapiserverdb insert_or_update_app_file")
-        result = self.fgapisrv_db.insert_or_update_app_file(1,
-                                                            'test_app_file',
-                                                            'test/file/path')
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.insert_or_update_app_file(1,
+                                                       'test_app_file',
+                                                       'test/file/path')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
 
     def test_dbobj_init_infra(self):
         self.banner("Testing fgapiserverdb init_infra")
-        result = self.fgapisrv_db.init_infra(
+        result = fgapisrv_db.init_infra(
             'Test infrastructure',
             'Test infrastructure description',
             True,
             False,
             {})
-        state = self.fgapisrv_db.get_state()
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result == '1'
@@ -604,8 +614,8 @@ class TestfgAPIServer(unittest.TestCase):
                       "parameters": [{"name": "jobservice",
                                       "value": "ssh://fgtest",
                                       "description": "fgtest ssh hots"}]}
-        result = self.fgapisrv_db.infra_change(1, infra_desc)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.infra_change(1, infra_desc)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
@@ -633,16 +643,16 @@ class TestfgAPIServer(unittest.TestCase):
             "id": "1",
             "infrastructures": [4],
             "description": "hostname tester application on toscaIDC"}
-        result = self.fgapisrv_db.app_change(1, app_desc)
-        state = self.fgapisrv_db.get_state()
+        result = fgapisrv_db.app_change(1, app_desc)
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert result is True
 
     def test_dbobj_get_file_app_id(self):
         self.banner("Testing fgapiserverdb get_file_app_id")
-        app_id = self.fgapisrv_db.get_file_app_id('/tmp', 'input.txt')
-        state = self.fgapisrv_db.get_state()
+        app_id = fgapisrv_db.get_file_app_id('/tmp', 'input.txt')
+        state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
         assert app_id is not None
@@ -682,15 +692,39 @@ class TestfgAPIServer(unittest.TestCase):
     #
     # MD5 values are taken from the self.md5sum_str(result.data) value
     # then they are hardcoded in the assertEqual statement
+    # check_result function verifies the API result
     #
+
+    def check_result(self, result, md5, retcode):
+        try:
+            data = str(result.data, 'utf-8')
+        except TypeError:
+            data = str(result.data).encode('utf-8')
+        data_md5 = self.md5sum_str(data)
+        print("Result: '%s'" % result)
+        print("Result data: '%s'" % data)
+        print("MD5: '%s'" % data_md5)
+        if retcode is not None:
+            self.assertEqual(result.status_code, retcode)
+        if md5 is not None:
+            if isinstance(md5, type(())):
+                self.assertTrue(md5[0] == data_md5 or
+                                md5[1] == data_md5)
+            else:
+                self.assertEqual(md5, data_md5)
 
     def test_get_index(self):
         self.banner("GET /v1.0/")
         result = self.app.get('/v1.0/')
+        try:
+            data = str(result.data, 'utf-8')
+        except TypeError:
+            data = str(result.data).encode('utf-8')
+        data_md5 = self.md5sum_str(data)
         print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        result_data = json.loads(result.data)
+        print("Result data: '%s'" % data)
+        print("MD5: '%s'" % data_md5)
+        result_data = json.loads(data)
         self.assertEqual('versions' in result_data, True)
         self.assertEqual('config' in result_data, True)
 
@@ -701,20 +735,16 @@ class TestfgAPIServer(unittest.TestCase):
     def test_get_infrastructures(self):
         self.banner("GET /v1.0/infrastructures")
         result = self.app.get('/v1.0/infrastructures')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("97b437330ba649e1a54d0abbf9ff0b93",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('e1c2b011c27a9b1c0eaf9f56cbb25e50',
+                           '97b437330ba649e1a54d0abbf9ff0b93'), None)
 
     def test_get_infrastructure(self):
         self.banner("GET /v1.0/infrastructures/1")
         result = self.app.get('/v1.0/infrastructures/1')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("0f814c236f26fd5fd5feb6449f9f8afc",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('9eee7f83fa43289b18732e8cc915138e',
+                           '0f814c236f26fd5fd5feb6449f9f8afc'), None)
 
     def test_post_infrastructures(self):
         post_data = {'virtual': False,
@@ -727,20 +757,14 @@ class TestfgAPIServer(unittest.TestCase):
             '/v1.0/infrastructures',
             data=json.dumps(post_data),
             content_type="application/json")
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("0ccd202bbf2ccbcded52eab2a64857bf",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('017c4bc1cf1db5c32a0157e21571f97c',
+                           '0ccd202bbf2ccbcded52eab2a64857bf'), None)
 
     def test_delete_infrastructure(self):
         self.banner("DELETE /v1.0/infrastructures/1")
         result = self.app.delete('/v1.0/infrastructures/1')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("8ba55904600d405ea07f71e499ca3aa5",
-                         self.md5sum_str(result.data))
+        self.check_result(result, "8ba55904600d405ea07f71e499ca3aa5", None)
 
     """
     APPLICATIONS
@@ -748,20 +772,16 @@ class TestfgAPIServer(unittest.TestCase):
     def test_get_applications(self):
         self.banner("GET /v1.0/applications")
         result = self.app.get('/v1.0/applications')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("bf6dd500b7a7a72510139484c9588da6",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('ca4891fa366cc77877364956ba7277b1',
+                           'bf6dd500b7a7a72510139484c9588da6'), None)
 
     def test_get_application(self):
         self.banner("GET /v1.0/applications/1")
         result = self.app.get('/v1.0/applications/1')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("473edf1da15f42eaf32992a3d759e631",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('e333a6935246027beeb48bf51b812a2f',
+                           '473edf1da15f42eaf32992a3d759e631'), None)
 
     def test_post_application(self):
         post_data = {'name': 'Test application',
@@ -773,56 +793,43 @@ class TestfgAPIServer(unittest.TestCase):
             '/v1.0/applications',
             data=json.dumps(post_data),
             content_type="application/json")
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("ac77cfbce136e375e4692d07212cb725",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('4bd582a980b6021a13d8f1ea63d4104b',
+                           'ac77cfbce136e375e4692d07212cb725'), None)
 
     def test_delete_application(self):
         self.banner("DELETE /v1.0/applications/1")
         result = self.app.delete('/v1.0/applications/1')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
-                         self.md5sum_str(result.data))
+        self.check_result(result, None, 204)
 
     def test_get_application_input(self):
         self.banner("GET /v1.0/applications/1/input")
         result = self.app.get('/v1.0/applications/1/input')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("b51fdff5c6e13ef4c4ed7a9b4bacd153",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('5aacc0679a0791b896d97cdf50564945',
+                           'b51fdff5c6e13ef4c4ed7a9b4bacd153'), 200)
 
     def test_post_application_input(self):
         self.banner("POST /v1.0/applications/1/input")
         # Upolad a file
         data = {
-            'file[]': (StringIO('Test file stream 1'), 'test_file_1'),
+            'file[]': (io.BytesIO(b"Test file stream 1"), 'test_file_1'),
         }
         result = self.app.post('/v1.0/applications/1/input',
                                data=data,
                                content_type='multipart/form-data')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        # Now upolad another file
-        self.assertEqual("eb546a7dc4a23c03b65eca8bfb74ced1",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('e65a989bab5f764c547c2027e1884b0f',
+                           'eb546a7dc4a23c03b65eca8bfb74ced1'), None)
         data = {
-            'file[]': (StringIO('Test file stream 2'), 'test_file_2'),
+            'file[]': (io.BytesIO(b"Test file stream 2"), 'test_file_2'),
         }
         result = self.app.post('/v1.0/applications/1/input',
                                data=data,
                                content_type='multipart/form-data')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("f5173aca7b43f3895d63313dd6eaec21",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('3d7e1967ebfdbcdba0e0abea71c3b23e',
+                           'f5173aca7b43f3895d63313dd6eaec21'), None)
 
     """
     TASKS
@@ -831,20 +838,16 @@ class TestfgAPIServer(unittest.TestCase):
     def test_get_tasks(self):
         self.banner("GET /v1.0/tasks")
         result = self.app.get('/v1.0/tasks')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("cb8f131e1ec4fb565710a3b1b7d8a233",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('b6fbc3c93e52713f54bb5874917309e9',
+                           'cb8f131e1ec4fb565710a3b1b7d8a233'), None)
 
     def test_get_task(self):
         self.banner("GET /v1.0/tasks/1")
         result = self.app.get('/v1.0/tasks/1')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("6ab2753736658d09062ced3d7fecae6d",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('2e3b9251d2daf3b078b6b9d035fe5da8',
+                           '6ab2753736658d09062ced3d7fecae6d'), None)
 
     def test_post_task(self):
         post_data = {'name': 'Test task',
@@ -856,20 +859,14 @@ class TestfgAPIServer(unittest.TestCase):
             '/v1.0/tasks',
             data=json.dumps(post_data),
             content_type="application/json")
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("e2f5a4efa29a391496ca36935a5f106b",
-                         self.md5sum_str(result.data))
+        self.check_result(result,
+                          ('8737f277494e017f2c078330ca5ef51c',
+                           'e2f5a4efa29a391496ca36935a5f106b'), None)
 
     def test_delete_task(self):
         self.banner("DELETE /v1.0/task/1")
         result = self.app.delete('/v1.0/tasks/1')
-        print("Result: '%s'" % result)
-        print("Result data: '%s'" % result.data)
-        print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("d41d8cd98f00b204e9800998ecf8427e",
-                         self.md5sum_str(result.data))
+        self.check_result(result, None, 204)
 
 
 if __name__ == '__main__':

@@ -17,8 +17,9 @@
 # limitations under the License.
 
 import os
+import sys
 import json
-import ConfigParser
+import yaml
 import logging
 import logging.config
 
@@ -29,7 +30,17 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-03-21 16:25:52'
+
+# setup path
+fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# fgapiserver configuration file
+fgapiserver_config_file = fgapirundir + 'fgapiserver.yaml'
+
+# Logging object
+logger = logging.getLogger(__name__)
 
 
 class FGApiServerConfig(dict):
@@ -47,7 +58,7 @@ class FGApiServerConfig(dict):
     config_file = None
 
     # Default values for configuration settings
-    def_api_ver = '1.0'
+    def_api_ver = 'v1.0'
     def_fg_ver = __version__
 
     # Default values; used when conf file does not exists
@@ -67,7 +78,7 @@ class FGApiServerConfig(dict):
             'fgapisrv_key': '',
             'fgapisrv_crt': '',
             'fgapisrv_logcfg': 'fgapiserver_log.conf',
-            'fgapisrv_dbver': '',
+            'fgapisrv_dbver': '0.0.13',
             'fgapisrv_secret': '0123456789ABCDEF',
             'fgapisrv_notoken': 'False',
             'fgapisrv_notokenusr': 'futuregateway',
@@ -81,13 +92,13 @@ class FGApiServerConfig(dict):
         'fgapiserver_db': {
             'fgapisrv_db_host': 'localhost',
             'fgapisrv_db_port': '3306',
-            'fgapisrv_db_user': 'localhost',
+            'fgapisrv_db_user': 'fgapiserver',
             'fgapisrv_db_pass': 'fgapiserver_password',
             'fgapisrv_db_name': 'fgapiserver'},
         'gridengine_ei': {
             'utdb_host': 'localhost',
             'utdb_port': '3306',
-            'utdb_user': 'localhost',
+            'utdb_user': 'tracking_user',
             'utdb_pass': 'fgapiserver_password',
             'utdb_name': 'fgapiserver',
             'fgapisrv_geappid': '10000'}
@@ -116,24 +127,27 @@ class FGApiServerConfig(dict):
         """
         dict.__init__(self)
 
-        # Parse configuration file
-        config = ConfigParser.ConfigParser()
-        if (config_file is None or
-                len(config.read(config_file)) == 0):
-            self.fg_config_messages += (
-                    "[WARNING]: Couldn't find configuration file '%s'; "
-                    " default options will be used\n" % config_file)
-        else:
-            # Store configuration file name
+        # Load config from config_file
+        if config_file is None:
+            config_file = ''
+        conf_yaml = {}
+        try:
+            conf_file = open(config_file, 'r')
+            conf_yaml = yaml.safe_load(conf_file)
             self.config_file = config_file
+        except IOError:
+            logging.warning(
+                "Couldn't find configuration file '%s'; "
+                " default options will be used\n" % config_file)
+            pass
 
         # Load configuration
         for section in self.defaults.keys():
             for conf_name in self.defaults[section].keys():
                 def_value = self.defaults[section][conf_name]
                 try:
-                    self[conf_name] = config.get(section, conf_name)
-                except ConfigParser.Error:
+                    self[conf_name] = conf_yaml[section][conf_name]
+                except KeyError:
                     self[conf_name] = def_value
                     self.fg_config_messages +=\
                         ("[WARNING]:Couldn't find option '%s' "
@@ -151,13 +165,10 @@ class FGApiServerConfig(dict):
                 except KeyError:
                     # Corresponding environment variable not exists
                     pass
-        # Logging
-        logging.config.fileConfig(self['fgapisrv_logcfg'])
+
         # Show configuration in Msg variable
         if self['fgapisrv_debug']:
-            self.fg_config_messages += self.show_conf()
-            logging.debug("Initialized configuration object")
-            logging.debug("Messages: %s" % self.fg_config_messages)
+            logging.debug(self.show_conf())
 
     def __getitem__(self, key):
         conf_value = dict.__getitem__(self, key)
@@ -188,6 +199,13 @@ class FGApiServerConfig(dict):
                 section_config[key] = self[key]
             config[section] = section_config
         return json.dumps(config, indent=int(self['fgjson_indent']))
+
+    def __str__(self):
+        """
+        Perfor object string representation equals to representation
+        :return:
+        """
+        return self.__repr__()
 
     def show_conf(self):
         """
@@ -220,3 +238,7 @@ class FGApiServerConfig(dict):
             for key in cfg_dict:
                 value = cfg_dict[key]
                 self[key] = value
+
+
+# FutureGateway configuration instance
+fg_config = FGApiServerConfig(fgapiserver_config_file)

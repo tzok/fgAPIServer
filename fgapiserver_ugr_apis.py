@@ -22,12 +22,10 @@ from flask import request
 from flask import Response
 from flask import Blueprint
 from flask_login import login_required, current_user
-from fgapiserver_config import FGApiServerConfig
+from fgapiserver_config import fg_config
+from fgapiserver_db import fgapisrv_db
 from fgapiserver_auth import authorize_user
-from fgapiserver_tools import check_api_ver,\
-                              get_fgapiserver_db
-import os
-import sys
+from fgapiserver_tools import check_api_ver
 import json
 import logging
 
@@ -41,26 +39,13 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
-
-# setup path
-fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# fgapiserver configuration file
-fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
-
-# Load configuration
-fg_config = FGApiServerConfig(fgapiserver_config_file)
+__update__ = '2019-03-21 16:25:52'
 
 # Logging
-logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
+logger = logging.getLogger(__name__)
 
 # Define Blueprint for user groups and roles APIs
 ugr_apis = Blueprint('ugr_apis', __name__, template_folder='templates')
-
-# Get the database object
-fgapisrv_db = get_fgapiserver_db()
 
 
 @ugr_apis.route('/<apiver>/users', methods=['GET', 'POST'])
@@ -246,7 +231,7 @@ def user_groups(user, apiver=fg_config['fgapiver']):
                 if fgapisrv_db.user_exists(user):
                     group_list = fgapisrv_db.user_groups_retrieve(user)
                     status = 200
-                    response = {'groups':  group_list}
+                    response = {'groups': group_list}
                 else:
                     status = 404
                     response = {
@@ -372,7 +357,7 @@ def user_tasks(user, apiver=fg_config['fgapiver']):
                         task_record = fgapisrv_db.get_task_record(task_id)
                         tasks_list += [task_record, ]
                     status = 200
-                    response = {'tasks':  tasks_list}
+                    response = {'tasks': tasks_list}
                 else:
                     status = 404
                     response = {
