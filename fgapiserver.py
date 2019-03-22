@@ -58,7 +58,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-22 13:08:03'
+__update__ = '2019-03-22 17:13:41'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
@@ -1770,8 +1770,8 @@ def limit_remote_addr():
     # Block blacklisted IPs
     if request.remote_addr in filtered_ips:
         abort(403)  # Forbidden
-    # Override configuration settings from the database
-    fg_config = update_db_config(fg_config)
+    # Override configuration settings from the database if necessary
+    fg_config.load_config(update_db_config(fg_config))
 
 
 #
