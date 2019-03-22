@@ -960,12 +960,12 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             record = cursor.fetchone()
             if record is not None:
-                result = record[0]
+                result = int(record[0])
             self.query_done(
-                ("same group for user '%s' "
-                 "and '%s' is %s" % (user_1,
-                                     user_2,
-                                     int(result) > 0)))
+                "same group for user '%s' "
+                "and '%s' is %s" % (user_1,
+                                    user_2,
+                                    result > 0))
         except MySQLdb.Error as e:
             self.catch_db_error(e, db, safe_transaction)
         finally:
