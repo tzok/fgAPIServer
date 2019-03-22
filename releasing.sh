@@ -132,6 +132,12 @@ check_style_and_tests() {
 
   RES=0
   PYTHON_2=$(which $PYTHON2)
+  [ "$PYTHON_2" = "" ] &&\
+    echo "which command could not determine python2; trying with 'python'" &&\
+    PYTHON_2=$(python --version 2>&1 | awk '{ print substr($2,1,1) }')
+  [ "$PYTHON_2" = "2" ] &&\
+    echo "python2 is python" &&\
+    PYTHON2=python
   if [ "$PYTHON_2" != "" ]; then
     venv2 &&\
     check_style &&\
@@ -146,6 +152,12 @@ check_style_and_tests() {
     return 1
 
   PYTHON_3=$(which $PYTHON3)
+  [ "$PYTHON_3" = "" ] &&\
+    echo "which command could not determine python3; trying with 'python'" &&\
+    PYTHON_3=$(python --version 2>&1 | awk '{ print substr($2,1,1) }')
+  [ "$PYTHON_3" = "3" ] &&\
+    echo "python3 is python" &&\
+    PYTHON3=python
   if [ "$PYTHON_3" != "" ]; then
     venv3 &&\
     check_style &&\
