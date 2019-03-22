@@ -42,7 +42,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-21 16:25:52'
+__update__ = '2019-03-22 11:41:02'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -216,7 +216,7 @@ class TestfgAPIServer(unittest.TestCase):
         state = fgapisrv_db.get_state()
         print("DB state: %s" % (state,))
         assert state[0] is False
-        assert result == '1'
+        assert result > 0
 
     def test_dbobj_get_user_info_by_name(self):
         self.banner("Testing fgapiserverdb get_user_info_by_name")

@@ -58,6 +58,7 @@ test_suite() {
       python -m unittest -f ${test} || RES=1
       [ $RES -ne 0 ] &&\
         echo "Error on test: '$test'" &&\
+        cd - &&\
         break
     done
   fi
@@ -130,45 +131,41 @@ check_style_and_tests() {
       return 1
 
   RES=0
-  PY2DONE=0
   PYTHON_2=$(which $PYTHON2)
   if [ "$PYTHON_2" != "" ]; then
     venv2 &&\
     check_style &&\
     tests_py2 &&\
     PY2_DONE=1 ||\
-    echo "Unit tests failed while testing for python2"
+    PY2_DONE=0
   else
     echo "No python 2 found, skipping tests for this version"
   fi
+  [ $((PY2_DONE)) -eq 0 ] &&\
+    echo "Releasing chain for python2 failed" &&\
+    return 1
 
-  PY3DONE=0
   PYTHON_3=$(which $PYTHON3)
   if [ "$PYTHON_3" != "" ]; then
     venv3 &&\
     check_style &&\
     tests_py3 &&\
     PY3_DONE=1 ||\
-    echo "Unit tests failed while testing for python3"
+    PY3_DONE=0 
   else
     echo "No python 3 found, skipping tests for this version"
   fi
+  [ $((PY3_DONE)) -eq 0 ] &&\
+    echo "Releasing chain for python3 failed" &&\
+    return 1
 
   # No python found at all
   [ $((PY2_DONE)) -eq 0 -a\
     $((PY3_DONE)) -eq 0 ] &&\
     echo "Neither python2 nor python3 found" &&\
-    RES=1
-  # Python2 found but tests failed
-  [  "$PYTHON_2" != "" -a $((PY2_DONE)) -eq 0 ] &&\
-    echo "Python2 tests failed" &&\
-    RES=1
-  # Python3 found but tests failed
-  [  "$PYTHON_3" != "" -a $((PY3_DONE)) -eq 0 ] &&\
-    echo "Python3 tests failed" &&\
-    RES=1
-  # If no error RES will be 0
-  return $RES
+    return 1 
+  
+  return 0
 }
 
 #

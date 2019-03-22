@@ -58,7 +58,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-21 16:25:52'
+__update__ = '2019-03-22 11:41:02'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
@@ -86,7 +86,9 @@ login_manager.init_app(app)
 
 @login_manager.request_loader
 def load_user(req):
+
     logger.debug("LoadUser: begin")
+
     # Login manager could be disabled in conf file
     if fg_config['fgapisrv_notoken']:
         logger.debug("LoadUser: notoken is true")
@@ -342,7 +344,9 @@ def get_request_token(auth_request):
 @app.route('/auth', methods=['GET', 'POST'])
 @app.route('/<apiver>/auth', methods=['GET', 'POST'])
 def auth(apiver=fg_config['fgapiver']):
+
     logger.debug('auth(%s): %s' % (request.method, request.values.to_dict()))
+
     session_token = ""
     delegated_token = ""
     response = {}
@@ -482,9 +486,9 @@ def index(apiver=fg_config['fgapiver']):
 @app.route('/<apiver>/token', methods=['GET', ])
 @login_required
 def token(apiver=fg_config['fgapiver']):
-    global fgapisrv_db
-    global logger
+
     logger.debug('token(%s): %s' % (request.method, request.values.to_dict()))
+
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     user_token = current_user.get_token()
@@ -529,6 +533,7 @@ def token(apiver=fg_config['fgapiver']):
 def tasks(apiver=fg_config['fgapiver']):
 
     logger.debug('tasks(%s): %s' % (request.method, request.values.to_dict()))
+
     user_name = current_user.get_name()
     user_id = current_user.get_id()
     logger.debug("user_name: '%s'" % user_name)
@@ -690,6 +695,7 @@ def tasks(apiver=fg_config['fgapiver']):
         'PATCH'])
 @login_required
 def task_id(apiver=fg_config['fgapiver'], taskid=None):
+
     logger.debug("tasks(%s)/%s: %s" % (request.method,
                                        taskid,
                                        request.values.to_dict()))
@@ -860,6 +866,7 @@ def task_id(apiver=fg_config['fgapiver'], taskid=None):
                     'POST'])
 @login_required
 def task_id_input(apiver=fg_config['fgapiver'], taskid=None):
+
     logger.debug('task_id_input(%s): %s' % (request.method,
                                             request.values.to_dict()))
     user_name = current_user.get_name()
@@ -970,8 +977,7 @@ def task_id_input(apiver=fg_config['fgapiver'], taskid=None):
 
 @app.route('/<apiver>/callback/<task_id>', methods=['GET', 'POST'])
 def task_callback(apiver=fg_config['fgapiver'], taskid=None):
-    global fgapisrv_db
-    global logger
+
     logger.debug('callback(%s)/%s: %s' % (request.method,
                                           taskid,
                                           request.values.to_dict()))

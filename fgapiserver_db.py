@@ -42,7 +42,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-21 16:25:52'
+__update__ = '2019-03-22 11:41:02'
 
 """
  Database connection default settings

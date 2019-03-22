@@ -39,7 +39,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-21 16:25:52'
+__update__ = '2019-03-22 11:41:02'
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -51,7 +51,6 @@ ugr_apis = Blueprint('ugr_apis', __name__, template_folder='templates')
 @ugr_apis.route('/<apiver>/users', methods=['GET', 'POST'])
 @login_required
 def users(apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('users(%s): %s' % (request.method,
                                      request.values.to_dict()))
@@ -209,7 +208,6 @@ def users_user(user, apiver=fg_config['fgapiver']):
                 methods=['GET', 'POST', 'DELETE'])
 @login_required
 def user_groups(user, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('user_groups(%s)/%s: %s' % (request.method,
                                               user,
@@ -329,7 +327,6 @@ def user_groups(user, apiver=fg_config['fgapiver']):
 @ugr_apis.route('/<apiver>/users/<user>/tasks', methods=['GET', ])
 @login_required
 def user_tasks(user, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('user_tasks(%s)/%s: %s' % (request.method,
                                              user,
@@ -382,7 +379,6 @@ def user_tasks(user, apiver=fg_config['fgapiver']):
     '/<apiver>/users/<user>/tasks/<task_id>', methods=['GET', ])
 @login_required
 def user_tasks_id(user, task_id, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('user_tasks(%s)/%s: %s' % (request.method,
                                              user,
@@ -428,7 +424,6 @@ def user_tasks_id(user, task_id, apiver=fg_config['fgapiver']):
                 methods=['GET', 'POST', 'DELETE', 'PATCH'])
 @login_required
 def users_user_data(user, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('user_data(%s)/%s: %s' % (request.method,
                                             user,
@@ -553,7 +548,6 @@ def users_user_data(user, apiver=fg_config['fgapiver']):
                 methods=['GET', 'POST', 'DELETE', 'PATCH'])
 @login_required
 def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('user_data_name(%s, %s)/%s: %s'
                   % (request.method,
@@ -680,7 +674,6 @@ def users_user_data_name(user, data_name, apiver=fg_config['fgapiver']):
 @ugr_apis.route('/<apiver>/groups', methods=['GET', 'POST'])
 @login_required
 def groups(apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('groups(%s): %s' % (request.method,
                                       request.values.to_dict()))
@@ -747,7 +740,6 @@ def groups(apiver=fg_config['fgapiver']):
 @ugr_apis.route('/<apiver>/groups/<group>', methods=['GET', 'POST'])
 @login_required
 def groups_group(group, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('groups_group(%s)/%s: %s' % (request.method,
                                                group,
@@ -796,7 +788,6 @@ def groups_group(group, apiver=fg_config['fgapiver']):
 @ugr_apis.route('/<apiver>/groups/<group>/apps', methods=['GET', 'POST'])
 @login_required
 def groups_group_apps(group, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('groups_group_apps(%s)/%s: %s' % (request.method,
                                                     group,
@@ -873,7 +864,6 @@ def groups_group_apps(group, apiver=fg_config['fgapiver']):
 @ugr_apis.route('/<apiver>/groups/<group>/roles', methods=['GET', 'POST'])
 @login_required
 def groups_group_roles(group, apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('groups_group_roles(%s)/%s: %s' % (request.method,
                                                      group,
@@ -949,7 +939,6 @@ def groups_group_roles(group, apiver=fg_config['fgapiver']):
 @ugr_apis.route('/<apiver>/roles', methods=['GET', ])
 @login_required
 def roles(apiver=fg_config['fgapiver']):
-    global fgapisrv_db
 
     logging.debug('groups(%s): %s' % (request.method,
                                       request.values.to_dict()))
