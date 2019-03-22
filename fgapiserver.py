@@ -1767,7 +1767,6 @@ filtered_ips = ('193.206.190.155', )
 # Common check for requests
 @app.before_request
 def limit_remote_addr():
-    global fg_config
     # Block blacklisted IPs
     if request.remote_addr in filtered_ips:
         abort(403)  # Forbidden

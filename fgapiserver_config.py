@@ -158,6 +158,9 @@ class FGApiServerConfig(dict):
                 # configuration setting present in the configuration file
                 try:
                     env_value = os.environ[conf_name.upper()]
+                    # environ may return "''" for some variables
+                    if env_value[-1:] == "'" and env_value[0:1] == "'":
+                        env_value = env_value[1:-1]
                     self.fg_config_messages += \
                         ("Environment bypass of '%s': '%s' <- '%s'\n" %
                          (conf_name, self[conf_name], env_value))
