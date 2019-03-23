@@ -30,7 +30,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-22 21:51:37'
+__update__ = '2019-03-23 16:12:11'
 
 # setup path
 fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
@@ -177,8 +177,10 @@ class FGApiServerConfig(dict):
         conf_value = dict.__getitem__(self, key)
         if key in self.bool_types:
             conf_value = (str(conf_value).lower() == 'true')
-        if key in self.int_types:
+        elif key in self.int_types:
             conf_value = int(conf_value)
+        if conf_value is None:
+            conf_value = ''
         return conf_value
 
     def __setitem__(self, key, value):

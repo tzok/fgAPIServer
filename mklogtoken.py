@@ -27,7 +27,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-22 21:51:37'
+__update__ = '2019-03-23 16:12:11'
 
 key = "0123456789ABCDEF"  # (!) Please use fgapiserver_secret value
 username = "futuregateway"
