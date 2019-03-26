@@ -19,12 +19,14 @@
 # user_apis_queries - Provide queries for user_apis tests
 #
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-19 11:47:47'
 
 # user_apis tests queries
 user_apis_queries = [
@@ -178,7 +180,104 @@ user_apis_queries = [
               '                           creation)\n'
               'values (%s, %s, now());',
      'result': []},
-
+    {'id': 16,
+     'query': 'select ud.data_id,\n'
+              '       ud.data_name,\n'
+              '       ud.data_value,\n'
+              '       ud.data_desc,\n'
+              '       ud.data_proto,\n'
+              '       ud.data_type,\n'
+              '       date_format(ud.creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(ud.last_change,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+              'from fg_user_data ud\n'
+              'where ud.user_id=%s\n'
+              '  and ud.data_id = (select max(data_id)\n'
+              '                    from fg_user_data\n'
+              '                    where user_id=ud.user_id\n'
+              '                      and data_name=ud.data_name);',
+     'result': [[1,
+                 'TEST_DATA_NAME',
+                 'TEST_DATA_VALUE',
+                 'TEST_DATA_DESCRIPTION',
+                 'TEST_DATA_PROTO',
+                 'TEST_DATA_TYPE',
+                 '01-01-1970',
+                 '01-01-1970'], ]},
+    {'id': 17,
+     'query': 'insert into fg_user_data (user_id,\n'
+              '                          data_id,\n'
+              '                          data_name,\n'
+              '                          data_value,\n'
+              '                          data_desc,\n'
+              '                          data_proto,\n'
+              '                          data_type,\n'
+              '                          creation,\n'
+              '                          last_change)\n'
+              'select %s,\n'
+              '       (select if(max(data_id) is NULL,\n'
+              '                  1,\n'
+              '                  max(data_id)+1)\n'
+              '        from fg_user_data\n'
+              '        where user_id = %s\n'
+              '          and data_name = %s),\n'
+              '       %s,\n'
+              '       %s,\n'
+              '       %s,\n'
+              '       %s,\n'
+              '       %s,\n'
+              '       now(),\n'
+              '       now();',
+     'result': None},
+    {'id': 18,
+     'query': 'select max(data_id)\n'
+              'from fg_user_data\n'
+              'where user_id=%s\n'
+              '  and data_name=%s;',
+     'result': '1'},
+    {'id': 19,
+     'query': 'update fg_user_data\n'
+              'set data_value = %s,\n'
+              '    data_desc = %s,\n'
+              '    data_proto = %s,\n'
+              '    data_type = %s,\n'
+              '    last_change = now()\n'
+              'where user_id=%s\n'
+              '  and data_id=%s\n'
+              '  and data_name=%s;',
+     'result': None},
+    {'id': 20,
+     'query': 'delete from fg_user_data\n'
+              'where user_id=%s\n'
+              '  and data_name=%s;',
+     'result': None},
+    {'id': 21,
+     'query': 'select ud.data_id,\n'
+              '       ud.data_name,\n'
+              '       ud.data_value,\n'
+              '       ud.data_desc,\n'
+              '       ud.data_proto,\n'
+              '       ud.data_type,\n'
+              '       date_format(ud.creation,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       date_format(ud.last_change,\n'
+              '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+              'from fg_user_data ud\n'
+              'where ud.user_id=%s\n'
+              '  and ud.data_id=(select max(data_id)\n'
+              '                  from fg_user_data\n'
+              '                  where user_id=ud.user_id\n'
+              '                    and data_name=ud.data_name)\n'
+              '  and ud.data_name=%s;',
+     'result': [[1,
+                 'TEST_DATA_NAME',
+                 'TEST_DATA_VALUE',
+                 'TEST_DATA_DESCRIPTION',
+                 'TEST_DATA_PROTO',
+                 'TEST_DATA_TYPE',
+                 '01-01-1970',
+                 '01-01-1970'], ]},
 ]
 
 # user_apis tests queries

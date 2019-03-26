@@ -20,13 +20,14 @@ from Crypto.Cipher import ARC4
 import time
 import base64
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.7-1"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
-
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-19 11:47:47'
 
 key = "0123456789ABCDEF"  # (!) Please use fgapiserver_secret value
 username = "futuregateway"
@@ -61,12 +62,12 @@ def token_info(key, token):
 if __name__ == "__main__":
     token = token_encode(key, username, password)
     tinfo = token_decode(key, token)
-    print ("Token with key: '%s'; "
-           "encoding: 'username:=%s:"
-           "password=%s:"
-           "timestamp=<issue_time>' is '%s'"
-           % (key, username, password, token))
-    print "Decoded token: '%s' -> '%s'" % (token, tinfo)
+    print("Token with key: '%s'; "
+          "encoding: 'username:=%s:"
+          "password=%s:"
+          "timestamp=<issue_time>' is '%s'"
+          % (key, username, password, token))
+    print("Decoded token: '%s' -> '%s'" % (token, tinfo))
     username, password, timestamp = token_info(token)
-    print ("Token info: 'username=%s:password=%s:timestamp=%s'"
-           % (username, password, timestamp))
+    print("Token info: 'username=%s:password=%s:timestamp=%s'"
+          % (username, password, timestamp))

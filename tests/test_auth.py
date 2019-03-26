@@ -27,12 +27,14 @@ import base64
 from fgapiserver import app
 from mklogtoken import token_encode
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-19 11:47:47'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -53,10 +55,11 @@ class TestUsersAPIs(unittest.TestCase):
 
     @staticmethod
     def banner(test_name):
-        print ""
-        print "------------------------------------------------"
-        print " Testing: %s" % test_name
-        print "------------------------------------------------"
+        print("\n"
+              "------------------------------------------------\n"
+              " Testing: %s\n"
+              "------------------------------------------------\n"
+              % test_name)
 
     @staticmethod
     def md5sum(filename, blocksize=65536):
@@ -71,7 +74,7 @@ class TestUsersAPIs(unittest.TestCase):
         return hashlib.md5(string).hexdigest()
 
     #
-    # auth/ endpoint 
+    # auth/endpoint
     #
 
     # Baseline authentication must be activated
@@ -132,7 +135,7 @@ class TestUsersAPIs(unittest.TestCase):
     # MD5 values are taken from the self.md5sum_str(result.data) value
     # then they are hardcoded in the assertEqual statement
 
-    # Token in header, just shows token info 
+    # Token in header, just shows token info
     def test_get_log_token_header(self):
         self.banner("GET /v1.0/auth")
         headers = {
@@ -141,10 +144,10 @@ class TestUsersAPIs(unittest.TestCase):
         url = '/v1.0/auth'
         result = self.app.get(url,
                               headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
     # Session token from credentials as filter
@@ -154,13 +157,12 @@ class TestUsersAPIs(unittest.TestCase):
         test_password_b64 = base64.b64encode(test_password)
         url = '/v1.0/auth?username=test_user&password=%s' % test_password_b64
         result = self.app.get(url)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
-     
     # Session token creation user:password
     def test_post_users_column(self):
         self.banner("POST /v1.0/auth")
@@ -176,10 +178,10 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
     # Session token creation user/password
@@ -197,16 +199,16 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("4f05b2ed2ec408503e56c633a9315ecd",
+        print(result)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
                          self.md5sum_str(result.data))
 
 
 if __name__ == '__main__':
-    print "----------------------------------"
-    print "Starting unit tests ..."
-    print "----------------------------------"
+    print("----------------------------------\n"
+          "Starting unit tests ...\n"
+          "----------------------------------\n")
     unittest.main(failfast=stop_at_fail)
-    print "Tests completed"
+    print("Tests completed")

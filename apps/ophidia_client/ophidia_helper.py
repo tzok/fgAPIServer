@@ -28,7 +28,7 @@ def get_png(output_pointers, name, pwd, dst_output):
 
     png_url = base_url + '/sessions.php/' + \
         session_id + export_path + workflow_id + png_name
-    print png_url
+    print(png_url)
 
     post_data = {'username': name, 'password': pwd, 'submit': '"login"'}
     postfields = urlencode(post_data)
@@ -50,7 +50,7 @@ def get_png(output_pointers, name, pwd, dst_output):
     except pycurl.error as e:
         err_msg = "Failed download on %s (pycurl %s) !\n-----\n" % (png_url, e)
         sys.stderr.write(err_msg)
-        print err_msg
+        print(err_msg)
         result = "-1"
 
     os.remove('ophidia_cookie')

@@ -25,7 +25,7 @@ err() {
 local_exec() {
   OUT=$(mktemp)
   ERR=$(mktemp)
-  $* >$OUT 2>$ERR
+  ./$* >$OUT 2>$ERR
   while read ln; do
     out "$ln"
   done < $OUT

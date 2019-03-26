@@ -19,13 +19,14 @@
 # fgapiserver_queries - Provide queries for fgapiserver tests
 #
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
-
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-19 11:47:47'
 
 fgapiserver_queries = [
     {'id': 0,
@@ -33,7 +34,7 @@ fgapiserver_queries = [
      'result': [['test', ], ]},
     {'id': 1,
      'query': 'select version from db_patches order by id desc limit 1;',
-     'result': [['0.0.12b'], ]},
+     'result': [['0.0.13'], ]},
     {'id': 2,
      'query': 'select id\n'
               'from fg_user\n'
@@ -1099,8 +1100,8 @@ fgapiserver_queries = [
               'where token=%s;',
      'result': [['1',
                  'test_user',
-                 None,
-                 None,
+                 '01/01/1970',
+                 '01/01/1970',
                  1,
                  1000, ], ]},
     {'id': 101,

@@ -19,12 +19,14 @@
 import unittest
 from mklogtoken import token_encode, token_decode, token_info
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-19 11:47:47'
 
 
 class TestMkLogToken(unittest.TestCase):
@@ -49,7 +51,8 @@ class TestMkLogToken(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print "----------------------------------"
-    print "Starting unit tests ..."
-    print "----------------------------------"
+    print("----------------------------------\n"
+          "Starting unit tests ...\n"
+          "----------------------------------\n")
     unittest.main(failfast=True)
+    print("Tests completed")

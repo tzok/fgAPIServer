@@ -27,12 +27,15 @@ import base64
 from fgapiserver import app
 from mklogtoken import token_encode
 
-__author__ = "Riccardo Bruno"
-__copyright__ = "2015"
-__license__ = "Apache"
-__version__ = "v0.0.2-30-g37540b8-37540b8-37"
-__maintainer__ = "Riccardo Bruno"
-__email__ = "riccardo.bruno@ct.infn.it"
+__author__ = 'Riccardo Bruno'
+__copyright__ = '2019'
+__license__ = 'Apache'
+__version__ = 'v0.0.10'
+__maintainer__ = 'Riccardo Bruno'
+__email__ = 'riccardo.bruno@ct.infn.it'
+__status__ = 'devel'
+__update__ = '2019-03-19 11:47:47'
+
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -49,10 +52,11 @@ class TestUsersAPIs(unittest.TestCase):
 
     @staticmethod
     def banner(test_name):
-        print ""
-        print "------------------------------------------------"
-        print " Testing: %s" % test_name
-        print "------------------------------------------------"
+        print("\n"
+              "------------------------------------------------\n"
+              " Testing: %s\n"
+              "------------------------------------------------\n"
+              % test_name)
 
     @staticmethod
     def md5sum(filename, blocksize=65536):
@@ -154,10 +158,10 @@ class TestUsersAPIs(unittest.TestCase):
         result = self.app.get(
             url,
             headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("34fc109845dabbdf2ba6022048c9979d",
+        self.assertEqual("d217201fe601c2cd9475d17d2b779091",
                          self.md5sum_str(result.data))
 
     """
@@ -172,9 +176,8 @@ class TestUsersAPIs(unittest.TestCase):
         url = '/v1.0/users'
         result = self.app.get(url,
                               headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("1f6e310992a628fa7473c4f63c561ec5",
                          self.md5sum_str(result.data))
 
@@ -200,9 +203,8 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("4bd146be73df313b35af48f107f3a23d",
                          self.md5sum_str(result.data))
 
@@ -214,9 +216,8 @@ class TestUsersAPIs(unittest.TestCase):
         url = '/v1.0/users/test'
         result = self.app.get(url,
                               headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
                          self.md5sum_str(result.data))
 
@@ -235,9 +236,8 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
                          self.md5sum_str(result.data))
 
@@ -249,9 +249,8 @@ class TestUsersAPIs(unittest.TestCase):
         url = '/v1.0/groups'
         result = self.app.get(url,
                               headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("30661885dc0cdeb44de575468597f446",
                          self.md5sum_str(result.data))
 
@@ -263,9 +262,8 @@ class TestUsersAPIs(unittest.TestCase):
         url = '/v1.0/users/test/groups'
         result = self.app.get(url,
                               headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("30661885dc0cdeb44de575468597f446",
                          self.md5sum_str(result.data))
 
@@ -281,9 +279,8 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual("b8d1575a174363bfe4f586af1a224043",
                          self.md5sum_str(result.data))
 
@@ -296,11 +293,11 @@ class TestUsersAPIs(unittest.TestCase):
                % (user, password))
         self.banner("GET '%s'" % url)
         result = self.app.get(url)
+        md5val = self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % md5val)
         self.assertEqual(result.status_code, 200)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("d499b1c6c90550b83f4ce029fdb166c7",
-                         self.md5sum_str(result.data))
+        self.assertEqual("761b5b5b0e064a0e8c44db836b80ab64", md5val)
 
     # Get access token from POST auth/ username/base64(password)
     def test_post_auth(self):
@@ -315,10 +312,212 @@ class TestUsersAPIs(unittest.TestCase):
             url,
             content_type="application/json",
             headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
-        self.assertEqual("6dc5ac7125d809b087b0c461ad2ba342",
+        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
+                         self.md5sum_str(result.data))
+
+    # Get user data of test_user (GET) /users/test_user/data
+    def test_user_data(self):
+        self.banner("GET /v1.0/users/test_user/data")
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        url = '/v1.0/users/test_user/data'
+        result = self.app.get(url,
+                              headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual("cb1a9cd6a613502200f149746c3deee6",
+                         self.md5sum_str(result.data))
+
+    # Add user data to test_user (POST) /users/test_user/data
+    def test_post_user_data(self):
+        self.banner("POST /v1.0/users/test_user/data")
+        url = '/v1.0/users/test_user/data'
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            "data": [
+              {"data_name": "TEST_DATA_NAME_1",
+               "data_value": "TEST_DATA_VALUE_1",
+               "data_desc": "TEST_DATA_DESCRIPTION_1",
+               "data_proto": "TEST_DATA_PROTO_1",
+               "data_type": "TEST_DATA_TYPE_1"}, ]
+        }
+        result = self.app.post(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual("c360b0c02967fbae59731216c095734e",
+                         self.md5sum_str(result.data))
+
+        # Add user data to test_user (POST) /users/test_user/data
+        def test_post_user_data(self):
+            self.banner("POST /v1.0/users/test_user/data")
+            url = '/v1.0/users/test_user/data'
+            headers = {
+                'Authorization': 'TEST_ACCESS_TOKEN',
+            }
+            post_data = {
+                "data": [
+                    {"data_name": "TEST_DATA_NAME_1",
+                     "data_value": "TEST_DATA_VALUE_1",
+                     "data_desc": "TEST_DATA_DESCRIPTION_1",
+                     "data_proto": "TEST_DATA_PROTO_1",
+                     "data_type": "TEST_DATA_TYPE_1"}, ]
+            }
+            result = self.app.post(
+                url,
+                data=json.dumps(post_data),
+                content_type="application/json",
+                headers=headers)
+            self.assertEqual(result.status_code, 201)
+            print(result.data)
+            print("MD5: '%s'" % self.md5sum_str(result.data))
+            self.assertEqual("c360b0c02967fbae59731216c095734e",
+                             self.md5sum_str(result.data))
+
+    # Modify user data to test_user (PATCH) /users/test_user/data
+    def test_patch_user_data(self):
+        self.banner("PATCH /v1.0/users/test_user/data")
+        url = '/v1.0/users/test_user/data'
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            "data": [
+                {"data_name": "TEST_DATA_NAME_1",
+                 "data_value": "TEST_DATA_VALUE_1",
+                 "data_desc": "TEST_DATA_DESCRIPTION_1",
+                 "data_proto": "TEST_DATA_PROTO_1",
+                 "data_type": "TEST_DATA_TYPE_1"}, ]
+        }
+        result = self.app.patch(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual("c360b0c02967fbae59731216c095734e",
+                         self.md5sum_str(result.data))
+
+    # Delete user data to test_user (PATCH) /users/test_user/data
+    def test_delete_user_data(self):
+        self.banner("DELETE /v1.0/users/test_user/data")
+        url = '/v1.0/users/test_user/data'
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            "data": [
+                {"data_name": "TEST_DATA_NAME"}, ]
+        }
+        result = self.app.delete(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual("21a94e203b2ecb70f9fa1ea1ee09c119",
+                         self.md5sum_str(result.data))
+
+    # Get data_name from user data of test_user:
+    # (GET) /users/test_user/data/TEST_DATA_NAME
+    def test_user_data_data_name(self):
+        self.banner("GET /v1.0/users/test_user/data/TEST_DATA_NAME")
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        url = '/v1.0/users/test_user/data/data_name'
+        result = self.app.get(url,
+                              headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual("311a143087daeb030e865ffbd254e67d",
+                         self.md5sum_str(result.data))
+
+    # Add user data TEST_DATA_NAME to test_user
+    # (POST) /users/test_user/data/TEST_DATA_NAME
+    def test_post_user_data_data_name(self):
+        self.banner("POST /v1.0/users/test_user/data/TEST_DATA_NAME")
+        url = '/v1.0/users/test_user/data/TEST_DATA_NAME'
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            "data_proto": "TEST_DATA_PROTO",
+            "creation": "01-01-1970",
+            "data_value": "TEST_DATA_VALUE",
+            "data_type": "TEST_DATA_TYPE",
+            "data_desc": "TEST_DATA_DESCRIPTION",
+            "last_change": "01-01-1970"
+        }
+        result = self.app.post(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual("94439e3f4fdfe6db1eb77d748b6432e0",
+                         self.md5sum_str(result.data))
+
+    # Modify user data TEST_DATA_NAME to test_user
+    # (PATCH) /users/test_user/data/TEST_DATA_NAME
+    def test_patch_user_data_data_name(self):
+        self.banner("PATCH /v1.0/users/test_user/data/TEST_DATA_NAME")
+        url = '/v1.0/users/test_user/data/TEST_DATA_NAME'
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {
+            "data_name": "TEST_DATA_NAME_1",
+            "data_value": "TEST_DATA_VALUE_1",
+            "data_desc": "TEST_DATA_DESCRIPTION_1",
+            "data_proto": "TEST_DATA_PROTO_1",
+            "data_type": "TEST_DATA_TYPE_1"
+        }
+        result = self.app.patch(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual("cffd220dd6f3e76fee6129ec1ac37387",
+                         self.md5sum_str(result.data))
+
+    # Delete user data TEST_DATA_NAME to test_user
+    # (DELETE) /users/test_user/data/TEST_DATA_NAME
+    def test_delete_user_data_data_name(self):
+        self.banner("DELETE /v1.0/users/test_user/data/TEST_DATA_NAME")
+        url = '/v1.0/users/test_user/data/TEST_DATA_NAME'
+        headers = {
+            'Authorization': 'TEST_ACCESS_TOKEN',
+        }
+        post_data = {}
+        result = self.app.delete(
+            url,
+            data=json.dumps(post_data),
+            content_type="application/json",
+            headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual("cf004012cf8b5bfd10cb415ecf03269e",
                          self.md5sum_str(result.data))
 
     #
@@ -340,9 +539,9 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 201)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("6a4376e47c877f672e47eac39e0f106e",
                          self.md5sum_str(result.data))
 
@@ -363,9 +562,9 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("1fe788c3f2420c8655e5cf2e8155e32b",
                          self.md5sum_str(result.data))
 
@@ -379,9 +578,9 @@ class TestUsersAPIs(unittest.TestCase):
         self.banner("GET '%s'" % url)
         result = self.app.get(url,
                               headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("61ac839061f508f995cb371009641151",
                          self.md5sum_str(result.data))
 
@@ -400,8 +599,8 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 201)
         self.assertEqual("41e0a74c8a471c981bcb5809fdd041b2",
                          self.md5sum_str(result.data))
@@ -416,9 +615,9 @@ class TestUsersAPIs(unittest.TestCase):
         self.banner("GET '%s'" % url)
         result = self.app.get(url,
                               headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
                          self.md5sum_str(result.data))
 
@@ -437,9 +636,9 @@ class TestUsersAPIs(unittest.TestCase):
             data=json.dumps(post_data),
             content_type="application/json",
             headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 201)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("ac2771bff10d98720167fac7136ccdce",
                          self.md5sum_str(result.data))
 
@@ -457,16 +656,16 @@ class TestUsersAPIs(unittest.TestCase):
         result = self.app.get(
             url,
             headers=headers)
+        print(result.data)
+        print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        print result.data
-        print "MD5: '%s'" % self.md5sum_str(result.data)
         self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
                          self.md5sum_str(result.data))
 
 
 if __name__ == '__main__':
-    print "----------------------------------"
-    print "Starting unit tests ..."
-    print "----------------------------------"
+    print("----------------------------------\n"
+          "Starting unit tests ...\n"
+          "----------------------------------\n")
     unittest.main(failfast=stop_at_fail)
-    print "Tests completed"
+    print("Tests completed")
