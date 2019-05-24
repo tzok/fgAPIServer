@@ -31,7 +31,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-23 16:12:11'
+__update__ = '2019-05-24 12:22:05'
 
 queries = [
     {'category': 'empty',
@@ -124,6 +124,7 @@ class cursor:
                         rank_max = rankq
                         rank_query = query['query']
                         rank_index = query['id']
+                        rank_category = category
                     if sql == query['query']:
                         self.cursor_results = query['result']
                         print("Test query found, category: '%s' at %s"
@@ -133,14 +134,19 @@ class cursor:
                         break
                 query_index += 1
         if query_found is not True:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("!!! Test query not found !!!")
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("Procesed queries %s" % query_index)
-            print("Closest query at index: '%s' is:" % rank_index)
-            print("'%s'" % rank_query)
-            print("whith score: %s" % rank_max)
+            exception_message =\
+                ("Procesed queries: %s\n"
+                 "Closest query at index: '%s' in category: '%s' is:\n"
+                 "%s\n"
+                 "whith score: '%s'\n"
+                 % (query_index,
+                    rank_index,
+                    rank_category,
+                    rank_query,
+                    rank_max))
             self.hilight_diff(sql, rank_query, True)
+            raise Error("Test query not found",
+                        exception_message)
 
     def fetchone(self):
         if self.cursor_results is None:
@@ -158,10 +164,16 @@ class cursor:
 
 class Error(Exception):
 
-    def __init__(self, *args, **kwargs):
-        # Exception.__init__(self, *args, **kwargs)
-        print("MySQLdb.error")
-        pass
+    title = ''
+    args = None
+
+    def __init__(self, *args):
+        self.title = args[0]
+        self.args = [a for a in args]
+        self.args[0] = -1
+        print("MySQLdb exception: %s" % self.title)
+        print("%s" % args[1])
+        super(Error, self).__init__(self.args)
 
 
 def connect(*args, **kwargs):

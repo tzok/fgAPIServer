@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
 #
@@ -58,7 +59,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-23 16:12:11'
+__update__ = '2019-05-24 12:22:05'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
@@ -629,9 +630,16 @@ def tasks(apiver=fg_config['fgapiver']):
                 app_args = params.get('arguments', [])
                 app_inpf = params.get('input_files', [])
                 app_outf = params.get('output_files', [])
+                app_runat = params.get('run_at', '')
                 # Create task
                 taskid = fgapisrv_db.init_task(
-                    appid, app_desc, user, app_args, app_inpf, app_outf)
+                    appid,
+                    app_desc,
+                    user,
+                    app_args,
+                    app_inpf,
+                    app_outf,
+                    app_runat)
                 logger.debug("task_id: '%s'" % taskid)
                 if taskid < 0:
                     db_state = fgapisrv_db.get_state()
@@ -1756,6 +1764,7 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods',
                          'GET,PUT,POST,DELETE,PATCH')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
+    response.headers.add('Content-Type', 'application/json; charset=utf-8')
     response.headers.add('Server', fg_config['fgapiserver_name'])
     return response
 

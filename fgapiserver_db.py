@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
 #
@@ -42,7 +43,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-23 16:12:11'
+__update__ = '2019-05-24 12:22:05'
 
 """
  Database connection default settings
@@ -217,7 +218,9 @@ class FGAPIServerDB:
             user=self.db_user,
             passwd=self.db_pass,
             db=self.db_name,
-            port=self.db_port)
+            port=self.db_port,
+            charset='utf8',
+            use_unicode=True)
         if db is not None and safe_transaction is True:
             sql = "BEGIN"
             sql_data = ()
@@ -1565,7 +1568,8 @@ class FGAPIServerDB:
             user,
             arguments,
             input_files,
-            output_files):
+            output_files,
+            run_at):
         app_id = self.app_param_to_app_id(application)
         # Get app defined files
         app_files = self.get_app_files(app_id)
@@ -1576,9 +1580,15 @@ class FGAPIServerDB:
         cursor = None
         safe_transaction = True
         task_id = -1
+        if run_at != '':
+            creation_value =\
+                '\'%s\'           -- creation date' % run_at
+        else:
+            creation_value =\
+                'now()                           -- creation date'
         try:
             # Create the Task IO Sandbox
-            iosandbox = '%s/%s' % (self.iosandbbox_dir, str(uuid.uuid1()))
+            iosandbox = '%s/%s' % (self.iosandbbox_dir, str(uuid.uuid4()))
             os.makedirs(iosandbox)
             os.chmod(iosandbox, 0o770)
             # Insert new Task record
@@ -1593,7 +1603,7 @@ class FGAPIServerDB:
                    '                 ,user\n'
                    '                 ,iosandbox)\n'
                    'select if(max(id) is NULL,1,max(id)+1) -- new id\n'
-                   '      ,now()                           -- creation date\n'
+                   '      ,%s\n'
                    '      ,now()                           -- last change\n'
                    '      ,%s                              -- app_id\n'
                    '      ,%s                              -- description\n'
@@ -1601,7 +1611,11 @@ class FGAPIServerDB:
                    '      ,%s                              -- user\n'
                    '      ,%s                              -- iosandbox\n'
                    'from task;\n')
-            sql_data = (app_id, description, user, iosandbox)
+            sql_data = (creation_value,
+                        app_id,
+                        description,
+                        user,
+                        iosandbox)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
             sql = 'select max(id) from task;'
@@ -1964,18 +1978,22 @@ class FGAPIServerDB:
                     '  ,last_change   \n'
                     '  ,check_ts      \n'
                     '  ,action_info   \n'
-                    ') values (%s,\n'
-                    '          NULL,\n'
-                    '          %s,\n'
-                    '          \'SUBMIT\',\n'
-                    '          \'QUEUED\',\n'
-                    '          NULL,\n'
-                    '          now(),\n'
-                    '          now(),\n'
-                    '          now(),\n'
-                    '          %s);')
+                    ') select %s,\n'
+                    '         NULL,\n'
+                    '         %s,\n'
+                    '         \'SUBMIT\',\n'
+                    '         \'QUEUED\',\n'
+                    '         NULL,\n'
+                    '         (select creation\n'
+                    '          from task\n'
+                    '          where id = %s),\n'
+                    '         now(),\n'
+                    '         now(),\n'
+                    '         %s;')
                 sql_data = (task_info['id'],
-                            target_executor, task_info['iosandbox'])
+                            target_executor,
+                            task_info['id'],
+                            task_info['iosandbox'])
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
                 sql = (

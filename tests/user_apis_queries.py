@@ -26,7 +26,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-23 16:12:11'
+__update__ = '2019-05-24 12:22:05'
 
 # user_apis tests queries
 user_apis_queries = [

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2015:
 # Istituto Nazionale di Fisica Nucleare (INFN), Italy
 # Consorzio COMETA (COMETA), Italy
@@ -39,7 +40,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-23 16:12:11'
+__update__ = '2019-05-24 12:22:05'
 
 # Logging
 logger = logging.getLogger(__name__)
