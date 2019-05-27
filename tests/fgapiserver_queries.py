@@ -26,7 +26,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-05-24 12:22:05'
+__update__ = '2019-05-27 10:41:55'
 
 fgapiserver_queries = [
     {'id': 0,
@@ -545,7 +545,7 @@ fgapiserver_queries = [
                '                 ,user\n'
                '                 ,iosandbox)\n'
                'select if(max(id) is NULL,1,max(id)+1) -- new id\n'
-               '      ,%s\n'
+               '      ,now()          -- creation date\n'
                '      ,now()                           -- last change\n'
                '      ,%s                              -- app_id\n'
                '      ,%s                              -- description\n'
