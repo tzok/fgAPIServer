@@ -43,7 +43,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-05-27 10:41:55'
+__update__ = '2019-05-27 11:23:18'
 
 """
  Database connection default settings
@@ -2723,7 +2723,7 @@ class FGAPIServerDB:
             sql = 'select max(id) from application;'
             sql_data = ()
             logging.debug(sql % sql_data)
-            cursor.execute(sql)
+            cursor.execute(sql, sql_data)
             app_id = cursor.fetchone()[0]
             # Insert Application parameters
             if parameters is not []:
@@ -2826,7 +2826,7 @@ class FGAPIServerDB:
                     sql = 'select max(id) from infrastructure;'
                     sql_data = ()
                     logging.debug(sql % sql_data)
-                    cursor.execute(sql)
+                    cursor.execute(sql, sql_data)
                     infra_id = cursor.fetchone()[0]
                     # Insert Application infrastructure parameters
                     for param in infra['parameters']:
@@ -3277,7 +3277,7 @@ class FGAPIServerDB:
             sql = 'select max(id) from infrastructure;'
             sql_data = ()
             logging.debug(sql % sql_data)
-            cursor.execute(sql)
+            cursor.execute(sql, sql_data)
             infra_id = cursor.fetchone()[0]
             # Insert Application infrastructure parameters
             for param in infrastructure_parameters:
@@ -3716,7 +3716,7 @@ class FGAPIServerDB:
                         sql = 'select max(id) from infrastructure'
                         sql_data = ()
                         logging.debug(sql % sql_data)
-                        cursor.execute(sql)
+                        cursor.execute(sql, sql_data)
                         new_infra_id = cursor.fetchone()[0]
                         for param in infra['parameters']:
                             sql = ('insert into infrastructure_parameter\n'
