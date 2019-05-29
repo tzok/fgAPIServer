@@ -29,7 +29,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-05-27 11:23:18'
+__update__ = '2019-05-29 16:44:53'
 
 
 class TestfgAPIServerConfig(unittest.TestCase):
