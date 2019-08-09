@@ -2274,7 +2274,7 @@ class FGAPIServerDB:
         task_id = None
         try:
             db = self.connect(safe_transaction)
-            cursor = db.cursor()
+            cursor = db.cursor(buffered=True)
             sql = ('select task_id from task_output_file\n'
                    'where file=%s and path=%s\n'
                    'union all\n'
