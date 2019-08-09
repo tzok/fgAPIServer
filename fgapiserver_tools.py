@@ -165,7 +165,7 @@ def srv_uuid():
     """
 
     # UUID from hostname/IP
-    return uuid.uuid3(uuid.NAMESPACE_DNS, socket.gethostname())
+    return str(uuid.uuid3(uuid.NAMESPACE_DNS, socket.gethostname()))
 
 
 def paginate_response(response, page, per_page, page_url):
