@@ -20,8 +20,10 @@ import fgapiserver_queries
 import user_apis_queries
 
 #
-# MySQLdb.py emulates the MySQL module returning configurable outputs
-#            accordingly to pre-defined queries (see queries variable)
+# connector.py emulates the mysql.connector  module 
+#              It uses a configurable set of  outputs
+#              accordingly to pre-defined queries 
+#              (see queries variable)
 #
 
 __author__ = 'Riccardo Bruno'
@@ -42,11 +44,6 @@ queries = [
 # Load tests queries
 queries += fgapiserver_queries.queries
 queries += user_apis_queries.queries
-
-
-def install_as_MySQLdb():
-    pass
-
 
 class cursor:
 
@@ -171,17 +168,17 @@ class Error(Exception):
         self.title = args[0]
         self.args = [a for a in args]
         self.args[0] = -1
-        print("MySQLdb exception: %s" % self.title)
+        print("mysql.connector exception: %s" % self.title)
         print("%s" % args[1])
         super(Error, self).__init__(self.args)
 
 
 def connect(*args, **kwargs):
-    db = MySQLdb()
+    db = connector()
     return db
 
 
-class MySQLdb:
+class connector:
 
     def __init__(self, *args, **kwargs):
         pass
@@ -191,13 +188,13 @@ class MySQLdb:
         return cr
 
     def close(self):
-        print("MySQLdb.close")
+        print("mysql.connector.close")
         return None
 
     def commit(self):
-        print("MySQLdb.commit")
+        print("mysql.connector.commit")
         return None
 
     def rollback(self):
-        print("MySQLdb.rollback")
+        print("mysql.connector.rollback")
         return None

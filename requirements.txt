@@ -7,7 +7,7 @@ packaging
 pyOpenSSL
 flask
 flask-login
-PyMySQL
+mysql-connector-python
 pycrypto
 requests
 python-dateutil
