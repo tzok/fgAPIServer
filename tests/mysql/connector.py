@@ -183,7 +183,7 @@ class connector:
     def __init__(self, *args, **kwargs):
         pass
 
-    def cursor(self):
+    def cursor(self, *args, **kwargs):
         cr = cursor()
         return cr
 

@@ -59,7 +59,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-08-09 13:02:27'
+__update__ = '2019-08-09 16:35:54'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
