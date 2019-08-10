@@ -152,25 +152,21 @@ class cursor:
         return None
 
 
-class MySQLError(Exception):
-    pass
-
-
-class Error:
+class Error(Exception):
     pass
 
 
 def connect(*args, **kwargs):
-    db = MySQLdb()
+    db = connector()
     return db
 
 
-class MySQLdb:
+class connector:
 
     Error = None
 
     def __init__(self, *args, **kwargs):
-        Error = MySQLError()
+        self.Error = Error()
 
     def cursor(self):
         cr = cursor()
