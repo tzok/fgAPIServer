@@ -189,8 +189,6 @@ class FGAPIServerDB:
     @staticmethod
     def close_db(db, cursor, commit):
         if cursor is not None:
-            if cursor._cnx.unread_result:
-                cursor.fetchall()
             cursor.close()
         if db is not None:
             if commit is True:
@@ -1192,7 +1190,7 @@ class FGAPIServerDB:
                 ',iosandbox\n'
                 'from task\n'
                 'where id=%s\n'
-                '  and status <> \'PURGED\';')
+                '  and status != \'PURGED\';')
             sql_data = (task_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1215,7 +1213,7 @@ class FGAPIServerDB:
             sql = ('select argument\n'
                    'from task_arguments\n'
                    'where task_id=%s\n'
-                   'order by arg_id;')
+                   'order by arg_id asc;')
             sql_data = (task_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1231,7 +1229,7 @@ class FGAPIServerDB:
                 '      ,if(path is NULL,\'\',path)\n'
                 'from task_input_file\n'
                 'where task_id=%s\n'
-                'order by file_id;')
+                'order by file_id asc;')
             sql_data = (task_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1256,7 +1254,7 @@ class FGAPIServerDB:
                    '      ,if(path is NULL,\'\',path)\n'
                    'from task_output_file\n'
                    'where task_id=%s\n'
-                   'order by file_id;')
+                   'order by file_id asc;')
             sql_data = (task_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1283,7 +1281,7 @@ class FGAPIServerDB:
                 '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
                 'from runtime_data\n'
                 'where task_id=%s\n'
-                'order by data_id;')
+                'order by data_id asc;')
             sql_data = (task_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1440,7 +1438,7 @@ class FGAPIServerDB:
                    '      ,pvalue\n'
                    'from application_parameter\n'
                    'where app_id=%s\n'
-                   'order by param_id;')
+                   'order by param_id asc;')
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -1481,7 +1479,7 @@ class FGAPIServerDB:
                 sql = ('select pname, pvalue\n'
                        'from infrastructure_parameter\n'
                        'where infra_id=%s\n'
-                       'order by param_id;')
+                       'order by param_id asc;')
                 sql_data = (str(infra['id']),)
                 logging.debug(sql % sql_data)
                 cursor.execute(sql, sql_data)
@@ -1547,7 +1545,7 @@ class FGAPIServerDB:
                    '      ,override\n'
                    'from application_file\n'
                    'where app_id=%s\n'
-                   'order by file_id;')
+                   'order by file_id asc;')
             sql_data = (app_id,)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
@@ -2057,7 +2055,7 @@ class FGAPIServerDB:
                 sql_data += (app_id,)
             sql = ('select id\n'
                    'from task\n'
-                   'where status <> \'PURGED\'\n'
+                   'where status != \'PURGED\'\n'
                    '%s%s'
                    'order by id desc;'
                    ) % (user_clause, app_clause)
@@ -4677,7 +4675,7 @@ class FGAPIServerDB:
                    '     application a\n'
                    'where u.id=%s\n'
                    '  and a.id=%s\n'
-                   '  and t.status <> \'PURGED\'\n'
+                   '  and t.status != \'PURGED\'\n'
                    '  and t.user=u.name\n'
                    '  and t.app_id=a.id\n'
                    'order by t.id desc;')
@@ -4688,7 +4686,7 @@ class FGAPIServerDB:
                    '     fg_user u,\n'
                    '     application a\n'
                    'where u.id=%s\n'
-                   '  and t.status <> \'PURGED\'\n'
+                   '  and t.status != \'PURGED\'\n'
                    '  and t.user=u.name\n'
                    '  and t.app_id=a.id\n'
                    'order by t.id desc;')
