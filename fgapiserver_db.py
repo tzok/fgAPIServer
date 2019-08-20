@@ -189,6 +189,8 @@ class FGAPIServerDB:
     @staticmethod
     def close_db(db, cursor, commit):
         if cursor is not None:
+            if cursor._cnx.unread_result:
+                cursor.fetchall()
             cursor.close()
         if db is not None:
             if commit is True:
