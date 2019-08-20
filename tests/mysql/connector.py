@@ -43,11 +43,18 @@ queries = [
 queries += fgapiserver_queries.queries
 queries += user_apis_queries.queries
 
+class CNX:
+
+    unread_result = False
+
+    def __init__(self):
+        pass
 
 class cursor:
 
     position = 0
     cursor_results = None
+    _cnx = CNX()
 
     def __getitem__(self, i):
         return self.cursor_results[i]
@@ -168,7 +175,7 @@ class connector:
     def __init__(self, *args, **kwargs):
         self.Error = Error()
 
-    def cursor(self):
+    def cursor(self, **kwargs):
         cr = cursor()
         return cr
 
@@ -179,3 +186,4 @@ class connector:
     def commit(self):
         print("MySQLdb.commit")
         return None
+

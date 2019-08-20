@@ -57,7 +57,7 @@ fgapiserver_queries = [
                ',iosandbox\n'
                'from task\n'
                'where id=%s\n'
-               '  and status != "PURGED";'),
+               '  and status != \'PURGED\';'),
      'result': [['1',
                  'WAITING',
                  '1970-01-01T00:00:00',
@@ -773,7 +773,7 @@ fgapiserver_queries = [
     {'id': 73,
      'query': ('select id\n'
                'from task\n'
-               'where status != "PURGED"\n'
+               'where status != \'PURGED\'\n'
                '  and user = %s\n'
                '  and app_id = %s\n'
                'order by id desc;'),
@@ -781,7 +781,7 @@ fgapiserver_queries = [
     {'id': 74,
      'query': ('select id\n'
                'from task\n'
-               'where status != "PURGED"\n'
+               'where status != \'PURGED\'\n'
                '  and user = %s\n'
                'order by id desc;'),
      'result': [[1], ]},
