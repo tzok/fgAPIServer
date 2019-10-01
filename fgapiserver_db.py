@@ -137,6 +137,11 @@ class FGAPIServerDB:
     message = ''
 
     """
+        Date format
+    """
+    date_format = "%Y-%m-%dT%TZ"
+
+    """
       FGAPIServerDB - Constructor may override default
                       values defined at the top of the file
     """
@@ -221,7 +226,8 @@ class FGAPIServerDB:
                     db=self.db_name,
                     port=self.db_port)
             except:
-                print('Failed to connect to database. Will retry in 5 seconds')
+                logging.error(
+                    'Failed to connect to database. Will retry in 5 seconds')
                 time.sleep(5)
 
         if safe_transaction is True:
@@ -543,8 +549,7 @@ class FGAPIServerDB:
             sql = (
                 'select user_id\n'
                 '      ,(select name from fg_user where id=user_id) name\n'
-                '      ,date_format(creation,\n'
-                '                   \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,creation,\n'
                 '      ,expiry\n'
                 '      ,(creation+expiry)-now()>0\n'
                 '      ,if((creation+expiry)-now()>0,\n'
@@ -559,7 +564,7 @@ class FGAPIServerDB:
             if user_rec is not None:
                 token_info['user_id'] = user_rec[0]
                 token_info['user_name'] = user_rec[1]
-                token_info['creation'] = user_rec[2]
+                token_info['creation'] = user_rec[2].strftime(self.date_format)
                 token_info['expiry'] = user_rec[3]
                 token_info['valid'] = user_rec[4] == 1
                 token_info['lasting'] = user_rec[5]
@@ -1014,8 +1019,8 @@ class FGAPIServerDB:
                     "last_name": record[4],
                     "institute": record[5],
                     "mail": record[6],
-                    "creation": record[7],
-                    "modified": record[8]}
+                    "creation": record[7].strftime(self.date_format),
+                    "modified": record[8].strftime(self.date_format)}
             self.query_done(
                 "User '%s' info: '%s'" % (name, user_info))
         except mysql.connector.Error as e:
@@ -1182,8 +1187,8 @@ class FGAPIServerDB:
                 'select '
                 ' id\n'
                 ',status\n'
-                ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                ',creation\n'
+                ',last_change\n'
                 ',app_id\n'
                 ',description\n'
                 ',user\n'
@@ -1200,8 +1205,8 @@ class FGAPIServerDB:
                     "id": str(
                         task_dbrec[0]),
                     "status": task_dbrec[1],
-                    "creation": str(task_dbrec[2]),
-                    "last_change": str(task_dbrec[3]),
+                    "creation": task_dbrec[2].strftime(self.date_format),
+                    "last_change": task_dbrec[3].strftime(self.date_format),
                     "application": task_dbrec[4],
                     "description": task_dbrec[5],
                     "user": task_dbrec[6],
@@ -1275,10 +1280,8 @@ class FGAPIServerDB:
                 ' ,data_desc\n'
                 ' ,data_type\n'
                 ' ,data_proto\n'
-                ' ,date_format(creation,'
-                '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                ' ,date_format(last_change,'
-                '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                ' ,creation\n'
+                ' ,last_change\n'
                 'from runtime_data\n'
                 'where task_id=%s\n'
                 'order by data_id asc;')
@@ -1293,20 +1296,16 @@ class FGAPIServerDB:
                     "description": rtdata[2],
                     "type": rtdata[3],
                     "proto": rtdata[4],
-                    "creation": str(
-                        rtdata[5]),
-                    "last_change": str(
-                        rtdata[6])}
+                    "creation": rtdata[5].strftime(self.date_format),
+                    "last_change": rtdata[6].strftime(self.date_format)}
                 runtime_data += [rtdata_entry, ]
             # Prepare output
             task_record = {
                 "id": str(
                     task_dicrec['id']),
                 "status": task_dicrec['status'],
-                "creation": str(
-                    task_dicrec['creation']),
-                "last_change": str(
-                    task_dicrec['last_change']),
+                "creation": task_dicrec['creation'],
+                "last_change": task_dicrec['last_change'],
                 "application": str(
                     task_dicrec['application']),
                 "description": task_dicrec['description'],
@@ -1416,7 +1415,7 @@ class FGAPIServerDB:
                 '      ,name\n'
                 '      ,description\n'
                 '      ,outcome\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,creation\n'
                 '      ,enabled\n'
                 'from application\n'
                 'where id=%s;')
@@ -1430,8 +1429,7 @@ class FGAPIServerDB:
                 "name": app_record[1],
                 "description": app_record[2],
                 "outcome": app_record[3],
-                "creation": str(
-                    app_record[4]),
+                "creation": app_record[4].strftime(self.date_format),
                 "enabled": bool(app_record[5])}
             # Add now app parameters
             sql = ('select pname\n'
@@ -1454,7 +1452,7 @@ class FGAPIServerDB:
                 'select id\n'
                 '      ,name\n'
                 '      ,description\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,creation\n'
                 '      ,if(enabled,\'enabled\',\'disabled\') status\n'
                 '      ,if(vinfra,\'virtual\',\'real\') status\n'
                 'from infrastructure\n'
@@ -1469,8 +1467,7 @@ class FGAPIServerDB:
                         infra[0]),
                     "name": infra[1],
                     "description": infra[2],
-                    "creation": str(
-                        infra[3]),
+                    "creation": infra[3].strftime(self.date_format),
                     "status": infra[4],
                     "virtual": infra[5]}
                 infrastructures += [infra_details, ]
@@ -2546,7 +2543,7 @@ class FGAPIServerDB:
                 '      ,name\n'
                 '      ,description\n'
                 '      ,outcome\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,creation\n'
                 '      ,enabled\n'
                 'from application\n'
                 'where id=%s;')
@@ -2560,8 +2557,7 @@ class FGAPIServerDB:
                     "name": app_dbrec[1],
                     "description": app_dbrec[2],
                     "outcome": app_dbrec[3],
-                    "creation": str(
-                        app_dbrec[4]),
+                    "creation": app_dbrec[4].strftime(self.date_format),
                     "enabled": bool(app_dbrec[5])}
             else:
                 self.query_done(
@@ -2613,8 +2609,7 @@ class FGAPIServerDB:
             #     'select id\n'
             #     '      ,name\n'
             #     '      ,description\n'
-            #     '      ,date_format(creation,
-            #                         \'%%Y-%%m-%%dT%%TZ\') creation\n'
+            #     '      ,creation,
             #     '      ,enabled\n'
             #     'from infrastructure\n'
             #     'where app_id=%s;')
@@ -2623,13 +2618,14 @@ class FGAPIServerDB:
             # cursor.execute(sql, sql_data)
             # app_infras = []
             # for app_infra in cursor:
-            #     app_infra_entry = {"id": str(app_infra[0]),
-            # #                       "name": app_infra[1],
-            #                        "description": app_infra[2],
-            #                        "creation": str(app_infra[3]),
-            #                        "enabled": bool(app_infra[4]),
-            #                        "virtual": False}
-            #     #                 ,"parameters"     : []}
+            #     app_infra_entry = {
+            #         "id": str(app_infra[0]),
+            # #       "name": app_infra[1],
+            #         "description": app_infra[2],
+            #         "creation": app_infra[3].strftime(self.date_format),
+            #         "enabled": bool(app_infra[4]),
+            #         "virtual": False}
+            ##        ,"parameters"     : []}
             #     app_infras += [app_infra_entry, ]
             # for app_infra in app_infras:
             #     sql = ('select pname\n'
@@ -3154,8 +3150,7 @@ class FGAPIServerDB:
                 'select app_id,\n'
                 '       name,\n'
                 '       description,\n'
-                '       date_format(creation,\n'
-                '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                '       creation,\n'
                 '       enabled,\n'
                 '       vinfra\n'
                 'from infrastructure\n'
@@ -3172,8 +3167,7 @@ class FGAPIServerDB:
                     "app_id": str(infra_dbrec[0]),
                     "name": infra_dbrec[1],
                     "description": infra_dbrec[2],
-                    "creation": str(
-                        infra_dbrec[3]),
+                    "creation": infra_dbrec[3].strftime(self.date_format),
                     "enabled": bool(infra_dbrec[4]),
                     "virtual": bool(infra_dbrec[5])}
             else:
@@ -3919,10 +3913,8 @@ class FGAPIServerDB:
                    '       last_name,\n'
                    '       institute,\n'
                    '       mail,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '       creation,\n'
+                   '       modified\n'
                    'from fg_user\n')
             sql_data = ()
             logging.debug(sql % sql_data)
@@ -3935,8 +3927,8 @@ class FGAPIServerDB:
                     'last_name': record[3],
                     'institute': record[4],
                     'mail': record[5],
-                    'creation': record[6],
-                    'modified': record[7], }]
+                    'creation': record[6].strftime(self.date_format),
+                    'modified': record[7].strftime(self.date_format), }]
             self.query_done(
                 "Loaded %s users" % len(result))
         except mysql.connector.Error as e:
@@ -3964,10 +3956,8 @@ class FGAPIServerDB:
                    '       last_name,\n'
                    '       institute,\n'
                    '       mail,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '       creation,\n'
+                   '       modified\n'
                    'from fg_user\n'
                    'where id=%s;')
             sql_data = (user_id,)
@@ -3982,8 +3972,8 @@ class FGAPIServerDB:
                     'last_name': record[3],
                     'institute': record[4],
                     'mail': record[5],
-                    'creation': record[6],
-                    'modified': record[7], }
+                    'creation': record[6].strftime(self.date_format),
+                    'modified': record[7].strftime(self.date_format), }
             self.query_done(
                 "User \'%s\' values: %s" % (user, result))
         except mysql.connector.Error as e:
@@ -4054,10 +4044,8 @@ class FGAPIServerDB:
                    '       last_name,\n'
                    '       institute,\n'
                    '       mail,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '       creation,\n'
+                   '       modified\n'
                    'from fg_user\n'
                    'where name = %s;')
             sql_data = (user_data['name'],)
@@ -4071,8 +4059,8 @@ class FGAPIServerDB:
                 'last_name': record[3],
                 'institute': record[4],
                 'mail': record[5],
-                'creation': record[6],
-                'modified': record[7],
+                'creation': record[6].strftime(self.date_format),
+                'modified': record[7].strftime(self.date_format),
             }
             self.query_done(
                 "User with name: '%s' successfully created, with id: %s"
@@ -4102,10 +4090,8 @@ class FGAPIServerDB:
                    '       ud.data_desc,\n'
                    '       ud.data_proto,\n'
                    '       ud.data_type,\n'
-                   '       date_format(ud.creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(ud.last_change,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                   '       ud.creation,\n'
+                   '       ud.last_change\n'
                    'from fg_user_data ud\n'
                    'where ud.user_id=%s\n'
                    '  and ud.data_id = (select max(data_id)\n'
@@ -4124,8 +4110,9 @@ class FGAPIServerDB:
                         'data_desc': user_data[3],
                         'data_proto': user_data[4],
                         'data_type': user_data[5],
-                        'creation': user_data[6],
-                        'last_change': user_data[7], }
+                        'creation': user_data[6].strftime(self.date_format),
+                        'last_change': user_data[7].strftime(self.date_format),
+                    }
                     data.append(data_entry)
             self.query_done(
                 "User \'%s\' data: %s" % (user, data))
@@ -4155,10 +4142,8 @@ class FGAPIServerDB:
                    '       ud.data_desc,\n'
                    '       ud.data_proto,\n'
                    '       ud.data_type,\n'
-                   '       date_format(ud.creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(ud.last_change,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                   '       ud.creation,\n'
+                   '       ud.last_change\n'
                    'from fg_user_data ud\n'
                    'where ud.user_id=%s\n'
                    '  and ud.data_id=(select max(data_id)\n'
@@ -4178,8 +4163,8 @@ class FGAPIServerDB:
                     'data_desc': data_entry[3],
                     'data_proto': data_entry[4],
                     'data_type': data_entry[5],
-                    'creation': data_entry[6],
-                    'last_change': data_entry[7]}
+                    'creation': data_entry[6].strftime(self.date_format),
+                    'last_change': data_entry[7].strftime(self.date_format)}
             self.query_done(
                 "User \'%s\' data: %s" % (user, data))
         except mysql.connector.Error as e:
@@ -4342,10 +4327,8 @@ class FGAPIServerDB:
             cursor = db.cursor()
             sql = ('select id,\n'
                    '       name,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '       creation,\n'
+                   '       modified\n'
                    'from fg_group;')
             sql_data = ()
             logging.debug(sql % sql_data)
@@ -4354,8 +4337,8 @@ class FGAPIServerDB:
                 groups += [
                     {"id": group_record[0],
                      "name": group_record[1],
-                     "creation": group_record[2],
-                     "modified": group_record[3]}]
+                     "creation": group_record[2].strftime(self.date_format),
+                     "modified": group_record[3].strftime(self.date_format), }]
             self.query_done(
                 "Groups: %s" % groups)
         except mysql.connector.Error as e:
@@ -4379,10 +4362,8 @@ class FGAPIServerDB:
             cursor = db.cursor()
             sql = ('select g.id,\n'
                    '       g.name,\n'
-                   '       date_format(g.creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(g.modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '       g.creation,\n'
+                   '       g.modified\n'
                    'from fg_group g,\n'
                    '     fg_user_group ug,\n'
                    '     fg_user u\n'
@@ -4396,8 +4377,8 @@ class FGAPIServerDB:
                 groups += [
                     {"id": group_record[0],
                      "name": group_record[1],
-                     "creation": group_record[2],
-                     "modified": group_record[3]}]
+                     "creation": group_record[2].strftime(self.date_format),
+                     "modified": group_record[3].strftime(self.date_format), }]
             self.query_done(
                 "User groups for user name '%s': %s" % (user, groups))
         except mysql.connector.Error as e:
@@ -4422,10 +4403,8 @@ class FGAPIServerDB:
                 cursor = db.cursor()
                 sql = ('select id,\n'
                        '       name,\n'
-                       '       date_format(creation,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                       '       date_format(modified,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                       '       creation,\n'
+                       '       modified\n'
                        'from fg_group\n'
                        'where id=%s;')
                 sql_data = (group_id,)
@@ -4433,10 +4412,11 @@ class FGAPIServerDB:
                 cursor.execute(sql, sql_data)
                 group_record = cursor.fetchone()
                 if group_record is not None:
-                    result = {"id": group_record[0],
-                              "name": group_record[1],
-                              "creation": group_record[2],
-                              "modified": group_record[3]}
+                    result = {
+                        "id": group_record[0],
+                        "name": group_record[1],
+                        "creation": group_record[2].strftime(self.date_format),
+                        "modified": group_record[3].strftime(self.date_format)}
                 self.query_done(
                     "Group: %s" % result)
             except mysql.connector.Error as e:
@@ -4465,8 +4445,7 @@ class FGAPIServerDB:
                        '       a.name,\n'
                        '       a.description,\n'
                        '       a.outcome,\n'
-                       '       date_format(a.creation,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                       '       a.creation,\n'
                        '       a.enabled\n'
                        'from fg_group_apps ga,\n'
                        '      application a\n'
@@ -4481,7 +4460,7 @@ class FGAPIServerDB:
                          "name": app_record[1],
                          "description": app_record[2],
                          "outcome": app_record[3],
-                         "creation": app_record[4],
+                         "creation": app_record[4].strftime(self.date_format),
                          "enabled": app_record[5]}]
                 result = {"applications": applications}
                 self.query_done(
@@ -4552,10 +4531,8 @@ class FGAPIServerDB:
             cursor.execute(sql, sql_data)
             sql = ('select id,\n'
                    '       name,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '       creation,\n'
+                   '       modified\n'
                    'from fg_group\n'
                    'where name = %s')
             sql_data = (group_name,)
@@ -4564,10 +4541,11 @@ class FGAPIServerDB:
             group_record = cursor.fetchone()
             if (group_record is not None and
                     group_name == group_record[1]):
-                result = {"id": group_record[0],
-                          "name": group_record[1],
-                          "creation": group_record[2],
-                          "modified": group_record[3]}
+                result = {
+                    "id": group_record[0],
+                    "name": group_record[1],
+                    "creation": group_record[2].strftime(self.date_format),
+                    "modified": group_record[3].strftime(self.date_format)}
             else:
                 result = None
             self.query_done(
@@ -4725,10 +4703,8 @@ class FGAPIServerDB:
                 cursor = db.cursor()
                 sql = ('select r.id,\n'
                        '       r.name,\n'
-                       '       date_format(r.creation,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                       '       date_format(r.modified,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                       '       r.creation,\n'
+                       '       r.modified\n'
                        'from fg_group_role gr,\n'
                        '     fg_role r\n'
                        'where gr.group_id = %s\n'
@@ -4740,8 +4716,10 @@ class FGAPIServerDB:
                     roles += [
                         {"id": role_record[0],
                          "name": role_record[1],
-                         "creation": role_record[2],
-                         "modified": role_record[3]}]
+                         "creation": 
+                            role_record[2].strftime(self.date_format),
+                         "modified":
+                            role_record[3].strftime(self.date_format)}]
                 result = {"roles": roles}
                 self.query_done(
                     "Roles: %s" % result)
@@ -4802,10 +4780,8 @@ class FGAPIServerDB:
             cursor = db.cursor()
             sql = ('select id,\n'
                    '       name,\n'
-                   '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-                   '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '       creation,\n'
+                   '       modified\n'
                    'from fg_role;')
             sql_data = ()
             logging.debug(sql % sql_data)
@@ -4814,8 +4790,8 @@ class FGAPIServerDB:
                 roles += [
                     {"id": role_record[0],
                      "name": role_record[1],
-                     "creation": role_record[2],
-                     "modified": role_record[3]}]
+                     "creation": role_record[2].strftime(self.date_format),
+                     "modified": role_record[3].strftime(self.date_format)}]
             self.query_done(
                 "Roles: %s" % roles)
         except mysql.connector.Error as e:
