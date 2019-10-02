@@ -139,7 +139,14 @@ class FGAPIServerDB:
     """
         Date format
     """
-    date_format = "%Y-%m-%dT%TZ"
+    date_format_str = "%Y-%m-%dT%TZ"
+
+    """
+        date_format - convert a given datetime.datetime object into a
+                      formatted datetime string
+    """
+    def date_format(self, datetime_var):
+        return datetime_var.strftime(self.date_format_str)
 
     """
       FGAPIServerDB - Constructor may override default
@@ -564,7 +571,7 @@ class FGAPIServerDB:
             if user_rec is not None:
                 token_info['user_id'] = user_rec[0]
                 token_info['user_name'] = user_rec[1]
-                token_info['creation'] = user_rec[2].strftime(self.date_format)
+                token_info['creation'] = self.date_format(user_rec[2])
                 token_info['expiry'] = user_rec[3]
                 token_info['valid'] = user_rec[4] == 1
                 token_info['lasting'] = user_rec[5]
@@ -1019,8 +1026,8 @@ class FGAPIServerDB:
                     "last_name": record[4],
                     "institute": record[5],
                     "mail": record[6],
-                    "creation": record[7].strftime(self.date_format),
-                    "modified": record[8].strftime(self.date_format)}
+                    "creation": self.date_format(record[7]),
+                    "modified": self.date_format(record[8])}
             self.query_done(
                 "User '%s' info: '%s'" % (name, user_info))
         except mysql.connector.Error as e:
@@ -1205,8 +1212,8 @@ class FGAPIServerDB:
                     "id": str(
                         task_dbrec[0]),
                     "status": task_dbrec[1],
-                    "creation": task_dbrec[2].strftime(self.date_format),
-                    "last_change": task_dbrec[3].strftime(self.date_format),
+                    "creation": self.date_format(task_dbrec[2]),
+                    "last_change": self.date_format(task_dbrec[3]),
                     "application": task_dbrec[4],
                     "description": task_dbrec[5],
                     "user": task_dbrec[6],
@@ -1296,8 +1303,8 @@ class FGAPIServerDB:
                     "description": rtdata[2],
                     "type": rtdata[3],
                     "proto": rtdata[4],
-                    "creation": rtdata[5].strftime(self.date_format),
-                    "last_change": rtdata[6].strftime(self.date_format)}
+                    "creation": self.date_format(rtdata[5]),
+                    "last_change": self.date_format(rtdata[6])}
                 runtime_data += [rtdata_entry, ]
             # Prepare output
             task_record = {
@@ -1429,7 +1436,7 @@ class FGAPIServerDB:
                 "name": app_record[1],
                 "description": app_record[2],
                 "outcome": app_record[3],
-                "creation": app_record[4].strftime(self.date_format),
+                "creation": self.date_format(app_record[4]),
                 "enabled": bool(app_record[5])}
             # Add now app parameters
             sql = ('select pname\n'
@@ -1467,7 +1474,7 @@ class FGAPIServerDB:
                         infra[0]),
                     "name": infra[1],
                     "description": infra[2],
-                    "creation": infra[3].strftime(self.date_format),
+                    "creation": self.date_format(infra[3]),
                     "status": infra[4],
                     "virtual": infra[5]}
                 infrastructures += [infra_details, ]
@@ -2557,7 +2564,7 @@ class FGAPIServerDB:
                     "name": app_dbrec[1],
                     "description": app_dbrec[2],
                     "outcome": app_dbrec[3],
-                    "creation": app_dbrec[4].strftime(self.date_format),
+                    "creation": self.date_format(app_dbrec[4]),
                     "enabled": bool(app_dbrec[5])}
             else:
                 self.query_done(
@@ -2622,7 +2629,7 @@ class FGAPIServerDB:
             #         "id": str(app_infra[0]),
             # #       "name": app_infra[1],
             #         "description": app_infra[2],
-            #         "creation": app_infra[3].strftime(self.date_format),
+            #         "creation": self.date_format(app_infra[3]),
             #         "enabled": bool(app_infra[4]),
             #         "virtual": False}
             ##        ,"parameters"     : []}
@@ -3167,7 +3174,7 @@ class FGAPIServerDB:
                     "app_id": str(infra_dbrec[0]),
                     "name": infra_dbrec[1],
                     "description": infra_dbrec[2],
-                    "creation": infra_dbrec[3].strftime(self.date_format),
+                    "creation": self.date_format(infra_dbrec[3]),
                     "enabled": bool(infra_dbrec[4]),
                     "virtual": bool(infra_dbrec[5])}
             else:
@@ -3927,8 +3934,8 @@ class FGAPIServerDB:
                     'last_name': record[3],
                     'institute': record[4],
                     'mail': record[5],
-                    'creation': record[6].strftime(self.date_format),
-                    'modified': record[7].strftime(self.date_format), }]
+                    'creation': self.date_format(record[6]),
+                    'modified': self.date_format(record[7]), }]
             self.query_done(
                 "Loaded %s users" % len(result))
         except mysql.connector.Error as e:
@@ -3972,8 +3979,8 @@ class FGAPIServerDB:
                     'last_name': record[3],
                     'institute': record[4],
                     'mail': record[5],
-                    'creation': record[6].strftime(self.date_format),
-                    'modified': record[7].strftime(self.date_format), }
+                    'creation': self.date_format(record[6]),
+                    'modified': self.date_format(record[7]), }
             self.query_done(
                 "User \'%s\' values: %s" % (user, result))
         except mysql.connector.Error as e:
@@ -4059,9 +4066,8 @@ class FGAPIServerDB:
                 'last_name': record[3],
                 'institute': record[4],
                 'mail': record[5],
-                'creation': record[6].strftime(self.date_format),
-                'modified': record[7].strftime(self.date_format),
-            }
+                'creation': self.date_format(record[6]),
+                'modified': self.date_format(record[7]), }
             self.query_done(
                 "User with name: '%s' successfully created, with id: %s"
                 % (result['name'], result['id']))
@@ -4110,9 +4116,8 @@ class FGAPIServerDB:
                         'data_desc': user_data[3],
                         'data_proto': user_data[4],
                         'data_type': user_data[5],
-                        'creation': user_data[6].strftime(self.date_format),
-                        'last_change': user_data[7].strftime(self.date_format),
-                    }
+                        'creation': self.date_format(user_data[6]),
+                        'last_change': self.date_format(user_data[7]), }
                     data.append(data_entry)
             self.query_done(
                 "User \'%s\' data: %s" % (user, data))
@@ -4163,8 +4168,8 @@ class FGAPIServerDB:
                     'data_desc': data_entry[3],
                     'data_proto': data_entry[4],
                     'data_type': data_entry[5],
-                    'creation': data_entry[6].strftime(self.date_format),
-                    'last_change': data_entry[7].strftime(self.date_format)}
+                    'creation': self.date_format(data_entry[6]),
+                    'last_change': self.date_format(data_entry[7]), }
             self.query_done(
                 "User \'%s\' data: %s" % (user, data))
         except mysql.connector.Error as e:
@@ -4337,8 +4342,8 @@ class FGAPIServerDB:
                 groups += [
                     {"id": group_record[0],
                      "name": group_record[1],
-                     "creation": group_record[2].strftime(self.date_format),
-                     "modified": group_record[3].strftime(self.date_format), }]
+                     "creation": self.date_format(group_record[2]),
+                     "modified": self.date_format(group_record[3]), }]
             self.query_done(
                 "Groups: %s" % groups)
         except mysql.connector.Error as e:
@@ -4377,8 +4382,8 @@ class FGAPIServerDB:
                 groups += [
                     {"id": group_record[0],
                      "name": group_record[1],
-                     "creation": group_record[2].strftime(self.date_format),
-                     "modified": group_record[3].strftime(self.date_format), }]
+                     "creation": self.date_format(group_record[2]),
+                     "modified": self.date_format(group_record[3]), }]
             self.query_done(
                 "User groups for user name '%s': %s" % (user, groups))
         except mysql.connector.Error as e:
@@ -4415,8 +4420,8 @@ class FGAPIServerDB:
                     result = {
                         "id": group_record[0],
                         "name": group_record[1],
-                        "creation": group_record[2].strftime(self.date_format),
-                        "modified": group_record[3].strftime(self.date_format)}
+                        "creation": self.date_format(group_record[2]),
+                        "modified": self.date_format(group_record[3]), }
                 self.query_done(
                     "Group: %s" % result)
             except mysql.connector.Error as e:
@@ -4460,8 +4465,8 @@ class FGAPIServerDB:
                          "name": app_record[1],
                          "description": app_record[2],
                          "outcome": app_record[3],
-                         "creation": app_record[4].strftime(self.date_format),
-                         "enabled": app_record[5]}]
+                         "creation": self.date_format(app_record[4]),
+                         "enabled": app_record[5], }]
                 result = {"applications": applications}
                 self.query_done(
                     "Applications: %s" % result)
@@ -4544,8 +4549,8 @@ class FGAPIServerDB:
                 result = {
                     "id": group_record[0],
                     "name": group_record[1],
-                    "creation": group_record[2].strftime(self.date_format),
-                    "modified": group_record[3].strftime(self.date_format)}
+                    "creation": self.date_format(group_record[2]),
+                    "modified": self.date_format(group_record[3]), }
             else:
                 result = None
             self.query_done(
@@ -4716,10 +4721,8 @@ class FGAPIServerDB:
                     roles += [
                         {"id": role_record[0],
                          "name": role_record[1],
-                         "creation": 
-                            role_record[2].strftime(self.date_format),
-                         "modified":
-                            role_record[3].strftime(self.date_format)}]
+                         "creation": self.date_format(role_record[2]),
+                         "modified": self.date_format(role_record[3]), }]
                 result = {"roles": roles}
                 self.query_done(
                     "Roles: %s" % result)
@@ -4790,8 +4793,8 @@ class FGAPIServerDB:
                 roles += [
                     {"id": role_record[0],
                      "name": role_record[1],
-                     "creation": role_record[2].strftime(self.date_format),
-                     "modified": role_record[3].strftime(self.date_format)}]
+                     "creation": self.date_format(role_record[2]),
+                     "modified": self.date_format(role_record[3]), }]
             self.query_done(
                 "Roles: %s" % roles)
         except mysql.connector.Error as e:
