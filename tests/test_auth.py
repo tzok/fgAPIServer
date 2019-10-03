@@ -34,7 +34,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-03 10:05:34'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
@@ -147,7 +147,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
+        self.assertEqual("bc97bbe5808595f75cdf3139fac38729",
                          self.md5sum_str(result.data))
 
     # Session token from credentials as filter
@@ -160,7 +160,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
+        self.assertEqual("bc97bbe5808595f75cdf3139fac38729",
                          self.md5sum_str(result.data))
 
     # Session token creation user:password
@@ -181,7 +181,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
+        self.assertEqual("bc97bbe5808595f75cdf3139fac38729",
                          self.md5sum_str(result.data))
 
     # Session token creation user/password
@@ -202,7 +202,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
+        self.assertEqual("bc97bbe5808595f75cdf3139fac38729",
                          self.md5sum_str(result.data))
 
 

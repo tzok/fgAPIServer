@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 
 #
 # user_apis_queries - Provide queries for user_apis tests
@@ -26,7 +27,9 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-03 10:05:34'
+
+test_date = datetime.datetime(1970, 1, 1)
 
 # user_apis tests queries
 user_apis_queries = [
@@ -91,13 +94,11 @@ user_apis_queries = [
     {'id': 5,
      'query': 'select id,\n'
               '       name,\n'
-              '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       creation,\n'
+              '       modified\n'
               'from fg_group\n'
               'where name = %s',
-     'result': [[1, 'TEST_GROUP', '01-01-1979', '01-01-1970'], ]},
+     'result': [[1, 'TEST_GROUP', test_date, test_date], ]},
     {'id': 6,
      'query': 'select id\n'
               'from fg_group\n'
@@ -113,8 +114,7 @@ user_apis_queries = [
               '       a.name,\n'
               '       a.description,\n'
               '       a.outcome,\n'
-              '       date_format(a.creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '       a.creation,\n'
               '       a.enabled\n'
               'from fg_group_apps ga,\n'
               '      application a\n'
@@ -124,7 +124,7 @@ user_apis_queries = [
                  'TEST_APPLICATION',
                  'Test application',
                  'JOB',
-                 '01-01-1970',
+                 test_date,
                  '1'], ]},
     {'id': 9,
      'query': 'select count(*)>0 from application where id = %s;',
@@ -149,28 +149,24 @@ user_apis_queries = [
     {'id': 12,
      'query': 'select id,\n'
               '       name,\n'
-              '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       creation,\n'
+              '       modified\n'
               'from fg_role;',
-     'result': [[1, 'TEST_ROLE_1', '01-01-1970', '01-01-1970'],
-                [2, 'TEST_ROLE_2', '01-01-1970', '01-01-1970'],
-                [3, 'TEST_ROLE_3', '01-01-1970', '01-01-1970'], ]},
+     'result': [[1, 'TEST_ROLE_1', test_date, test_date],
+                [2, 'TEST_ROLE_2', test_date, test_date],
+                [3, 'TEST_ROLE_3', test_date, test_date], ]},
     {'id': 13,
      'query': 'select r.id,\n'
               '       r.name,\n'
-              '       date_format(r.creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(r.modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       r.creation,\n'
+              '       r.modified\n'
               'from fg_group_role gr,\n'
               '     fg_role r\n'
               'where gr.group_id = %s\n'
               '  and gr.role_id = r.id;',
-     'result': [[1, 'TEST_ROLE_1', '01-01-1970', '01-01-1970'],
-                [2, 'TEST_ROLE_2', '01-01-1970', '01-01-1970'],
-                [3, 'TEST_ROLE_3', '01-01-1970', '01-01-1970'], ]},
+     'result': [[1, 'TEST_ROLE_1', test_date, test_date],
+                [2, 'TEST_ROLE_2', test_date, test_date],
+                [3, 'TEST_ROLE_3', test_date, test_date], ]},
     {'id': 14,
      'query': 'select count(*)>0 from fg_role where id = %s;',
      'result': [[1, ], ]},
@@ -187,10 +183,8 @@ user_apis_queries = [
               '       ud.data_desc,\n'
               '       ud.data_proto,\n'
               '       ud.data_type,\n'
-              '       date_format(ud.creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(ud.last_change,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+              '       ud.creation,\n'
+              '       ud.last_change\n'
               'from fg_user_data ud\n'
               'where ud.user_id=%s\n'
               '  and ud.data_id = (select max(data_id)\n'
@@ -203,8 +197,8 @@ user_apis_queries = [
                  'TEST_DATA_DESCRIPTION',
                  'TEST_DATA_PROTO',
                  'TEST_DATA_TYPE',
-                 '01-01-1970',
-                 '01-01-1970'], ]},
+                 test_date,
+                 test_date], ]},
     {'id': 17,
      'query': 'insert into fg_user_data (user_id,\n'
               '                          data_id,\n'
@@ -259,10 +253,8 @@ user_apis_queries = [
               '       ud.data_desc,\n'
               '       ud.data_proto,\n'
               '       ud.data_type,\n'
-              '       date_format(ud.creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(ud.last_change,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+              '       ud.creation,\n'
+              '       ud.last_change\n'
               'from fg_user_data ud\n'
               'where ud.user_id=%s\n'
               '  and ud.data_id=(select max(data_id)\n'
@@ -276,8 +268,8 @@ user_apis_queries = [
                  'TEST_DATA_DESCRIPTION',
                  'TEST_DATA_PROTO',
                  'TEST_DATA_TYPE',
-                 '01-01-1970',
-                 '01-01-1970'], ]},
+                 test_date,
+                 test_date], ]},
 ]
 
 # user_apis tests queries

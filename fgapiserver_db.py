@@ -37,7 +37,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-03 10:05:34'
 
 """
  Database connection default settings
@@ -232,9 +232,10 @@ class FGAPIServerDB:
                     passwd=self.db_pass,
                     db=self.db_name,
                     port=self.db_port)
-            except:
+            except mysql.connector.Error as err:
                 logging.error(
-                    'Failed to connect to database. Will retry in 5 seconds')
+                    'Failed to connect to database: \'%s\'. '
+                    'Will retry in 5 seconds' % err)
                 time.sleep(5)
 
         if safe_transaction is True:
@@ -572,7 +573,7 @@ class FGAPIServerDB:
                 token_info['user_id'] = user_rec[0]
                 token_info['user_name'] = user_rec[1]
                 token_info['creation'] = self.date_format(user_rec[2])
-                token_info['expiry'] = user_rec[3]
+                token_info['expiry'] = self.date_format(user_rec[3])
                 token_info['valid'] = user_rec[4] == 1
                 token_info['lasting'] = user_rec[5]
             self.query_done(
@@ -1470,8 +1471,7 @@ class FGAPIServerDB:
             infrastructures = []
             for infra in cursor:
                 infra_details = {
-                    "id": str(
-                        infra[0]),
+                    "id": str(infra[0]),
                     "name": infra[1],
                     "description": infra[2],
                     "creation": self.date_format(infra[3]),
@@ -2632,7 +2632,7 @@ class FGAPIServerDB:
             #         "creation": self.date_format(app_infra[3]),
             #         "enabled": bool(app_infra[4]),
             #         "virtual": False}
-            ##        ,"parameters"     : []}
+            # #       ,"parameters"     : []}
             #     app_infras += [app_infra_entry, ]
             # for app_infra in app_infras:
             #     sql = ('select pname\n'

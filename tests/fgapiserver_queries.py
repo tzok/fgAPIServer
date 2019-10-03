@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import datetime
 
 #
 # fgapiserver_queries - Provide queries for fgapiserver tests
@@ -26,7 +26,9 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-03 10:05:34'
+
+test_date = datetime.datetime(1970, 1, 1)
 
 fgapiserver_queries = [
     {'id': 0,
@@ -49,8 +51,8 @@ fgapiserver_queries = [
      'query': ('select '
                ' id\n'
                ',status\n'
-               ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-               ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+               ',creation\n'
+               ',last_change\n'
                ',app_id\n'
                ',description\n'
                ',user\n'
@@ -60,8 +62,8 @@ fgapiserver_queries = [
                '  and status != \'PURGED\';'),
      'result': [['1',
                  'WAITING',
-                 '1970-01-01T00:00:00',
-                 '1970-01-01T00:00:00',
+                 test_date,
+                 test_date,
                  '1',
                  'test task',
                  'test user',
@@ -97,10 +99,8 @@ fgapiserver_queries = [
                ' ,data_desc\n'
                ' ,data_type\n'
                ' ,data_proto\n'
-               ' ,date_format(creation,'
-               '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
-               ' ,date_format(last_change,'
-               '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+               ' ,creation\n'
+               ' ,last_change\n'
                'from runtime_data\n'
                'where task_id=%s\n'
                'order by data_id asc;'),
@@ -109,22 +109,22 @@ fgapiserver_queries = [
                  'userdata_desc_1',
                  'NULL',
                  'NULL',
-                 '1970-01-01T00:00:00',
-                 '1970-01-01T00:00:00'],
+                 test_date,
+                 test_date],
                 ['userdata_name_2',
                  'userdata_value_2',
                  'userdata_desc_2',
                  'NULL',
                  'NULL',
-                 '1970-01-01T00:00:00',
-                 '1970-01-01T00:00:00'],
+                 test_date,
+                 test_date],
                 ]},
     {'id': 9,
      'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
                '      ,outcome\n'
-               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,creation\n'
                '      ,enabled\n'
                'from application\n'
                'where id=%s;'),
@@ -132,7 +132,7 @@ fgapiserver_queries = [
                  'test application',
                  'test application description',
                  'JOB',
-                 '1970-01-01T00:00:00',
+                 test_date,
                  '1'],
                 ]},
     {'id': 10,
@@ -155,7 +155,7 @@ fgapiserver_queries = [
      'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
-               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,creation\n'
                '      ,if(enabled,\'enabled\',\'disabled\') status\n'
                '      ,if(vinfra,\'virtual\',\'real\') status\n'
                'from infrastructure\n'
@@ -163,7 +163,7 @@ fgapiserver_queries = [
      'result': [['1',
                  'test infra',
                  'test infrastructure for test application',
-                 '1970-01-01T00:00:00',
+                 test_date,
                  'enabled',
                  'real'], ]},
     {'id': 12,
@@ -218,8 +218,8 @@ fgapiserver_queries = [
                  'futuregateway',
                  'futuregateway',
                  'futuregateway@futuregateway',
-                 '1970-01-01T00:00:00',
-                 '1970-01-01T00:00:00'], ]},
+                 test_date,
+                 test_date], ]},
     {'id': 18,
      'query': ('select distinct id\n'
                'from infrastructure order by 1 asc;'),
@@ -228,8 +228,7 @@ fgapiserver_queries = [
      'query': ('select app_id,\n'
                '       name,\n'
                '       description,\n'
-               '       date_format(creation,\n'
-               '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+               '       creation,\n'
                '       enabled,\n'
                '       vinfra\n'
                'from infrastructure\n'
@@ -239,7 +238,7 @@ fgapiserver_queries = [
      'result': [['0',
                  'test infra',
                  'test infrastructure',
-                 '1970-01-01T00:00:00',
+                 test_date,
                  0,
                  0]]},
     {'id': 20,
@@ -629,7 +628,7 @@ fgapiserver_queries = [
                '      ,name\n'
                '      ,description\n'
                '      ,outcome\n'
-               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,creation\n'
                '      ,enabled\n'
                'from application\n'
                'where id = %s;'),
@@ -637,7 +636,7 @@ fgapiserver_queries = [
                  'test_app',
                  'test_app_desc',
                  'JOB',
-                 '1970-01-01T00:00:00',
+                 test_date,
                  1], ]},
     {'id': 61,
      'query': ('select pname\n'
@@ -958,10 +957,8 @@ fgapiserver_queries = [
               '       last_name,\n'
               '       institute,\n'
               '       mail,\n'
-              '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       creation,\n'
+              '       modified\n'
               'from fg_user\n'
               'where name = %s;',
      'result': [['1',
@@ -970,8 +967,8 @@ fgapiserver_queries = [
                  'test_lastname',
                  'institute',
                  'mail',
-                 '01/01/1970',
-                 '01/01/1970'], ]},
+                 test_date,
+                 test_date], ]},
     {'id': 94.1,
      'query': 'select id,\n'
               '       name,\n'
@@ -979,10 +976,8 @@ fgapiserver_queries = [
               '       last_name,\n'
               '       institute,\n'
               '       mail,\n'
-              '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       creation,\n'
+              '       modified\n'
               'from fg_user\n'
               'where id=%s;',
      'result': [['1',
@@ -991,8 +986,8 @@ fgapiserver_queries = [
                  'test_lastname',
                  'institute',
                  'mail',
-                 '01/01/1970',
-                 '01/01/1970'], ]},
+                 test_date,
+                 test_date], ]},
     {'id': 95,
      'query': 'insert into fg_user (id\n'
               '                    ,name\n'
@@ -1020,26 +1015,22 @@ fgapiserver_queries = [
     {'id': 96,
      'query': 'select id,\n'
               '       name,\n'
-              '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       creation,\n'
+              '       modified\n'
               'from fg_group;',
-     'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
+     'result': [[1, 'test_group', test_date, test_date], ]},
     {'id': 97,
      'query': 'select g.id,\n'
               '       g.name,\n'
-              '       date_format(g.creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(g.modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       g.creation,\n'
+              '       g.modified\n'
               'from fg_group g,\n'
               '     fg_user_group ug,\n'
               '     fg_user u\n'
               'where u.id = %s\n'
               '  and u.id = ug.user_id\n'
               '  and g.id = ug.group_id;',
-     'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
+     'result': [[1, 'test_group', test_date, test_date], ]},
     {'id': 98,
      'query': 'select id,\n'
               '       name,\n'
@@ -1047,10 +1038,8 @@ fgapiserver_queries = [
               '       last_name,\n'
               '       institute,\n'
               '       mail,\n'
-              '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
-              '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '       creation,\n'
+              '       modified\n'
               'from fg_user\n',
      'result': [['1',
                  'test_user1',
@@ -1058,16 +1047,16 @@ fgapiserver_queries = [
                  'test_lastname',
                  'institute',
                  'mail',
-                 '01/01/1970',
-                 '01/01/1970'],
+                 test_date,
+                 test_date],
                 ['2',
                  'test_user2',
                  'test_firstname',
                  'test_lastname',
                  'institute',
                  'mail',
-                 '01/01/1970',
-                 '01/01/1970'], ]},
+                 test_date,
+                 test_date], ]},
     {'id': 99,
      'query': 'insert into fg_user_group (user_id,\n'
               '                           group_id,\n'
@@ -1089,8 +1078,7 @@ fgapiserver_queries = [
     {'id': 100,
      'query': 'select user_id\n'
               '      ,(select name from fg_user where id=user_id) name\n'
-              '      ,date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation\n'
+              '      ,creation,\n'
               '      ,expiry\n'
               '      ,(creation+expiry)-now()>0\n'
               '      ,if((creation+expiry)-now()>0,\n'
@@ -1100,8 +1088,8 @@ fgapiserver_queries = [
               'where token=%s;',
      'result': [['1',
                  'test_user',
-                 '01/01/1970',
-                 '01/01/1970',
+                 test_date,
+                 test_date,
                  1,
                  1000, ], ]},
     {'id': 101,

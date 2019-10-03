@@ -34,7 +34,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-03 10:05:34'
 
 
 # FGTESTS_STOPATFAIL environment controls the execution
@@ -129,9 +129,9 @@ class TestUsersAPIs(unittest.TestCase):
     def test_GroupAdd(self):
         self.banner("group_add (fgapiserverdb)")
         new_group = self.fgapisrv_db.group_add("TEST_GROUP")
-        chk_group = {'creation': '01-01-1979',
+        chk_group = {'creation': '1970-01-01T00:00:00Z',
                      'id': 1,
-                     'modified': '01-01-1970',
+                     'modified': '1970-01-01T00:00:00Z',
                      'name': 'TEST_GROUP'}
         self.assertEqual(chk_group, new_group)
 
@@ -161,7 +161,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        self.assertEqual("d217201fe601c2cd9475d17d2b779091",
+        self.assertEqual("4a27502cda0396d9f925a93c33b17ff4",
                          self.md5sum_str(result.data))
 
     """
@@ -178,7 +178,7 @@ class TestUsersAPIs(unittest.TestCase):
                               headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("1f6e310992a628fa7473c4f63c561ec5",
+        self.assertEqual("fc3b043abff5e4f45a92229d202419d6",
                          self.md5sum_str(result.data))
 
     def test_post_users(self):
@@ -205,7 +205,7 @@ class TestUsersAPIs(unittest.TestCase):
             headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("4bd146be73df313b35af48f107f3a23d",
+        self.assertEqual("992c43c0e90cbe43b3855f05da0377e6",
                          self.md5sum_str(result.data))
 
     def test_get_user(self):
@@ -218,7 +218,7 @@ class TestUsersAPIs(unittest.TestCase):
                               headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
+        self.assertEqual("8d288ea0c51a7d17a75393ececfd7af8",
                          self.md5sum_str(result.data))
 
     def test_post_user(self):
@@ -238,7 +238,7 @@ class TestUsersAPIs(unittest.TestCase):
             headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("27a2adc7411953be94a4711b088b3bb4",
+        self.assertEqual("8d288ea0c51a7d17a75393ececfd7af8",
                          self.md5sum_str(result.data))
 
     def test_get_groups(self):
@@ -251,7 +251,7 @@ class TestUsersAPIs(unittest.TestCase):
                               headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("30661885dc0cdeb44de575468597f446",
+        self.assertEqual("44456d87fe2e72dccdb2dee997d1e4e2",
                          self.md5sum_str(result.data))
 
     def test_get_user_groups(self):
@@ -264,7 +264,7 @@ class TestUsersAPIs(unittest.TestCase):
                               headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("30661885dc0cdeb44de575468597f446",
+        self.assertEqual("44456d87fe2e72dccdb2dee997d1e4e2",
                          self.md5sum_str(result.data))
 
     def test_post_user_groups(self):
@@ -297,7 +297,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % md5val)
         self.assertEqual(result.status_code, 200)
-        self.assertEqual("761b5b5b0e064a0e8c44db836b80ab64", md5val)
+        self.assertEqual("387ef0914ffd298b43a9e18e7f951b5f", md5val)
 
     # Get access token from POST auth/ username/base64(password)
     def test_post_auth(self):
@@ -315,7 +315,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        self.assertEqual("6dcf15f9ed8fd7bdb110125a0c6d68f4",
+        self.assertEqual("bc97bbe5808595f75cdf3139fac38729",
                          self.md5sum_str(result.data))
 
     # Get user data of test_user (GET) /users/test_user/data
@@ -329,7 +329,7 @@ class TestUsersAPIs(unittest.TestCase):
                               headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("cb1a9cd6a613502200f149746c3deee6",
+        self.assertEqual("fec4498548d4b81feadbbea883f375a1",
                          self.md5sum_str(result.data))
 
     # Add user data to test_user (POST) /users/test_user/data
@@ -444,7 +444,7 @@ class TestUsersAPIs(unittest.TestCase):
                               headers=headers)
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("311a143087daeb030e865ffbd254e67d",
+        self.assertEqual("b4a113e4844840aa4dab41f9ee00cbdc",
                          self.md5sum_str(result.data))
 
     # Add user data TEST_DATA_NAME to test_user
@@ -457,11 +457,11 @@ class TestUsersAPIs(unittest.TestCase):
         }
         post_data = {
             "data_proto": "TEST_DATA_PROTO",
-            "creation": "01-01-1970",
+            "creation": "1970-01-01T00:00:00Z",
             "data_value": "TEST_DATA_VALUE",
             "data_type": "TEST_DATA_TYPE",
             "data_desc": "TEST_DATA_DESCRIPTION",
-            "last_change": "01-01-1970"
+            "last_change": "1970-01-01T00:00:00Z"
         }
         result = self.app.post(
             url,
@@ -471,7 +471,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 201)
-        self.assertEqual("94439e3f4fdfe6db1eb77d748b6432e0",
+        self.assertEqual("28cb19a7754b149607feead953bded16",
                          self.md5sum_str(result.data))
 
     # Modify user data TEST_DATA_NAME to test_user
@@ -542,7 +542,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 201)
-        self.assertEqual("6a4376e47c877f672e47eac39e0f106e",
+        self.assertEqual("0ac63b091cb357a9fc33951f1acda17d",
                          self.md5sum_str(result.data))
 
     # Delete group DELETE user /users/<user>/groups/
@@ -581,7 +581,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        self.assertEqual("61ac839061f508f995cb371009641151",
+        self.assertEqual("2c9250727962b4fea8b5f613c6f51fbf",
                          self.md5sum_str(result.data))
 
     # Add group app POST /groups/<group>/apps
@@ -618,7 +618,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
+        self.assertEqual("06d634a689f15f1a8fb0af55ea2738e9",
                          self.md5sum_str(result.data))
 
     # Add group roles POST /groups/<group>/roles
@@ -659,7 +659,7 @@ class TestUsersAPIs(unittest.TestCase):
         print(result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
         self.assertEqual(result.status_code, 200)
-        self.assertEqual("39640ec912b6f4d69809e875adf9bfa7",
+        self.assertEqual("06d634a689f15f1a8fb0af55ea2738e9",
                          self.md5sum_str(result.data))
 
 

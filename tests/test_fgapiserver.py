@@ -35,12 +35,13 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-03 10:05:34'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as
 # soon as the first test error occurs
 stop_at_fail = os.getenv('FGTESTS_STOPATFAIL') is not None
+print "stop_at_fail=%s" % stop_at_fail
 
 
 class TestfgAPIServer(unittest.TestCase):
@@ -168,8 +169,8 @@ class TestfgAPIServer(unittest.TestCase):
         assert state[0] is False
         expected_result = {
             'user_id': '1',
-            'creation': '01/01/1970',
-            'expiry': '01/01/1970',
+            'creation': '1970-01-01T00:00:00Z',
+            'expiry': '1970-01-01T00:00:00Z',
             'token': 'TESTSESSIONTOKEN',
             'valid': True,
             'user_name': 'test_user',
@@ -704,7 +705,7 @@ class TestfgAPIServer(unittest.TestCase):
         print("Result: '%s'" % result)
         print("Result data: '%s'" % result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("97b437330ba649e1a54d0abbf9ff0b93",
+        self.assertEqual("75fccd87dfa14ccca2e80e2031a25438",
                          self.md5sum_str(result.data))
 
     def test_get_infrastructure(self):
@@ -713,7 +714,7 @@ class TestfgAPIServer(unittest.TestCase):
         print("Result: '%s'" % result)
         print("Result data: '%s'" % result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("0f814c236f26fd5fd5feb6449f9f8afc",
+        self.assertEqual("ced6630adc7dc23da23f14a60fd55800",
                          self.md5sum_str(result.data))
 
     def test_post_infrastructures(self):
@@ -730,7 +731,7 @@ class TestfgAPIServer(unittest.TestCase):
         print("Result: '%s'" % result)
         print("Result data: '%s'" % result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("0ccd202bbf2ccbcded52eab2a64857bf",
+        self.assertEqual("e39db30745d5993b9d9588a3585990eb",
                          self.md5sum_str(result.data))
 
     def test_delete_infrastructure(self):
@@ -760,7 +761,7 @@ class TestfgAPIServer(unittest.TestCase):
         print("Result: '%s'" % result)
         print("Result data: '%s'" % result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("473edf1da15f42eaf32992a3d759e631",
+        self.assertEqual("a91bd189f6619431fe3e0a1fd9a517ef",
                          self.md5sum_str(result.data))
 
     def test_post_application(self):
@@ -834,7 +835,7 @@ class TestfgAPIServer(unittest.TestCase):
         print("Result: '%s'" % result)
         print("Result data: '%s'" % result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("cb8f131e1ec4fb565710a3b1b7d8a233",
+        self.assertEqual("1377b3bfa9e4495bf4f4e58026a68949",
                          self.md5sum_str(result.data))
 
     def test_get_task(self):
@@ -843,7 +844,7 @@ class TestfgAPIServer(unittest.TestCase):
         print("Result: '%s'" % result)
         print("Result data: '%s'" % result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("6ab2753736658d09062ced3d7fecae6d",
+        self.assertEqual("10f60a78fb0e31c44550afe756eb91f0",
                          self.md5sum_str(result.data))
 
     def test_post_task(self):
@@ -859,7 +860,7 @@ class TestfgAPIServer(unittest.TestCase):
         print("Result: '%s'" % result)
         print("Result data: '%s'" % result.data)
         print("MD5: '%s'" % self.md5sum_str(result.data))
-        self.assertEqual("e2f5a4efa29a391496ca36935a5f106b",
+        self.assertEqual("c931523a0f46a75e31eaa4b00aa6db69",
                          self.md5sum_str(result.data))
 
     def test_delete_task(self):
