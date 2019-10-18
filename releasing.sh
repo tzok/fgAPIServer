@@ -31,12 +31,16 @@ __email__ = '${EMAIL}'
 __status__ = '${STATUS}'
 __update__ = '${UPDATE}'
 EOF
+  OS=$(uname -a | awk '{ print $1 }')
+  [ "$OS" = "Darwin" ] &&\
+      I_OPT="''" ||\
+      I_OPT=""
   for pyfile in $(/bin/ls -1 *.py *.wsgi tests/*.py); do
       echo "Releasing file: '$pyfile'"
       while read rel_line; do
           rel_item=$(echo $rel_line | awk -F'=' '{ print $1 }' | xargs echo)
           echo "    Processing line item: '$rel_item'"
-          CMD=$(echo "sed -i '' s/^${rel_item}.*/\"$rel_line\"/ $pyfile")
+          CMD=$(echo "sed -i $I_OPT s/^${rel_item}.*/\"$rel_line\"/ $pyfile")
           eval $CMD
       done < $TMP
   done

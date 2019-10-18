@@ -28,7 +28,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-08-09 16:35:54'
+__update__ = '2019-10-18 10:50:54'
 
 key = "0123456789ABCDEF"  # (!) Please use fgapiserver_secret value
 username = "futuregateway"
@@ -69,6 +69,6 @@ if __name__ == "__main__":
           "timestamp=<issue_time>' is '%s'"
           % (key, username, password, token))
     print("Decoded token: '%s' -> '%s'" % (token, tinfo))
-    username, password, timestamp = token_info(token)
+    username, password, timestamp = token_info(key, token)
     print("Token info: 'username=%s:password=%s:timestamp=%s'"
           % (username, password, timestamp))

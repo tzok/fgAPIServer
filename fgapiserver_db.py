@@ -44,7 +44,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-08-09 16:35:54'
+__update__ = '2019-10-18 10:50:54'
 
 """
  Database connection default settings
@@ -146,8 +146,7 @@ class FGAPIServerDB:
 
     def __init__(self, **kwargs):
         """
-
-        :rtype:
+          FGAPIServerDB constructor
         """
         self.db_host = kwargs.get('db_host', def_db_host)
         self.db_port = kwargs.get('db_port', def_db_port)
@@ -172,6 +171,14 @@ class FGAPIServerDB:
                          self.db_name,
                          self.iosandbbox_dir,
                          self.geapiserverappid))
+
+    """
+      print_sql - Return a printable sql statement string in case it contains
+                  special characters as in date_format statements
+    """
+
+    def print_sql(self, sql):
+        return sql.replace('%Y-%m-%dT%TZ', '%%Y-%%m-%%dT%%TZ')
 
     """
        catchDBError - common operations performed upon database
@@ -560,7 +567,7 @@ class FGAPIServerDB:
                 'select user_id\n'
                 '      ,(select name from fg_user where id=user_id) name\n'
                 '      ,date_format(creation,\n'
-                '                   \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '                   \'%Y-%m-%dT%TZ\') creation\n'
                 '      ,expiry\n'
                 '      ,(creation+expiry)-now()>0\n'
                 '      ,if((creation+expiry)-now()>0,\n'
@@ -569,7 +576,7 @@ class FGAPIServerDB:
                 'from fg_token\n'
                 'where token=%s;')
             sql_data = (sestoken,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             user_rec = cursor.fetchone()
             if user_rec is not None:
@@ -1198,8 +1205,8 @@ class FGAPIServerDB:
                 'select '
                 ' id\n'
                 ',status\n'
-                ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-                ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                ',date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
+                ',date_format(last_change, \'%Y-%m-%dT%TZ\') last_change\n'
                 ',app_id\n'
                 ',description\n'
                 ',user\n'
@@ -1208,7 +1215,7 @@ class FGAPIServerDB:
                 'where id=%s\n'
                 '  and status != "PURGED";')
             sql_data = (task_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             task_dbrec = cursor.fetchone()
             if task_dbrec is not None:
@@ -1292,14 +1299,14 @@ class FGAPIServerDB:
                 ' ,data_type\n'
                 ' ,data_proto\n'
                 ' ,date_format(creation,'
-                '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '              \'%Y-%m-%dT%TZ\') creation\n'
                 ' ,date_format(last_change,'
-                '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                '              \'%Y-%m-%dT%TZ\') last_change\n'
                 'from runtime_data\n'
                 'where task_id=%s\n'
                 'order by data_id asc;')
             sql_data = (task_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             runtime_data = []
             for rtdata in cursor:
@@ -1432,12 +1439,12 @@ class FGAPIServerDB:
                 '      ,name\n'
                 '      ,description\n'
                 '      ,outcome\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
                 '      ,enabled\n'
                 'from application\n'
                 'where id=%s;')
             sql_data = (app_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             app_record = cursor.fetchone()
             app_detail = {
@@ -1470,13 +1477,13 @@ class FGAPIServerDB:
                 'select id\n'
                 '      ,name\n'
                 '      ,description\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
                 '      ,if(enabled,\'enabled\',\'disabled\') status\n'
                 '      ,if(vinfra,\'virtual\',\'real\') status\n'
                 'from infrastructure\n'
                 'where app_id=%s;')
             sql_data = (app_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             infrastructures = []
             for infra in cursor:
@@ -2338,7 +2345,7 @@ class FGAPIServerDB:
         app_id = None
         try:
             db = self.connect(safe_transaction)
-            cursor = db.cursor()
+            cursor = db.cursor(buffered=True)
             sql = ('select app_id from application_file\n'
                    'where file=%s and path=%s\n'
                    'union all\n'
@@ -2575,12 +2582,12 @@ class FGAPIServerDB:
                 '      ,name\n'
                 '      ,description\n'
                 '      ,outcome\n'
-                '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+                '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
                 '      ,enabled\n'
                 'from application\n'
                 'where id=%s;')
             sql_data = (app_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             app_dbrec = cursor.fetchone()
             if app_dbrec is not None:
@@ -2643,12 +2650,12 @@ class FGAPIServerDB:
             #     '      ,name\n'
             #     '      ,description\n'
             #     '      ,date_format(creation,
-            #                         \'%%Y-%%m-%%dT%%TZ\') creation\n'
+            #                         \'%Y-%m-%dT%TZ\') creation\n'
             #     '      ,enabled\n'
             #     'from infrastructure\n'
             #     'where app_id=%s;')
             # sql_data = (app_id,)
-            # logging.debug(sql % sql_data)
+            # logging.debug(self.print_sql(sql) % sql_data)
             # cursor.execute(sql, sql_data)
             # app_infras = []
             # for app_infra in cursor:
@@ -3185,7 +3192,7 @@ class FGAPIServerDB:
                 '       name,\n'
                 '       description,\n'
                 '       date_format(creation,\n'
-                '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                '                   \'%Y-%m-%dT%TZ\') creation,\n'
                 '       enabled,\n'
                 '       vinfra\n'
                 'from infrastructure\n'
@@ -3193,7 +3200,7 @@ class FGAPIServerDB:
                 'order by 1 asc ,2 asc\n'
                 'limit 1;')
             sql_data = (infra_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             infra_dbrec = cursor.fetchone()
             if infra_dbrec is not None:
@@ -3950,12 +3957,12 @@ class FGAPIServerDB:
                    '       institute,\n'
                    '       mail,\n'
                    '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '                   \'%Y-%m-%dT%TZ\') modified\n'
                    'from fg_user\n')
             sql_data = ()
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             for record in cursor:
                 result += [{
@@ -3995,13 +4002,13 @@ class FGAPIServerDB:
                    '       institute,\n'
                    '       mail,\n'
                    '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '                   \'%Y-%m-%dT%TZ\') modified\n'
                    'from fg_user\n'
                    'where id=%s;')
             sql_data = (user_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             record = cursor.fetchone()
             if record is not None:
@@ -4085,13 +4092,13 @@ class FGAPIServerDB:
                    '       institute,\n'
                    '       mail,\n'
                    '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '                   \'%Y-%m-%dT%TZ\') modified\n'
                    'from fg_user\n'
                    'where name = %s;')
             sql_data = (user_data['name'],)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             record = cursor.fetchone()
             result = {
@@ -4133,9 +4140,9 @@ class FGAPIServerDB:
                    '       ud.data_proto,\n'
                    '       ud.data_type,\n'
                    '       date_format(ud.creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(ud.last_change,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                   '                   \'%Y-%m-%dT%TZ\') last_change\n'
                    'from fg_user_data ud\n'
                    'where ud.user_id=%s\n'
                    '  and ud.data_id = (select max(data_id)\n'
@@ -4143,7 +4150,7 @@ class FGAPIServerDB:
                    '                    where user_id=ud.user_id\n'
                    '                      and data_name=ud.data_name);')
             sql_data = (user_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             for user_data in cursor:
                 if user_data is not None:
@@ -4186,9 +4193,9 @@ class FGAPIServerDB:
                    '       ud.data_proto,\n'
                    '       ud.data_type,\n'
                    '       date_format(ud.creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(ud.last_change,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+                   '                   \'%Y-%m-%dT%TZ\') last_change\n'
                    'from fg_user_data ud\n'
                    'where ud.user_id=%s\n'
                    '  and ud.data_id=(select max(data_id)\n'
@@ -4197,7 +4204,7 @@ class FGAPIServerDB:
                    '                    and data_name=ud.data_name)\n'
                    '  and ud.data_name=%s;')
             sql_data = (user_id, data_name)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             data_entry = cursor.fetchone()
             if data_entry is not None:
@@ -4373,12 +4380,12 @@ class FGAPIServerDB:
             sql = ('select id,\n'
                    '       name,\n'
                    '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '                   \'%Y-%m-%dT%TZ\') modified\n'
                    'from fg_group;')
             sql_data = ()
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             for group_record in cursor:
                 groups += [
@@ -4410,9 +4417,9 @@ class FGAPIServerDB:
             sql = ('select g.id,\n'
                    '       g.name,\n'
                    '       date_format(g.creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(g.modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '                   \'%Y-%m-%dT%TZ\') modified\n'
                    'from fg_group g,\n'
                    '     fg_user_group ug,\n'
                    '     fg_user u\n'
@@ -4420,7 +4427,7 @@ class FGAPIServerDB:
                    '  and u.id = ug.user_id\n'
                    '  and g.id = ug.group_id;')
             sql_data = (user_id,)
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             for group_record in cursor:
                 groups += [
@@ -4453,13 +4460,13 @@ class FGAPIServerDB:
                 sql = ('select id,\n'
                        '       name,\n'
                        '       date_format(creation,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                       '                   \'%Y-%m-%dT%TZ\') creation,\n'
                        '       date_format(modified,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                       '                   \'%Y-%m-%dT%TZ\') modified\n'
                        'from fg_group\n'
                        'where id=%s;')
                 sql_data = (group_id,)
-                logging.debug(sql % sql_data)
+                logging.debug(self.print_sql(sql) % sql_data)
                 cursor.execute(sql, sql_data)
                 group_record = cursor.fetchone()
                 if group_record is not None:
@@ -4496,14 +4503,14 @@ class FGAPIServerDB:
                        '       a.description,\n'
                        '       a.outcome,\n'
                        '       date_format(a.creation,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                       '                   \'%Y-%m-%dT%TZ\') creation,\n'
                        '       a.enabled\n'
                        'from fg_group_apps ga,\n'
                        '      application a\n'
                        'where group_id=%s\n'
                        '  and ga.app_id=a.id;')
                 sql_data = (group_id,)
-                logging.debug(sql % sql_data)
+                logging.debug(self.print_sql(sql) % sql_data)
                 cursor.execute(sql, sql_data)
                 for app_record in cursor:
                     applications += [
@@ -4583,13 +4590,13 @@ class FGAPIServerDB:
             sql = ('select id,\n'
                    '       name,\n'
                    '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '                   \'%Y-%m-%dT%TZ\') modified\n'
                    'from fg_group\n'
                    'where name = %s')
             sql_data = (group_name,)
-            logging.debug(sql, sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             group_record = cursor.fetchone()
             if group_record is not None and group_name == group_record[1]:
@@ -4743,15 +4750,15 @@ class FGAPIServerDB:
                 sql = ('select r.id,\n'
                        '       r.name,\n'
                        '       date_format(r.creation,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                       '                   \'%Y-%m-%dT%TZ\') creation,\n'
                        '       date_format(r.modified,\n'
-                       '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                       '                   \'%Y-%m-%dT%TZ\') modified\n'
                        'from fg_group_role gr,\n'
                        '     fg_role r\n'
                        'where gr.group_id = %s\n'
                        '  and gr.role_id = r.id;')
                 sql_data = (group_id,)
-                logging.debug(sql % sql_data)
+                logging.debug(self.print_sql(sql) % sql_data)
                 cursor.execute(sql, sql_data)
                 for role_record in cursor:
                     roles += [
@@ -4820,12 +4827,12 @@ class FGAPIServerDB:
             sql = ('select id,\n'
                    '       name,\n'
                    '       date_format(creation,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+                   '                   \'%Y-%m-%dT%TZ\') creation,\n'
                    '       date_format(modified,\n'
-                   '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+                   '                   \'%Y-%m-%dT%TZ\') modified\n'
                    'from fg_role;')
             sql_data = ()
-            logging.debug(sql % sql_data)
+            logging.debug(self.print_sql(sql) % sql_data)
             cursor.execute(sql, sql_data)
             for role_record in cursor:
                 roles += [

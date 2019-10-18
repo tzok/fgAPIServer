@@ -35,7 +35,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-08-09 16:35:54'
+__update__ = '2019-10-18 10:50:54'
 
 # FGTESTS_STOPATFAIL environment controls the execution
 # of the tests, if defined, it stops test execution as

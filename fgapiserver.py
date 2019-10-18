@@ -59,7 +59,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-08-09 16:35:54'
+__update__ = '2019-10-18 10:50:54'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
@@ -869,7 +869,7 @@ def task_id(apiver=fg_config['fgapiver'], taskid=None):
 # POST - specify input files
 
 
-@app.route('/<apiver>/tasks/<task_id>/input',
+@app.route('/<apiver>/tasks/<taskid>/input',
            methods=['GET',
                     'POST'])
 @login_required
@@ -965,7 +965,7 @@ def task_id_input(apiver=fg_config['fgapiver'], taskid=None):
                     else:
                         state = 200
                         response = {
-                            "task": task_id,
+                            "task": taskid,
                             "files": file_list,
                             "message": "uploaded",
                             "gestatus": "waiting"}
