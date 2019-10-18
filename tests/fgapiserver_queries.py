@@ -26,7 +26,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-10-18 12:34:14'
+__update__ = '2019-10-18 14:17:10'
 
 fgapiserver_queries = [
     {'id': 0,
@@ -1163,6 +1163,11 @@ fgapiserver_queries = [
     {'id': 114,
      'query': 'delete from application where id=%s;',
      'result': None},
+    {'id': 115,
+     'query': 'select count(*)\n'
+              'from task_input_file\n'
+              'where task_id=%s and file=%s;',
+     'result': [[1], ]},
 ]
 
 # fgapiserver tests queries

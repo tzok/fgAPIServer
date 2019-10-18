@@ -44,7 +44,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-10-18 12:34:14'
+__update__ = '2019-10-18 14:17:10'
 
 """
  Database connection default settings
@@ -1859,7 +1859,8 @@ class FGAPIServerDB:
 
     """
       update_input_sandbox_file - Update input_sandbox_table with the fullpath
-      of a given (task_id, filename, filepat filepath)
+      of a given (task_id, filename, filepat filepath), if the file does not
+      exists, it will be added in the task_input_file table
     """
 
     def update_input_sandbox_file(self, task_id, filename, filepath):
@@ -1869,13 +1870,37 @@ class FGAPIServerDB:
         try:
             db = self.connect(safe_transaction)
             cursor = db.cursor()
-            sql = ('update task_input_file\n'
-                   'set path=%s\n'
-                   'where task_id=%s\n'
-                   '  and file=%s;')
-            sql_data = (filepath, task_id, filename)
+            sql = ('select count(*)\n'
+                   'from task_input_file\n'
+                   'where task_id=%s and file=%s;')
+            sql_data = (task_id, filename)
             logging.debug(sql % sql_data)
             cursor.execute(sql, sql_data)
+            file_count = cursor.fetchone()[0]
+            if file_count == 0:
+                sql = ('insert into task_input_file(task_id,\n'
+                       '                            file_id,\n'
+                       '                            file,\n'
+                       '                            path)\n'
+                       'select %s,\n'
+                       '       (select if(max(file_id) is NULL,\n'
+                       '                  1,\n'
+                       '                  max(file_id)+1)\n'
+                       '        from task_input_file\n'
+                       '        where task_id=%s),\n'
+                       '       %s,\n'
+                       '       %s;')
+                sql_data = (task_id, task_id, filename, filepath)
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
+            else:
+                sql = ('update task_input_file\n'
+                       'set path=%s\n'
+                       'where task_id=%s\n'
+                       '  and file=%s;')
+                sql_data = (filepath, task_id, filename)
+                logging.debug(sql % sql_data)
+                cursor.execute(sql, sql_data)
             self.query_done(
                 "input sandbox for task '%s' successfully updated" % task_id)
         except mysql.connector.Error as e:
