@@ -59,7 +59,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-10-18 10:50:54'
+__update__ = '2019-10-18 12:34:14'
 
 # Logging
 logging.config.fileConfig(fg_config['fgapisrv_logcfg'])
@@ -464,6 +464,7 @@ def index(apiver=fg_config['fgapiver']):
         response = {
             "versions": versions,
             "config": fg_config,
+            "srv_uuid": fgapiserver_uuid,
             "_links": ({"rel": "self",
                         "href": "/"},)
         }
@@ -1792,7 +1793,7 @@ def limit_remote_addr():
 check_db_ver()
 
 # Server registration and configuration from fgdb
-check_db_reg(fg_config)
+fgapiserver_uuid = check_db_reg(fg_config)
 
 # Now execute accordingly to the app configuration (stand-alone/wsgi)
 if __name__ == "__main__":

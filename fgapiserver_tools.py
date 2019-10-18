@@ -41,7 +41,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-10-18 10:50:54'
+__update__ = '2019-10-18 12:34:14'
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -373,6 +373,7 @@ def check_db_reg(config):
         # Registered service checks for database configuration
         logging.debug("Service with uuid: '%s' is already registered"
                       % fgapisrv_uuid)
+    return fgapisrv_uuid
 
 
 def update_db_config(config):
