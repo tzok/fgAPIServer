@@ -33,6 +33,7 @@ create table srv_registry (
    ,creation      datetime      not null
    ,last_access   datetime      not null
    ,enabled       boolean default true
+   ,cfg_hash      varchar(1024)
    ,primary key(uuid)
 );
 

@@ -31,7 +31,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-18 15:19:14'
 
 """
   fgapiserver_ptv - APIServer Portal Token Validator

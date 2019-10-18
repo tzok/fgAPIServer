@@ -26,7 +26,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-18 15:19:14'
 
 fgapiserver_queries = [
     {'id': 0,
@@ -49,8 +49,8 @@ fgapiserver_queries = [
      'query': ('select '
                ' id\n'
                ',status\n'
-               ',date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
-               ',date_format(last_change, \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+               ',date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
+               ',date_format(last_change, \'%Y-%m-%dT%TZ\') last_change\n'
                ',app_id\n'
                ',description\n'
                ',user\n'
@@ -98,9 +98,9 @@ fgapiserver_queries = [
                ' ,data_type\n'
                ' ,data_proto\n'
                ' ,date_format(creation,'
-               '              \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '              \'%Y-%m-%dT%TZ\') creation\n'
                ' ,date_format(last_change,'
-               '              \'%%Y-%%m-%%dT%%TZ\') last_change\n'
+               '              \'%Y-%m-%dT%TZ\') last_change\n'
                'from runtime_data\n'
                'where task_id=%s\n'
                'order by data_id asc;'),
@@ -124,7 +124,7 @@ fgapiserver_queries = [
                '      ,name\n'
                '      ,description\n'
                '      ,outcome\n'
-               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
                '      ,enabled\n'
                'from application\n'
                'where id=%s;'),
@@ -155,7 +155,7 @@ fgapiserver_queries = [
      'query': ('select id\n'
                '      ,name\n'
                '      ,description\n'
-               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
                '      ,if(enabled,\'enabled\',\'disabled\') status\n'
                '      ,if(vinfra,\'virtual\',\'real\') status\n'
                'from infrastructure\n'
@@ -229,7 +229,7 @@ fgapiserver_queries = [
                '       name,\n'
                '       description,\n'
                '       date_format(creation,\n'
-               '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+               '                   \'%Y-%m-%dT%TZ\') creation,\n'
                '       enabled,\n'
                '       vinfra\n'
                'from infrastructure\n'
@@ -629,7 +629,7 @@ fgapiserver_queries = [
                '      ,name\n'
                '      ,description\n'
                '      ,outcome\n'
-               '      ,date_format(creation, \'%%Y-%%m-%%dT%%TZ\') creation\n'
+               '      ,date_format(creation, \'%Y-%m-%dT%TZ\') creation\n'
                '      ,enabled\n'
                'from application\n'
                'where id = %s;'),
@@ -959,9 +959,9 @@ fgapiserver_queries = [
               '       institute,\n'
               '       mail,\n'
               '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '                   \'%Y-%m-%dT%TZ\') creation,\n'
               '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '                   \'%Y-%m-%dT%TZ\') modified\n'
               'from fg_user\n'
               'where name = %s;',
      'result': [['1',
@@ -980,9 +980,9 @@ fgapiserver_queries = [
               '       institute,\n'
               '       mail,\n'
               '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '                   \'%Y-%m-%dT%TZ\') creation,\n'
               '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '                   \'%Y-%m-%dT%TZ\') modified\n'
               'from fg_user\n'
               'where id=%s;',
      'result': [['1',
@@ -1021,18 +1021,18 @@ fgapiserver_queries = [
      'query': 'select id,\n'
               '       name,\n'
               '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '                   \'%Y-%m-%dT%TZ\') creation,\n'
               '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '                   \'%Y-%m-%dT%TZ\') modified\n'
               'from fg_group;',
      'result': [[1, 'test_group', '01/01/1970', '01/01/1970'], ]},
     {'id': 97,
      'query': 'select g.id,\n'
               '       g.name,\n'
               '       date_format(g.creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '                   \'%Y-%m-%dT%TZ\') creation,\n'
               '       date_format(g.modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '                   \'%Y-%m-%dT%TZ\') modified\n'
               'from fg_group g,\n'
               '     fg_user_group ug,\n'
               '     fg_user u\n'
@@ -1048,9 +1048,9 @@ fgapiserver_queries = [
               '       institute,\n'
               '       mail,\n'
               '       date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation,\n'
+              '                   \'%Y-%m-%dT%TZ\') creation,\n'
               '       date_format(modified,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') modified\n'
+              '                   \'%Y-%m-%dT%TZ\') modified\n'
               'from fg_user\n',
      'result': [['1',
                  'test_user1',
@@ -1090,7 +1090,7 @@ fgapiserver_queries = [
      'query': 'select user_id\n'
               '      ,(select name from fg_user where id=user_id) name\n'
               '      ,date_format(creation,\n'
-              '                   \'%%Y-%%m-%%dT%%TZ\') creation\n'
+              '                   \'%Y-%m-%dT%TZ\') creation\n'
               '      ,expiry\n'
               '      ,(creation+expiry)-now()>0\n'
               '      ,if((creation+expiry)-now()>0,\n'

@@ -41,7 +41,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-03-19 11:47:47'
+__update__ = '2019-10-18 15:19:14'
 
 
 # setup path
@@ -406,6 +406,7 @@ def check_db_reg(config):
         # Registered service checks for database configuration
         logging.debug("Service with uuid: '%s' is already registered"
                       % fgapisrv_uuid)
+    return fgapisrv_uuid
 
 
 def update_db_config(config):
