@@ -89,7 +89,9 @@ class FGApiServerConfig(dict):
             'fgapisrv_ptvpass': 'ptvpass',
             'fgapisrv_ptvdefusr': 'futuregateway',
             'fgapisrv_ptvdefgrp': 'administrator',
-            'fgapisrv_ptvmapfile': 'fgapiserver_ptvmap.json'},
+            'fgapisrv_ptvmapfile': 'fgapiserver_ptvmap.json',
+            'dbcon_retry_times': '-1',
+            'dbcon_retry_delay': '5'},
         'fgapiserver_db': {
             'fgapisrv_db_host': 'localhost',
             'fgapisrv_db_port': '3306',
@@ -112,7 +114,9 @@ class FGApiServerConfig(dict):
                  'fgapisrv_geappid',
                  'fgapisrv_port',
                  'fgapisrv_db_port',
-                 'utdb_port']
+                 'utdb_port',
+                 'dbcon_retry_times',
+                 'dbcon_retry_delay']
     bool_types = ['fgapisrv_lnkptvflag',
                   'fgapisrv_notoken',
                   'fgapisrv_debug']
