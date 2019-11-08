@@ -29,7 +29,7 @@ __version__ = 'v0.0.10'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
-__update__ = '2019-10-18 14:17:10'
+__update__ = '2019-11-08 14:10:59'
 
 
 class TestfgAPIServerConfig(unittest.TestCase):
@@ -243,6 +243,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
         self.assertEqual("%s" % cfg['fgapisrv_ptvdefgrp'], 'administrator')
         self.assertEqual("%s" % cfg['fgapisrv_ptvmapfile'],
                          'fgapiserver_ptvmap.json')
+        self.assertEqual("%s" % cfg['dbcon_retry_times'], '-1')
+        self.assertEqual("%s" % cfg['dbcon_retry_delay'], '5')
 
     def test_ConfigTypes(self):
         """
@@ -310,6 +312,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
             "fgapisrv_debug": not cfg['fgapisrv_debug'],
             "fgapisrv_port": cfg['fgapisrv_port'] * -1,
             "fgapisrv_lnkptvflag": not cfg['fgapisrv_lnkptvflag'],
+            "dbcon_retry_times": cfg['dbcon_retry_times'] * -1,
+            "dbcon_retry_delay": cfg['dbcon_retry_delay'] * -1,
             # GridEngine
             "utdb_user": "utdb_user",
             "utdb_pass": "utdb_pass",
@@ -380,6 +384,8 @@ class TestfgAPIServerConfig(unittest.TestCase):
             "fgapisrv_debug": not cfg['fgapisrv_debug'],
             "fgapisrv_port": cfg['fgapisrv_port'] * -1,
             "fgapisrv_lnkptvflag": not cfg['fgapisrv_lnkptvflag'],
+            "dbcon_retry_times": cfg['dbcon_retry_times'] * -1,
+            "dbcon_retry_delay": cfg['dbcon_retry_delay'] * -1,
             # GridEngine
             "utdb_user": "utdb_user",
             "utdb_pass": "utdb_pass",

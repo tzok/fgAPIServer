@@ -59,7 +59,7 @@ fgapiserver:
   fgapisrv_secret: 0123456789ABCDEF
   fgapisrv_notoken: False
   fgapisrv_notokenusr: test
-  fgapisrv_lnkptvflag: True
+  fgapisrv_lnkptvflag: False 
   fgapisrv_ptvendpoint: http://localhost:8889/checktoken
   fgapisrv_ptvuser: tokenver_user
   fgapisrv_ptvpass: tokenver_pass
