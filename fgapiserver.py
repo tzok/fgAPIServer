@@ -384,7 +384,7 @@ def auth(apiver=fg_config['fgapiver']):
                 username=username,
                 password=base64.b64decode(password),
                 user=user)
-        elif len(auth_request) > 0:
+        elif auth_request and len(auth_request) > 0:
             # Extract session token from auth request (view)
             session_token = get_request_token(auth_request)
         else:
