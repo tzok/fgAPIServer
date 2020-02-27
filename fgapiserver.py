@@ -104,6 +104,9 @@ login_manager.init_app(app)
 @login_manager.request_loader
 def load_user(req):
     logger.debug("LoadUser: begin")
+    fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
+    fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
+    fg_config = FGApiServerConfig(fgapiserver_config_file)
     # Login manager could be disabled in conf file
     if fg_config['fgapisrv_notoken']:
         logger.debug("LoadUser: notoken is true")
