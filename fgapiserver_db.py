@@ -1205,8 +1205,7 @@ class FGAPIServerDB:
             task_dbrec = cursor.fetchone()
             if task_dbrec is not None:
                 task_dicrec = {
-                    "id": str(
-                        task_dbrec[0]),
+                    "id": task_dbrec[0],
                     "status": task_dbrec[1],
                     "creation": str(task_dbrec[2]),
                     "last_change": str(task_dbrec[3]),
