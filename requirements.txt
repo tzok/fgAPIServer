@@ -8,5 +8,4 @@ pyOpenSSL
 flask
 flask-login
 mysql-connector-python
-pycrypto
 requests
