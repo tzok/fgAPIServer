@@ -370,7 +370,7 @@ def auth(apiver=fg_config['fgapiver']):
     logtoken = request.values.get('token', '')
     username = request.values.get('username', '')
     password = request.values.get('password', '')
-    auth_request = request.headers.get('Authorization')
+    auth_request = request.headers.get('Authorization', '')
     api_support, state, message = check_api_ver(apiver)
     if not api_support:
         response = {"message": message}
@@ -387,7 +387,7 @@ def auth(apiver=fg_config['fgapiver']):
                 username=username,
                 password=base64.b64decode(password),
                 user=user)
-        elif auth_request and len(auth_request) > 0:
+        elif len(auth_request) > 0:
             # Extract session token from auth request (view)
             session_token = get_request_token(auth_request)
         else:
