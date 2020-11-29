@@ -494,7 +494,7 @@ def index(apiver=fg_config['fgapiver']):
 
 def redact_secrets():
     to_redact = ('fgapisrv_key', 'fgapisrv_crt', 'fgapisrv_secret', 'fgapisrv_ptvpass', 'fgapisrv_db_pass', 'utdb_pass')
-    return dict(filter(lambda kv: kv[0] not in to_redact, fg_config.items()))
+    return dict(map(lambda kv: (kv[0], '***') if kv[0] in to_redact else kv, fg_config.items()))
 
 
 ##
