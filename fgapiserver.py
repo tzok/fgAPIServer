@@ -54,7 +54,7 @@ import logging.config
 __author__ = 'Riccardo Bruno'
 __copyright__ = '2019'
 __license__ = 'Apache'
-__version__ = 'v0.0.10'
+__version__ = 'v0.0.10.1'
 __maintainer__ = 'Riccardo Bruno'
 __email__ = 'riccardo.bruno@ct.infn.it'
 __status__ = 'devel'
@@ -104,6 +104,9 @@ login_manager.init_app(app)
 @login_manager.request_loader
 def load_user(req):
     logger.debug("LoadUser: begin")
+    fgapirundir = os.path.dirname(os.path.abspath(__file__)) + '/'
+    fgapiserver_config_file = fgapirundir + 'fgapiserver.conf'
+    fg_config = FGApiServerConfig(fgapiserver_config_file)
     # Login manager could be disabled in conf file
     if fg_config['fgapisrv_notoken']:
         logger.debug("LoadUser: notoken is true")
@@ -367,7 +370,7 @@ def auth(apiver=fg_config['fgapiver']):
     logtoken = request.values.get('token', '')
     username = request.values.get('username', '')
     password = request.values.get('password', '')
-    auth_request = request.headers.get('Authorization')
+    auth_request = request.headers.get('Authorization', '')
     api_support, state, message = check_api_ver(apiver)
     if not api_support:
         response = {"message": message}
@@ -384,7 +387,7 @@ def auth(apiver=fg_config['fgapiver']):
                 username=username,
                 password=base64.b64decode(password),
                 user=user)
-        elif auth_request and len(auth_request) > 0:
+        elif len(auth_request) > 0:
             # Extract session token from auth request (view)
             session_token = get_request_token(auth_request)
         else:
@@ -476,7 +479,7 @@ def index(apiver=fg_config['fgapiver']):
                      "build:": __version__},)
         response = {
             "versions": versions,
-            "config": fg_config,
+            "config": redact_secrets(),
             "srv_uuid": fgapiserver_uuid,
             "_links": ({"rel": "self",
                         "href": "/"},)
@@ -487,6 +490,11 @@ def index(apiver=fg_config['fgapiver']):
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
+
+def redact_secrets():
+    to_redact = ('fgapisrv_key', 'fgapisrv_crt', 'fgapisrv_secret', 'fgapisrv_ptvpass', 'fgapisrv_db_pass', 'utdb_pass')
+    return dict(map(lambda kv: (kv[0], '***') if kv[0] in to_redact else kv, fg_config.items()))
 
 
 ##
