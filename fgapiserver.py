@@ -479,7 +479,7 @@ def index(apiver=fg_config['fgapiver']):
                      "build:": __version__},)
         response = {
             "versions": versions,
-            "config": fg_config,
+            "config": redact_secrets(),
             "srv_uuid": fgapiserver_uuid,
             "_links": ({"rel": "self",
                         "href": "/"},)
@@ -490,6 +490,11 @@ def index(apiver=fg_config['fgapiver']):
     resp.headers['Content-type'] = 'application/json'
     header_links(request, resp, response)
     return resp
+
+
+def redact_secrets():
+    to_redact = ('fgapisrv_key', 'fgapisrv_crt', 'fgapisrv_secret', 'fgapisrv_ptvpass', 'fgapisrv_db_pass', 'utdb_pass')
+    return dict(map(lambda kv: (kv[0], '***') if kv[0] in to_redact else kv, fg_config.items()))
 
 
 ##
